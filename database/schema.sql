@@ -306,7 +306,7 @@ CREATE TABLE debt_payments (
 -- ============================================
 -- Default password: admin123 (hashed with bcryptjs, 10 rounds)
 INSERT INTO admins (login, password, full_name) VALUES
-('admin', '$2a$10$rWXqZE5g3n1F5v5VLRxnGOKxLQK7Qy9kH3v5JZH5mPXq5H5mPXq5H', 'System Administrator');
+('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator');
 
 -- ============================================
 -- SAMPLE DATA (Optional - for testing)

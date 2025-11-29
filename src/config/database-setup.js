@@ -28,7 +28,7 @@ async function setupDatabase() {
 
         // Replace the placeholder password with actual hashed password
         schema = schema.replace(
-            '$2a$10$rWXqZE5g3n1F5v5VLRxnGOKxLQK7Qy9kH3v5JZH5mPXq5H5mPXq5H',
+            '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
             hashedPassword
         );
 
