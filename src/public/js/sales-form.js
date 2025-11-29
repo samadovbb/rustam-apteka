@@ -1,5 +1,6 @@
 // Sales Form Client-Side Logic
-let sellerInventory = [];
+// Make these global so they can be accessed by Select2 handlers
+window.sellerInventory = [];
 
 // Customer phone search
 let searchTimeout;
@@ -29,7 +30,7 @@ document.getElementById('seller_id').addEventListener('change', async function()
     const sellerId = this.value;
 
     if (!sellerId) {
-        sellerInventory = [];
+        window.sellerInventory = [];
         updateProductSelects();
         return;
     }
@@ -37,7 +38,7 @@ document.getElementById('seller_id').addEventListener('change', async function()
     try {
         const response = await fetch(`/sales/api/seller/${sellerId}/inventory`);
         if (response.ok) {
-            sellerInventory = await response.json();
+            window.sellerInventory = await response.json();
             updateProductSelects();
             document.getElementById('addProductBtn').disabled = false;
         }
@@ -46,12 +47,13 @@ document.getElementById('seller_id').addEventListener('change', async function()
     }
 });
 
-function updateProductSelects() {
+// Expose updateProductSelects globally so Select2 handlers can call it
+window.updateProductSelects = function updateProductSelects() {
     document.querySelectorAll('.product-select').forEach(select => {
         select.innerHTML = '<option value="">Select Product</option>';
 
-        if (sellerInventory.length > 0) {
-            sellerInventory.forEach(item => {
+        if (window.sellerInventory.length > 0) {
+            window.sellerInventory.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.product_id;
                 option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.seller_price).toFixed(2)})`;
@@ -68,7 +70,7 @@ function updateProductSelects() {
 
     const firstInput = document.querySelector('.quantity-input');
     const firstPriceInput = document.querySelector('.price-input');
-    if (sellerInventory.length > 0) {
+    if (window.sellerInventory.length > 0) {
         firstInput.disabled = false;
         firstPriceInput.disabled = false;
     }
