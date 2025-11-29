@@ -1,0 +1,60 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Stock Intake Details</h3>
+                    <a href="/stock-intake" class="btn btn-secondary">Back to List</a>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p><strong>ID:</strong> #<%= intake.id %></p>
+                    <p><strong>Supplier:</strong> <%= intake.supplier_name %></p>
+                    <p><strong>Date:</strong> <%= new Date(intake.intake_date).toLocaleDateString() %></p>
+                    <p><strong>Total Amount:</strong> $<%= parseFloat(intake.total_amount || 0).toFixed(2) %></p>
+                    <% if (intake.notes) { %>
+                        <p><strong>Notes:</strong> <%= intake.notes %></p>
+                    <% } %>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Barcode</th>
+                                <th>Quantity</th>
+                                <th>Purchase Price</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% items.forEach(item => { %>
+                                <tr>
+                                    <td><%= item.product_name %></td>
+                                    <td><%= item.barcode %></td>
+                                    <td><%= item.quantity %></td>
+                                    <td>$<%= parseFloat(item.purchase_price || 0).toFixed(2) %></td>
+                                    <td>$<%= parseFloat(item.subtotal || 0).toFixed(2) %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

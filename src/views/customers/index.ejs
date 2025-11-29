@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">All Customers</h3>
+                    <a href="/customers/create" class="btn btn-primary">Add New Customer</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (customers.length === 0) { %>
+                                <tr>
+                                    <td colspan="5" class="text-center">No customers found</td>
+                                </tr>
+                            <% } else { %>
+                                <% customers.forEach(customer => { %>
+                                    <tr>
+                                        <td>#<%= customer.id %></td>
+                                        <td><%= customer.full_name %></td>
+                                        <td><%= customer.phone %></td>
+                                        <td><%= customer.address || '-' %></td>
+                                        <td>
+                                            <a href="/customers/<%= customer.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+                                            <form action="/customers/<%= customer.id %>/delete" method="POST" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

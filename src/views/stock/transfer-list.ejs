@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">All Stock Transfers</h3>
+                    <a href="/stock-transfer/create" class="btn btn-primary">New Stock Transfer</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Seller</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (transfers.length === 0) { %>
+                                <tr>
+                                    <td colspan="4" class="text-center">No stock transfers found</td>
+                                </tr>
+                            <% } else { %>
+                                <% transfers.forEach(transfer => { %>
+                                    <tr>
+                                        <td>#<%= transfer.id %></td>
+                                        <td><%= new Date(transfer.transfer_date).toLocaleDateString() %></td>
+                                        <td><%= transfer.seller_name %></td>
+                                        <td>
+                                            <a href="/stock-transfer/<%= transfer.id %>" class="btn btn-sm btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,74 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">All Sales</h3>
+                    <a href="/sales/create" class="btn btn-primary">New Sale</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Seller</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (sales.length === 0) { %>
+                                <tr>
+                                    <td colspan="9" class="text-center">No sales found</td>
+                                </tr>
+                            <% } else { %>
+                                <% sales.forEach(sale => { %>
+                                    <tr>
+                                        <td>#<%= sale.id %></td>
+                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
+                                        <td><%= sale.customer_name %></td>
+                                        <td><%= sale.seller_name %></td>
+                                        <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>
+                                        <td>$<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></td>
+                                        <td>$<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %></td>
+                                        <td>
+                                            <% if (sale.status === 'paid') { %>
+                                                <span class="badge badge-success">Paid</span>
+                                            <% } else if (sale.status === 'partial') { %>
+                                                <span class="badge badge-warning">Partial</span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger">Unpaid</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <a href="/sales/<%= sale.id %>" class="btn btn-sm btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

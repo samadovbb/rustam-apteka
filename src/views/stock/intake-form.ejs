@@ -1,0 +1,120 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">New Stock Intake from Supplier</h3>
+                    <a href="/stock-intake" class="btn btn-secondary">Back to List</a>
+                </div>
+
+                <% if (error) { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+
+                <form action="/stock-intake" method="POST" id="intakeForm" data-validate-form>
+                    <div class="form-group">
+                        <label for="supplier_id" class="form-label required">Supplier</label>
+                        <select id="supplier_id" name="supplier_id" class="form-control" data-validate="required" required>
+                            <option value="">Select Supplier</option>
+                            <% suppliers.forEach(supplier => { %>
+                                <option value="<%= supplier.id %>"><%= supplier.name %></option>
+                            <% }) %>
+                        </select>
+                        <span class="form-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Products</label>
+                        <div id="productsList">
+                            <div class="product-item" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;">
+                                <select class="form-control product-select" style="flex: 2;" required>
+                                    <option value="">Select Product</option>
+                                    <% products.forEach(product => { %>
+                                        <option value="<%= product.id %>" data-purchase="<%= product.purchase_price %>" data-sell="<%= product.sell_price %>">
+                                            <%= product.name %> (<%= product.barcode %>)
+                                        </option>
+                                    <% }) %>
+                                </select>
+                                <input type="number" class="form-control quantity-input" placeholder="Quantity" min="1" style="flex: 1;" required>
+                                <input type="number" step="0.01" class="form-control price-input" placeholder="Purchase Price" min="0" style="flex: 1;" required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addProductRow()">+ Add Product</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <input type="hidden" name="items" id="itemsData">
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Stock Intake</button>
+                        <a href="/stock-intake" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function addProductRow() {
+    const container = document.getElementById('productsList');
+    const newRow = container.querySelector('.product-item').cloneNode(true);
+    newRow.querySelectorAll('input, select').forEach(input => input.value = '');
+    container.appendChild(newRow);
+}
+
+document.getElementById('intakeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const items = [];
+    document.querySelectorAll('.product-item').forEach(row => {
+        const productId = row.querySelector('.product-select').value;
+        const quantity = row.querySelector('.quantity-input').value;
+        const price = row.querySelector('.price-input').value;
+
+        if (productId && quantity && price) {
+            items.push({
+                product_id: parseInt(productId),
+                quantity: parseInt(quantity),
+                purchase_price: parseFloat(price)
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        alert('Please add at least one product');
+        return;
+    }
+
+    document.getElementById('itemsData').value = JSON.stringify(items);
+    this.submit();
+});
+
+// Auto-fill last prices when product selected
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('product-select')) {
+        const option = e.target.selectedOptions[0];
+        const row = e.target.closest('.product-item');
+        if (option.dataset.purchase) {
+            row.querySelector('.price-input').value = option.dataset.purchase;
+        }
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>

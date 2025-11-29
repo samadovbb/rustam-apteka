@@ -1,0 +1,58 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">All Stock Intakes</h3>
+                    <a href="/stock-intake/create" class="btn btn-primary">New Stock Intake</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Supplier</th>
+                                <th>Total Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (intakes.length === 0) { %>
+                                <tr>
+                                    <td colspan="5" class="text-center">No stock intakes found</td>
+                                </tr>
+                            <% } else { %>
+                                <% intakes.forEach(intake => { %>
+                                    <tr>
+                                        <td>#<%= intake.id %></td>
+                                        <td><%= new Date(intake.intake_date).toLocaleDateString() %></td>
+                                        <td><%= intake.supplier_name %></td>
+                                        <td>$<%= parseFloat(intake.total_amount || 0).toFixed(2) %></td>
+                                        <td>
+                                            <a href="/stock-intake/<%= intake.id %>" class="btn btn-sm btn-primary">View</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Add New Seller</h3>
+                    <a href="/sellers" class="btn btn-secondary">Back to List</a>
+                </div>
+
+                <% if (error) { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+
+                <form action="/sellers" method="POST" data-validate-form>
+                    <div class="form-group">
+                        <label for="full_name" class="form-label required">Full Name</label>
+                        <input type="text" id="full_name" name="full_name" class="form-control" data-validate="required" required>
+                        <span class="form-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" data-validate="phone" placeholder="+998901234567">
+                        <span class="form-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="commission_percent" class="form-label">Commission Percent</label>
+                        <input type="number" step="0.01" id="commission_percent" name="commission_percent" class="form-control" data-validate="number|min:0|max:100" min="0" max="100" value="0">
+                        <span class="form-error"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Seller</button>
+                        <a href="/sellers" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>
