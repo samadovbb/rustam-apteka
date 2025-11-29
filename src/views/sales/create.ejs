@@ -205,15 +205,39 @@ $(document).ready(function() {
         allowClear: true
     });
 
-    // Trigger change event when seller is selected (for sales-form.js compatibility)
-    $('#seller_id').on('select2:select', function (e) {
-        // Trigger native change event so sales-form.js can handle it
-        $(this).trigger('change');
+    // Handle seller selection - load inventory directly
+    $('#seller_id').on('select2:select', async function (e) {
+        const sellerId = e.params.data.id;
+
+        if (!sellerId) {
+            window.sellerInventory = [];
+            if (typeof window.updateProductSelects === 'function') {
+                window.updateProductSelects();
+            }
+            return;
+        }
+
+        try {
+            const response = await fetch(`/sales/api/seller/${sellerId}/inventory`);
+            if (response.ok) {
+                window.sellerInventory = await response.json();
+                if (typeof window.updateProductSelects === 'function') {
+                    window.updateProductSelects();
+                }
+                document.getElementById('addProductBtn').disabled = false;
+            }
+        } catch (error) {
+            alert('Failed to load seller inventory');
+        }
     });
 
-    // Also trigger when cleared
+    // Also handle when cleared
     $('#seller_id').on('select2:clear', function (e) {
-        $(this).trigger('change');
+        window.sellerInventory = [];
+        if (typeof window.updateProductSelects === 'function') {
+            window.updateProductSelects();
+        }
+        document.getElementById('addProductBtn').disabled = true;
     });
 
     // Note: Product selects are NOT using Select2 on this page
