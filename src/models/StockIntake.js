@@ -7,9 +7,9 @@ class StockIntake {
             FROM stock_intakes si
             JOIN suppliers s ON si.supplier_id = s.id
             ORDER BY si.intake_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [limit]);
+        return await query(sql);
     }
 
     static async findById(id) {
@@ -114,9 +114,9 @@ class StockIntake {
             WHERE si.intake_date >= DATE_SUB(NOW(), INTERVAL ${parseInt(days)} DAY)
             GROUP BY si.id
             ORDER BY si.intake_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [limit]);
+        return await query(sql);
     }
 }
 

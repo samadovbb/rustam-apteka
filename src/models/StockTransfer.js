@@ -7,9 +7,9 @@ class StockTransfer {
             FROM stock_transfers st
             JOIN sellers s ON st.seller_id = s.id
             ORDER BY st.transfer_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [limit]);
+        return await query(sql);
     }
 
     static async findById(id) {
@@ -97,9 +97,9 @@ class StockTransfer {
             FROM stock_transfers st
             WHERE st.seller_id = ?
             ORDER BY st.transfer_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [sellerId, limit]);
+        return await query(sql, [sellerId]);
     }
 
     static async getRecentTransfers(days = 30, limit = 50) {
@@ -112,9 +112,9 @@ class StockTransfer {
             WHERE st.transfer_date >= DATE_SUB(NOW(), INTERVAL ${parseInt(days)} DAY)
             GROUP BY st.id
             ORDER BY st.transfer_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [limit]);
+        return await query(sql);
     }
 }
 

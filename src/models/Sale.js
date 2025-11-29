@@ -9,9 +9,9 @@ class Sale {
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
             ORDER BY s.sale_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [limit]);
+        return await query(sql);
     }
 
     static async findById(id) {
@@ -225,9 +225,9 @@ class Sale {
             JOIN sellers sel ON s.seller_id = sel.id
             WHERE s.status = ?
             ORDER BY s.sale_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [status, limit]);
+        return await query(sql, [status]);
     }
 }
 

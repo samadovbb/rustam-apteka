@@ -68,9 +68,9 @@ class Customer {
             JOIN sellers sel ON s.seller_id = sel.id
             WHERE s.customer_id = ?
             ORDER BY s.sale_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [customerId, limit]);
+        return await query(sql, [customerId]);
     }
 
     static async getActiveDebts(customerId) {

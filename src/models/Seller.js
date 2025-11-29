@@ -72,9 +72,9 @@ class Seller {
             JOIN customers c ON s.customer_id = c.id
             WHERE s.seller_id = ?
             ORDER BY s.sale_date DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [sellerId, limit]);
+        return await query(sql, [sellerId]);
     }
 }
 
