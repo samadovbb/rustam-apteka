@@ -3,7 +3,7 @@
 <div class="login-container">
     <div class="login-box">
         <div class="login-header">
-            <h1 style="color: #ef4444;">⚠️ Error</h1>
+            <h1 style="color: #ef4444;">⚠️ <%= lang.error.title %></h1>
             <h2 style="font-size: 48px; color: #64748b;"><%= error.status || 500 %></h2>
         </div>
 
@@ -18,7 +18,7 @@
         <% } %>
 
         <div class="text-center mt-3">
-            <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+            <a href="/dashboard" class="btn btn-primary"><%= lang.error.goToDashboard %></a>
         </div>
     </div>
 </div>

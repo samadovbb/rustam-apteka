@@ -4,7 +4,7 @@
     <div class="login-box">
         <div class="login-header">
             <h1>MegaDent POS</h1>
-            <p>Dental Equipment Store Management System</p>
+            <p><%= lang.auth.systemTitle %></p>
         </div>
 
         <% if (error) { %>
@@ -15,7 +15,7 @@
 
         <form action="/login" method="POST" data-validate-form>
             <div class="form-group">
-                <label for="login" class="form-label required">Login</label>
+                <label for="login" class="form-label required"><%= lang.auth.loginLabel %></label>
                 <input
                     type="text"
                     id="login"
@@ -29,7 +29,7 @@
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label required">Password</label>
+                <label for="password" class="form-label required"><%= lang.auth.password %></label>
                 <input
                     type="password"
                     id="password"
@@ -42,12 +42,12 @@
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%;">
-                Login
+                <%= lang.auth.login %>
             </button>
         </form>
 
         <p class="text-center" style="margin-top: 20px; color: #64748b; font-size: 12px;">
-            Default: admin / admin123
+            <%= lang.auth.defaultCredentials %>
         </p>
     </div>
 </div>

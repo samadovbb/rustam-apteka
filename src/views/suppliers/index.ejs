@@ -7,33 +7,33 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">All Suppliers</h3>
-                    <a href="/suppliers/create" class="btn btn-primary">Add New Supplier</a>
+                    <h3 class="card-title"><%= lang.suppliers.title %></h3>
+                    <a href="/suppliers/create" class="btn btn-primary"><%= lang.suppliers.addNew %></a>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Address</th>
-                                <th>Actions</th>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.table.name %></th>
+                                <th><%= lang.table.phone %></th>
+                                <th><%= lang.table.email %></th>
+                                <th><%= lang.table.address %></th>
+                                <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (suppliers.length === 0) { %>
                                 <tr>
-                                    <td colspan="6" class="text-center">No suppliers found</td>
+                                    <td colspan="6" class="text-center"><%= lang.suppliers.noSuppliers %></td>
                                 </tr>
                             <% } else { %>
                                 <% suppliers.forEach(supplier => { %>
@@ -44,9 +44,9 @@
                                         <td><%= supplier.email || '-' %></td>
                                         <td><%= supplier.address || '-' %></td>
                                         <td>
-                                            <a href="/suppliers/<%= supplier.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+                                            <a href="/suppliers/<%= supplier.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/suppliers/<%= supplier.id %>/delete" method="POST" style="display: inline;">
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.common.confirmDelete %>')"><%= lang.buttons.delete %></button>
                                             </form>
                                         </td>
                                     </tr>

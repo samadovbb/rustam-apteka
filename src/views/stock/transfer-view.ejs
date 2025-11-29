@@ -7,23 +7,23 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Stock Transfer Details</h3>
-                    <a href="/stock-transfer" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.stockTransfer.transferDetails %></h3>
+                    <a href="/stock-transfer" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <p><strong>ID:</strong> #<%= transfer.id %></p>
-                    <p><strong>Seller:</strong> <%= transfer.seller_name %></p>
-                    <p><strong>Date:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.table.id %>:</strong> #<%= transfer.id %></p>
+                    <p><strong><%= lang.stockTransfer.seller %>:</strong> <%= transfer.seller_name %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString() %></p>
                     <% if (transfer.notes) { %>
-                        <p><strong>Notes:</strong> <%= transfer.notes %></p>
+                        <p><strong><%= lang.common.notes %>:</strong> <%= transfer.notes %></p>
                     <% } %>
                 </div>
 
@@ -31,11 +31,11 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th>Barcode</th>
-                                <th>Quantity</th>
-                                <th>Seller Price</th>
-                                <th>Total Value</th>
+                                <th><%= lang.table.product %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.table.sellerPrice %></th>
+                                <th><%= lang.table.totalValue %></th>
                             </tr>
                         </thead>
                         <tbody>

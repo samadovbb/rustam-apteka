@@ -7,24 +7,24 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Stock Intake Details</h3>
-                    <a href="/stock-intake" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.stockIntake.intakeDetails %></h3>
+                    <a href="/stock-intake" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <p><strong>ID:</strong> #<%= intake.id %></p>
-                    <p><strong>Supplier:</strong> <%= intake.supplier_name %></p>
-                    <p><strong>Date:</strong> <%= new Date(intake.intake_date).toLocaleDateString() %></p>
-                    <p><strong>Total Amount:</strong> $<%= parseFloat(intake.total_amount || 0).toFixed(2) %></p>
+                    <p><strong><%= lang.table.id %>:</strong> #<%= intake.id %></p>
+                    <p><strong><%= lang.stockIntake.supplier %>:</strong> <%= intake.supplier_name %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(intake.intake_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.stockIntake.totalAmount %>:</strong> $<%= parseFloat(intake.total_amount || 0).toFixed(2) %></p>
                     <% if (intake.notes) { %>
-                        <p><strong>Notes:</strong> <%= intake.notes %></p>
+                        <p><strong><%= lang.common.notes %>:</strong> <%= intake.notes %></p>
                     <% } %>
                 </div>
 
@@ -32,11 +32,11 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th>Barcode</th>
-                                <th>Quantity</th>
-                                <th>Purchase Price</th>
-                                <th>Subtotal</th>
+                                <th><%= lang.table.product %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.table.purchasePrice %></th>
+                                <th><%= lang.table.subtotal %></th>
                             </tr>
                         </thead>
                         <tbody>

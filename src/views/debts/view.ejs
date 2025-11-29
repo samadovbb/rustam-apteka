@@ -7,53 +7,53 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Debt Details</h3>
-                    <a href="/debts" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.debts.debtDetails %></h3>
+                    <a href="/debts" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <h4>Debt Information</h4>
-                    <p><strong>ID:</strong> #<%= debt.id %></p>
-                    <p><strong>Customer:</strong> <%= debt.customer_name %> (<%= debt.customer_phone %>)</p>
-                    <p><strong>Sale Date:</strong> <%= new Date(debt.sale_date).toLocaleDateString() %></p>
-                    <p><strong>Original Amount:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
-                    <p><strong>Current Amount:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></span></p>
-                    <p><strong>Markup Type:</strong>
+                    <h4><%= lang.debts.debtInfo %></h4>
+                    <p><strong><%= lang.table.id %>:</strong> #<%= debt.id %></p>
+                    <p><strong><%= lang.debts.customer %>:</strong> <%= debt.customer_name %> (<%= debt.customer_phone %>)</p>
+                    <p><strong><%= lang.debts.saleDate %>:</strong> <%= new Date(debt.sale_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.debts.originalAmount %>:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
+                    <p><strong><%= lang.debts.currentAmount %>:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></span></p>
+                    <p><strong><%= lang.debts.markupType %>:</strong>
                         <% if (debt.markup_type === 'fixed') { %>
-                            Fixed Amount: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> monthly
+                            <%= lang.debts.fixed %>: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> <%= lang.debts.monthly %>
                         <% } else { %>
-                            <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% monthly interest
+                            <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% <%= lang.debts.monthly %>
                         <% } %>
                     </p>
-                    <p><strong>Grace Period:</strong> <%= debt.grace_period_months %> months (ends <%= new Date(debt.grace_end_date).toLocaleDateString() %>)</p>
-                    <p><strong>Last Markup Date:</strong> <%= debt.last_markup_date ? new Date(debt.last_markup_date).toLocaleDateString() : 'Never' %></p>
-                    <p><strong>Status:</strong>
+                    <p><strong><%= lang.sales.gracePeriod %>:</strong> <%= debt.grace_period_months %> <%= lang.debts.monthly %> (<%= lang.debts.graceEnd %> <%= new Date(debt.grace_end_date).toLocaleDateString() %>)</p>
+                    <p><strong><%= lang.debts.lastMarkupDate %>:</strong> <%= debt.last_markup_date ? new Date(debt.last_markup_date).toLocaleDateString() : lang.debts.never %></p>
+                    <p><strong><%= lang.common.status %>:</strong>
                         <% if (debt.status === 'active') { %>
-                            <span class="badge badge-danger">Active</span>
+                            <span class="badge badge-danger"><%= lang.status.active %></span>
                         <% } else if (debt.status === 'paid') { %>
-                            <span class="badge badge-success">Paid</span>
+                            <span class="badge badge-success"><%= lang.status.paid %></span>
                         <% } else { %>
-                            <span class="badge badge-secondary">Cancelled</span>
+                            <span class="badge badge-secondary"><%= lang.status.cancelled %></span>
                         <% } %>
                     </p>
                 </div>
 
                 <% if (paymentHistory.length > 0) { %>
-                    <h4>Payment History</h4>
+                    <h4><%= lang.sales.paymentHistory %></h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Amount</th>
-                                    <th>Method</th>
+                                    <th><%= lang.common.date %></th>
+                                    <th><%= lang.sales.amount %></th>
+                                    <th><%= lang.sales.method %></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,15 +70,15 @@
                 <% } %>
 
                 <% if (markupLogs.length > 0) { %>
-                    <h4>Markup History</h4>
+                    <h4><%= lang.debts.markupHistory %></h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Debt Before</th>
-                                    <th>Markup Applied</th>
-                                    <th>Debt After</th>
+                                    <th><%= lang.common.date %></th>
+                                    <th><%= lang.debts.debtBefore %></th>
+                                    <th><%= lang.debts.markupApplied %></th>
+                                    <th><%= lang.debts.debtAfter %></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -104,15 +104,15 @@
                 <% if (debt.status === 'active') { %>
                     <div style="margin-top: 20px;">
                         <form action="/debts/<%= debt.id %>/apply-markup" method="POST" style="display: inline;">
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Apply markup to this debt now?')">
-                                Apply Markup Manually
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('<%= lang.debts.confirmApplyMarkup %>')">
+                                <%= lang.debts.applyMarkupManually %>
                             </button>
                         </form>
 
                         <form action="/debts/<%= debt.id %>/status" method="POST" style="display: inline;">
                             <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this debt?')">
-                                Cancel Debt
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('<%= lang.debts.confirmCancel %>')">
+                                <%= lang.debts.cancelDebt %>
                             </button>
                         </form>
                     </div>

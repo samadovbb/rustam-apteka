@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 const { startDebtCron } = require('./cron/debt-markup');
+const languageMiddleware = require('./middleware/language');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -33,6 +34,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Language middleware - inject Uzbek translations into all views
+app.use(languageMiddleware);
 
 // Make environment available to views
 app.locals.env = process.env.NODE_ENV || 'development';

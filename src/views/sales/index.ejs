@@ -7,36 +7,36 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">All Sales</h3>
-                    <a href="/sales/create" class="btn btn-primary">New Sale</a>
+                    <h3 class="card-title"><%= lang.sales.allSales %></h3>
+                    <a href="/sales/create" class="btn btn-primary"><%= lang.sales.newSale %></a>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Date</th>
-                                <th>Customer</th>
-                                <th>Seller</th>
-                                <th>Total</th>
-                                <th>Paid</th>
-                                <th>Remaining</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.table.date %></th>
+                                <th><%= lang.table.customer %></th>
+                                <th><%= lang.table.seller %></th>
+                                <th><%= lang.table.total %></th>
+                                <th><%= lang.table.paid %></th>
+                                <th><%= lang.table.remaining %></th>
+                                <th><%= lang.table.status %></th>
+                                <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (sales.length === 0) { %>
                                 <tr>
-                                    <td colspan="9" class="text-center">No sales found</td>
+                                    <td colspan="9" class="text-center"><%= lang.sales.notFound %></td>
                                 </tr>
                             <% } else { %>
                                 <% sales.forEach(sale => { %>
@@ -50,15 +50,15 @@
                                         <td>$<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %></td>
                                         <td>
                                             <% if (sale.status === 'paid') { %>
-                                                <span class="badge badge-success">Paid</span>
+                                                <span class="badge badge-success"><%= lang.status.paid %></span>
                                             <% } else if (sale.status === 'partial') { %>
-                                                <span class="badge badge-warning">Partial</span>
+                                                <span class="badge badge-warning"><%= lang.status.partial %></span>
                                             <% } else { %>
-                                                <span class="badge badge-danger">Unpaid</span>
+                                                <span class="badge badge-danger"><%= lang.status.unpaid %></span>
                                             <% } %>
                                         </td>
                                         <td>
-                                            <a href="/sales/<%= sale.id %>" class="btn btn-sm btn-primary">View</a>
+                                            <a href="/sales/<%= sale.id %>" class="btn btn-sm btn-primary"><%= lang.buttons.view %></a>
                                         </td>
                                     </tr>
                                 <% }) %>
