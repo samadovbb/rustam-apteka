@@ -25,10 +25,17 @@
                 <form action="/sales" method="POST" id="salesForm" data-validate-form>
                     <h4><%= lang.sales.customerInfo %></h4>
                     <div class="form-group">
+                        <label for="customer_search" class="form-label"><%= lang.sales.searchExisting %></label>
+                        <select id="customer_search" class="form-control" style="width: 100%;">
+                            <option value=""><%= lang.sales.searchExisting %></option>
+                        </select>
+                        <small><%= lang.sales.searchExisting %></small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="customer_phone" class="form-label required"><%= lang.sales.customerPhone %></label>
                         <input type="tel" id="customer_phone" name="customer_phone" class="form-control" data-validate="required|phone" required placeholder="+998901234567">
                         <span class="form-error"></span>
-                        <small><%= lang.sales.searchExisting %></small>
                     </div>
 
                     <div class="form-group">
@@ -128,5 +135,108 @@
 </div>
 
 <script src="/js/sales-form.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for customer search
+    $('#customer_search').select2({
+        ajax: {
+            url: '/customers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(customer) {
+                        return {
+                            id: customer.id,
+                            text: customer.full_name + ' (' + customer.phone + ')',
+                            customer: customer
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.sales.searchExisting %>',
+        minimumInputLength: 2,
+        allowClear: true
+    });
+
+    // When customer is selected from search, populate the form
+    $('#customer_search').on('select2:select', function (e) {
+        var customer = e.params.data.customer;
+        $('#customer_phone').val(customer.phone);
+        $('#customer_name').val(customer.full_name);
+        $('#customer_address').val(customer.address || '');
+    });
+
+    // Initialize Select2 for seller
+    $('#seller_id').select2({
+        ajax: {
+            url: '/sellers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || ''
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(seller) {
+                        return {
+                            id: seller.id,
+                            text: seller.full_name
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.sales.selectSeller %>',
+        minimumInputLength: 0,
+        allowClear: true
+    });
+
+    // Initialize Select2 for product selects (will be initialized dynamically)
+    $(document).on('focus', '.product-select:not(.select2-hidden-accessible)', function() {
+        if (!$(this).prop('disabled')) {
+            $(this).select2({
+                ajax: {
+                    url: '/products/api/search',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term || ''
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.map(function(product) {
+                                return {
+                                    id: product.id,
+                                    text: product.name + ' (' + product.barcode + ')',
+                                    product: product
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                },
+                placeholder: '<%= lang.sales.selectProduct %>',
+                minimumInputLength: 0,
+                allowClear: true,
+                dropdownParent: $(this).parent()
+            });
+        }
+    });
+});
+</script>
 
 <%- include('../partials/footer') %>

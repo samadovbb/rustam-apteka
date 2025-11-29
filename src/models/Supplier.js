@@ -57,6 +57,17 @@ class Supplier {
         `;
         return await query(sql, [supplierId]);
     }
+
+    static async search(searchTerm) {
+        const sql = `
+            SELECT * FROM suppliers
+            WHERE name LIKE ? OR phone LIKE ? OR email LIKE ?
+            ORDER BY name ASC
+            LIMIT 50
+        `;
+        const term = `%${searchTerm}%`;
+        return await query(sql, [term, term, term]);
+    }
 }
 
 module.exports = Supplier;

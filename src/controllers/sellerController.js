@@ -98,6 +98,22 @@ class SellerController {
             res.status(500).render('error', { title: 'Error', message: error.message, error });
         }
     }
+
+    // API: Search sellers
+    static async search(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q) {
+                return res.json([]);
+            }
+
+            const sellers = await Seller.search(q);
+            res.json(sellers);
+        } catch (error) {
+            console.error('Seller search error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = SellerController;

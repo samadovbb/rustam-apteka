@@ -82,6 +82,22 @@ class SupplierController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // API: Search suppliers
+    static async search(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q) {
+                return res.json([]);
+            }
+
+            const suppliers = await Supplier.search(q);
+            res.json(suppliers);
+        } catch (error) {
+            console.error('Supplier search error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = SupplierController;

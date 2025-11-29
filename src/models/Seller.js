@@ -76,6 +76,17 @@ class Seller {
         `;
         return await query(sql, [sellerId]);
     }
+
+    static async search(searchTerm) {
+        const sql = `
+            SELECT * FROM sellers
+            WHERE full_name LIKE ? OR phone LIKE ?
+            ORDER BY full_name ASC
+            LIMIT 50
+        `;
+        const term = `%${searchTerm}%`;
+        return await query(sql, [term, term]);
+    }
 }
 
 module.exports = Seller;

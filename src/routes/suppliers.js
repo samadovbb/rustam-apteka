@@ -12,4 +12,7 @@ router.get('/:id/edit', SupplierController.edit);
 router.post('/:id', SupplierController.update);
 router.post('/:id/delete', SupplierController.delete);
 
+// API routes
+router.get('/api/search', SupplierController.search);
+
 module.exports = router;
