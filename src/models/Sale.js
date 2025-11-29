@@ -210,11 +210,11 @@ class Sale {
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
-            WHERE s.sale_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            WHERE s.sale_date >= DATE_SUB(NOW(), INTERVAL ${parseInt(days)} DAY)
             ORDER BY s.sale_date DESC
             LIMIT ?
         `;
-        return await query(sql, [days, limit]);
+        return await query(sql, [limit]);
     }
 
     static async getSalesByStatus(status, limit = 100) {

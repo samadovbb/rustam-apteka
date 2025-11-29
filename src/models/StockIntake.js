@@ -111,12 +111,12 @@ class StockIntake {
             FROM stock_intakes si
             JOIN suppliers s ON si.supplier_id = s.id
             LEFT JOIN stock_intake_items sii ON si.id = sii.stock_intake_id
-            WHERE si.intake_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            WHERE si.intake_date >= DATE_SUB(NOW(), INTERVAL ${parseInt(days)} DAY)
             GROUP BY si.id
             ORDER BY si.intake_date DESC
             LIMIT ?
         `;
-        return await query(sql, [days, limit]);
+        return await query(sql, [limit]);
     }
 }
 

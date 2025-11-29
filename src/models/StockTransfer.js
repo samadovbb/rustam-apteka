@@ -109,12 +109,12 @@ class StockTransfer {
             FROM stock_transfers st
             JOIN sellers s ON st.seller_id = s.id
             LEFT JOIN stock_transfer_items sti ON st.id = sti.stock_transfer_id
-            WHERE st.transfer_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            WHERE st.transfer_date >= DATE_SUB(NOW(), INTERVAL ${parseInt(days)} DAY)
             GROUP BY st.id
             ORDER BY st.transfer_date DESC
             LIMIT ?
         `;
-        return await query(sql, [days, limit]);
+        return await query(sql, [limit]);
     }
 }
 
