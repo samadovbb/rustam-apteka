@@ -8,11 +8,11 @@ class Debt {
             FROM debts d
             JOIN customers c ON d.customer_id = c.id
             JOIN sales s ON d.sale_id = s.id
-            WHERE d.status = ?
+            WHERE d.status = '${status}'
             ORDER BY d.created_at DESC
-            LIMIT ?
+            LIMIT ${parseInt(limit)}
         `;
-        return await query(sql, [status, limit]);
+        return await query(sql, []);
     }
 
     static async findById(id) {
