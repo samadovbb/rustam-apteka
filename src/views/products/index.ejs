@@ -43,8 +43,8 @@
                                         <td><%= product.name %></td>
                                         <td><%= product.barcode %></td>
                                         <td><%= product.warranty_months %></td>
-                                        <td>$<%= product.purchase_price.toFixed(2) %></td>
-                                        <td>$<%= product.sell_price.toFixed(2) %></td>
+                                        <td>$<%= parseFloat(product.purchase_price || 0).toFixed(2) %></td>
+                                        <td>$<%= parseFloat(product.sell_price || 0).toFixed(2) %></td>
                                         <td>
                                             <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
                                             <form action="/products/<%= product.id %>/delete" method="POST" style="display: inline;">
