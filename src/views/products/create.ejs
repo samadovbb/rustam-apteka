@@ -7,15 +7,15 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Add New Product</h3>
-                    <a href="/products" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.products.addNew %></h3>
+                    <a href="/products" class="btn btn-secondary"><%= lang.buttons.backToList %></a>
                 </div>
 
                 <% if (error) { %>
@@ -24,38 +24,38 @@
 
                 <form action="/products" method="POST" data-validate-form>
                     <div class="form-group">
-                        <label for="name" class="form-label required">Product Name</label>
+                        <label for="name" class="form-label required"><%= lang.products.productName %></label>
                         <input type="text" id="name" name="name" class="form-control" data-validate="required" required>
                         <span class="form-error"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="barcode" class="form-label required">Barcode</label>
+                        <label for="barcode" class="form-label required"><%= lang.products.barcode %></label>
                         <input type="text" id="barcode" name="barcode" class="form-control" data-validate="required" required>
                         <span class="form-error"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="warranty_months" class="form-label">Warranty (months)</label>
+                        <label for="warranty_months" class="form-label"><%= lang.products.warranty %></label>
                         <input type="number" id="warranty_months" name="warranty_months" class="form-control" data-validate="number|min:0" min="0" value="0">
                         <span class="form-error"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="purchase_price" class="form-label">Purchase Price</label>
+                        <label for="purchase_price" class="form-label"><%= lang.products.purchasePrice %></label>
                         <input type="number" step="0.01" id="purchase_price" name="purchase_price" class="form-control" data-validate="positiveNumber|min:0" min="0" value="0">
                         <span class="form-error"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="sell_price" class="form-label">Sell Price</label>
+                        <label for="sell_price" class="form-label"><%= lang.products.sellPrice %></label>
                         <input type="number" step="0.01" id="sell_price" name="sell_price" class="form-control" data-validate="positiveNumber|min:0" min="0" value="0">
                         <span class="form-error"></span>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Save Product</button>
-                        <a href="/products" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary"><%= lang.buttons.save %></button>
+                        <a href="/products" class="btn btn-secondary"><%= lang.buttons.cancel %></a>
                     </div>
                 </form>
             </div>

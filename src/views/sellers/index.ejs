@@ -7,32 +7,32 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">All Sellers</h3>
-                    <a href="/sellers/create" class="btn btn-primary">Add New Seller</a>
+                    <h3 class="card-title"><%= lang.sellers.allSellers %></h3>
+                    <a href="/sellers/create" class="btn btn-primary"><%= lang.sellers.addNew %></a>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Full Name</th>
-                                <th>Phone</th>
-                                <th>Commission %</th>
-                                <th>Actions</th>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.table.name %></th>
+                                <th><%= lang.table.phone %></th>
+                                <th><%= lang.table.commission %></th>
+                                <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (sellers.length === 0) { %>
                                 <tr>
-                                    <td colspan="5" class="text-center">No sellers found</td>
+                                    <td colspan="5" class="text-center"><%= lang.sellers.notFound %></td>
                                 </tr>
                             <% } else { %>
                                 <% sellers.forEach(seller => { %>
@@ -42,10 +42,10 @@
                                         <td><%= seller.phone || '-' %></td>
                                         <td><%= parseFloat(seller.commission_percent || 0).toFixed(2) %>%</td>
                                         <td>
-                                            <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-sm btn-info">Inventory</a>
-                                            <a href="/sellers/<%= seller.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+                                            <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-sm btn-info"><%= lang.sellers.inventory %></a>
+                                            <a href="/sellers/<%= seller.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/sellers/<%= seller.id %>/delete" method="POST" style="display: inline;">
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.products.deleteConfirm %>')"><%= lang.buttons.delete %></button>
                                             </form>
                                         </td>
                                     </tr>

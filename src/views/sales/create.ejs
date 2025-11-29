@@ -7,15 +7,15 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">New Sale</h3>
-                    <a href="/sales" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.sales.newSale %></h3>
+                    <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <% if (error) { %>
@@ -23,32 +23,32 @@
                 <% } %>
 
                 <form action="/sales" method="POST" id="salesForm" data-validate-form>
-                    <h4>Customer Information</h4>
+                    <h4><%= lang.sales.customerInfo %></h4>
                     <div class="form-group">
-                        <label for="customer_phone" class="form-label required">Customer Phone</label>
+                        <label for="customer_phone" class="form-label required"><%= lang.sales.customerPhone %></label>
                         <input type="tel" id="customer_phone" name="customer_phone" class="form-control" data-validate="required|phone" required placeholder="+998901234567">
                         <span class="form-error"></span>
-                        <small>Start typing to search existing customers</small>
+                        <small><%= lang.sales.searchExisting %></small>
                     </div>
 
                     <div class="form-group">
-                        <label for="customer_name" class="form-label required">Customer Name</label>
+                        <label for="customer_name" class="form-label required"><%= lang.sales.customerName %></label>
                         <input type="text" id="customer_name" name="customer_name" class="form-control" data-validate="required" required>
                         <span class="form-error"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="customer_address" class="form-label">Customer Address</label>
+                        <label for="customer_address" class="form-label"><%= lang.sales.customerAddress %></label>
                         <textarea id="customer_address" name="customer_address" class="form-control" rows="2"></textarea>
                     </div>
 
                     <hr>
 
-                    <h4>Sale Details</h4>
+                    <h4><%= lang.sales.saleDetails %></h4>
                     <div class="form-group">
-                        <label for="seller_id" class="form-label required">Seller</label>
+                        <label for="seller_id" class="form-label required"><%= lang.sales.seller %></label>
                         <select id="seller_id" name="seller_id" class="form-control" data-validate="required" required>
-                            <option value="">Select Seller</option>
+                            <option value=""><%= lang.sales.selectSeller %></option>
                             <% sellers.forEach(seller => { %>
                                 <option value="<%= seller.id %>"><%= seller.full_name %></option>
                             <% }) %>
@@ -57,60 +57,60 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Products</label>
+                        <label class="form-label"><%= lang.sales.products %></label>
                         <div id="productsList">
                             <div class="product-item" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;">
                                 <select class="form-control product-select" style="flex: 2;" disabled>
-                                    <option value="">Select seller first</option>
+                                    <option value=""><%= lang.sales.selectSellerFirst %></option>
                                 </select>
-                                <input type="number" class="form-control quantity-input" placeholder="Qty" min="1" style="flex: 0.5;" disabled>
-                                <input type="number" step="0.01" class="form-control price-input" placeholder="Price" min="0" style="flex: 1;" disabled>
+                                <input type="number" class="form-control quantity-input" placeholder="<%= lang.sales.qty %>" min="1" style="flex: 0.5;" disabled>
+                                <input type="number" step="0.01" class="form-control price-input" placeholder="<%= lang.sales.price %>" min="0" style="flex: 1;" disabled>
                                 <span class="form-control" style="flex: 1; background: #f1f5f9;">$0.00</span>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-sm btn-secondary" id="addProductBtn" disabled>+ Add Product</button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="addProductBtn" disabled><%= lang.stockIntake.addProduct %></button>
                     </div>
 
                     <div style="text-align: right; font-size: 18px; font-weight: bold; margin: 20px 0;">
-                        Total: $<span id="totalAmount">0.00</span>
+                        <%= lang.common.total %>: $<span id="totalAmount">0.00</span>
                     </div>
 
                     <hr>
 
-                    <h4>Payment</h4>
+                    <h4><%= lang.sales.payment %></h4>
                     <div class="form-group">
-                        <label for="initial_payment" class="form-label">Initial Payment</label>
+                        <label for="initial_payment" class="form-label"><%= lang.sales.initialPayment %></label>
                         <input type="number" step="0.01" id="initial_payment" name="initial_payment" class="form-control" min="0" value="0">
                     </div>
 
                     <div class="form-group">
-                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <label for="payment_method" class="form-label"><%= lang.sales.paymentMethod %></label>
                         <select id="payment_method" name="payment_method" class="form-control">
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="transfer">Transfer</option>
-                            <option value="other">Other</option>
+                            <option value="cash"><%= lang.sales.cash %></option>
+                            <option value="card"><%= lang.sales.card %></option>
+                            <option value="transfer"><%= lang.sales.transfer %></option>
+                            <option value="other"><%= lang.sales.other %></option>
                         </select>
                     </div>
 
                     <div id="debtSection" style="display: none;">
                         <hr>
-                        <h4>Debt Configuration</h4>
+                        <h4><%= lang.sales.debtConfig %></h4>
                         <div class="form-group">
-                            <label for="debt_markup_type" class="form-label">Markup Type</label>
+                            <label for="debt_markup_type" class="form-label"><%= lang.sales.markupType %></label>
                             <select id="debt_markup_type" name="debt_markup_type" class="form-control">
-                                <option value="fixed">Fixed Amount (monthly)</option>
-                                <option value="percent">Percent (monthly interest)</option>
+                                <option value="fixed"><%= lang.sales.fixedAmount %></option>
+                                <option value="percent"><%= lang.sales.percentInterest %></option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label for="debt_markup_value" class="form-label">Markup Value</label>
-                            <input type="number" step="0.01" id="debt_markup_value" name="debt_markup_value" class="form-control" min="0" placeholder="Amount or Percentage">
+                            <label for="debt_markup_value" class="form-label"><%= lang.sales.markupValue %></label>
+                            <input type="number" step="0.01" id="debt_markup_value" name="debt_markup_value" class="form-control" min="0" placeholder="<%= lang.sales.markupValue %>">
                         </div>
 
                         <div class="form-group">
-                            <label for="debt_grace_months" class="form-label">Grace Period (months)</label>
+                            <label for="debt_grace_months" class="form-label"><%= lang.sales.gracePeriod %></label>
                             <input type="number" id="debt_grace_months" name="debt_grace_months" class="form-control" min="0" value="0">
                         </div>
                     </div>
@@ -118,8 +118,8 @@
                     <input type="hidden" name="items" id="itemsData">
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Complete Sale</button>
-                        <a href="/sales" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary"><%= lang.sales.completeSale %></button>
+                        <a href="/sales" class="btn btn-secondary"><%= lang.buttons.cancel %></a>
                     </div>
                 </form>
             </div>

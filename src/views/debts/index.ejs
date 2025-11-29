@@ -7,7 +7,7 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
@@ -15,26 +15,26 @@
             <!-- Debt Statistics -->
             <div class="stats-grid" style="margin-bottom: 20px;">
                 <div class="stat-card">
-                    <div class="stat-label">Total Active Debts</div>
+                    <div class="stat-label"><%= lang.debts.totalActiveDebts %></div>
                     <div class="stat-value"><%= stats.active_count || 0 %></div>
                 </div>
                 <div class="stat-card danger">
-                    <div class="stat-label">Total Active Amount</div>
+                    <div class="stat-label"><%= lang.debts.totalActiveAmount %></div>
                     <div class="stat-value">$<%= parseFloat(stats.total_active_debt || 0).toFixed(2) %></div>
                 </div>
                 <div class="stat-card success">
-                    <div class="stat-label">Total Recovered</div>
+                    <div class="stat-label"><%= lang.debts.totalRecovered %></div>
                     <div class="stat-value">$<%= parseFloat(stats.total_recovered || 0).toFixed(2) %></div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Debt Management</h3>
+                    <h3 class="card-title"><%= lang.debts.debtManagement %></h3>
                     <div>
-                        <a href="/debts?status=active" class="btn btn-sm <%= currentStatus === 'active' ? 'btn-primary' : 'btn-secondary' %>">Active</a>
-                        <a href="/debts?status=paid" class="btn btn-sm <%= currentStatus === 'paid' ? 'btn-primary' : 'btn-secondary' %>">Paid</a>
-                        <a href="/debts?status=cancelled" class="btn btn-sm <%= currentStatus === 'cancelled' ? 'btn-primary' : 'btn-secondary' %>">Cancelled</a>
+                        <a href="/debts?status=active" class="btn btn-sm <%= currentStatus === 'active' ? 'btn-primary' : 'btn-secondary' %>"><%= lang.debts.active %></a>
+                        <a href="/debts?status=paid" class="btn btn-sm <%= currentStatus === 'paid' ? 'btn-primary' : 'btn-secondary' %>"><%= lang.debts.paid %></a>
+                        <a href="/debts?status=cancelled" class="btn btn-sm <%= currentStatus === 'cancelled' ? 'btn-primary' : 'btn-secondary' %>"><%= lang.debts.cancelled %></a>
                     </div>
                 </div>
 
@@ -42,21 +42,21 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Customer</th>
-                                <th>Sale Date</th>
-                                <th>Original Amount</th>
-                                <th>Current Amount</th>
-                                <th>Markup Type</th>
-                                <th>Grace End</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.debts.customer %></th>
+                                <th><%= lang.debts.saleDate %></th>
+                                <th><%= lang.debts.originalAmount %></th>
+                                <th><%= lang.debts.currentAmount %></th>
+                                <th><%= lang.debts.markupType %></th>
+                                <th><%= lang.debts.graceEnd %></th>
+                                <th><%= lang.common.status %></th>
+                                <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (debts.length === 0) { %>
                                 <tr>
-                                    <td colspan="9" class="text-center">No <%= currentStatus %> debts found</td>
+                                    <td colspan="9" class="text-center"><%= currentStatus %> <%= lang.debts.notFound %></td>
                                 </tr>
                             <% } else { %>
                                 <% debts.forEach(debt => { %>
@@ -68,7 +68,7 @@
                                         <td>$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></td>
                                         <td>
                                             <% if (debt.markup_type === 'fixed') { %>
-                                                Fixed: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %>
+                                                <%= lang.debts.fixed %>: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %>
                                             <% } else { %>
                                                 <%= parseFloat(debt.markup_value || 0).toFixed(2) %>%
                                             <% } %>
@@ -76,15 +76,15 @@
                                         <td><%= debt.grace_end_date ? new Date(debt.grace_end_date).toLocaleDateString() : '-' %></td>
                                         <td>
                                             <% if (debt.status === 'active') { %>
-                                                <span class="badge badge-danger">Active</span>
+                                                <span class="badge badge-danger"><%= lang.status.active %></span>
                                             <% } else if (debt.status === 'paid') { %>
-                                                <span class="badge badge-success">Paid</span>
+                                                <span class="badge badge-success"><%= lang.status.paid %></span>
                                             <% } else { %>
-                                                <span class="badge badge-secondary">Cancelled</span>
+                                                <span class="badge badge-secondary"><%= lang.status.cancelled %></span>
                                             <% } %>
                                         </td>
                                         <td>
-                                            <a href="/debts/<%= debt.id %>" class="btn btn-sm btn-primary">View</a>
+                                            <a href="/debts/<%= debt.id %>" class="btn btn-sm btn-primary"><%= lang.buttons.view %></a>
                                         </td>
                                     </tr>
                                 <% }) %>

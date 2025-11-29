@@ -7,32 +7,32 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title"><%= seller.full_name %> - Current Inventory</h3>
-                    <a href="/sellers" class="btn btn-secondary">Back to Sellers</a>
+                    <h3 class="card-title"><%= seller.full_name %> - <%= lang.sellers.currentInventory %></h3>
+                    <a href="/sellers" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th>Barcode</th>
-                                <th>Quantity</th>
-                                <th>Seller Price</th>
-                                <th>Total Value</th>
+                                <th><%= lang.table.product %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.table.sellerPrice %></th>
+                                <th><%= lang.table.totalValue %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (inventory.length === 0) { %>
                                 <tr>
-                                    <td colspan="5" class="text-center">No inventory assigned to this seller</td>
+                                    <td colspan="5" class="text-center"><%= lang.sellers.noInventory %></td>
                                 </tr>
                             <% } else { %>
                                 <% inventory.forEach(item => { %>

@@ -1,58 +1,58 @@
 <aside class="sidebar">
     <div class="sidebar-header">
         <h1>MegaDent POS</h1>
-        <p>Dental Equipment Store</p>
+        <p><%= lang.common.storeSubtitle %></p>
     </div>
     <nav class="sidebar-nav">
         <ul>
             <li class="nav-item">
                 <a href="/dashboard" class="nav-link <%= title.includes('Dashboard') ? 'active' : '' %>">
-                    <span>📊</span> Dashboard
+                    <span>📊</span> <%= lang.nav.dashboard %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/products" class="nav-link <%= title.includes('Products') ? 'active' : '' %>">
-                    <span>📦</span> Products
+                    <span>📦</span> <%= lang.nav.products %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/suppliers" class="nav-link <%= title.includes('Suppliers') ? 'active' : '' %>">
-                    <span>🏢</span> Suppliers
+                    <span>🏢</span> <%= lang.nav.suppliers %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/sellers" class="nav-link <%= title.includes('Sellers') ? 'active' : '' %>">
-                    <span>👤</span> Sellers
+                    <span>👤</span> <%= lang.nav.sellers %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/customers" class="nav-link <%= title.includes('Customers') ? 'active' : '' %>">
-                    <span>👥</span> Customers
+                    <span>👥</span> <%= lang.nav.customers %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/stock-intake" class="nav-link <%= title.includes('Stock Intake') ? 'active' : '' %>">
-                    <span>📥</span> Stock Intake
+                    <span>📥</span> <%= lang.nav.stockIntake %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/stock-transfer" class="nav-link <%= title.includes('Stock Transfer') ? 'active' : '' %>">
-                    <span>🔄</span> Stock Transfer
+                    <span>🔄</span> <%= lang.nav.stockTransfer %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/sales" class="nav-link <%= title.includes('Sales') || title.includes('Sale') ? 'active' : '' %>">
-                    <span>💰</span> Sales
+                    <span>💰</span> <%= lang.nav.sales %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/debts" class="nav-link <%= title.includes('Debt') ? 'active' : '' %>">
-                    <span>📋</span> Debts
+                    <span>📋</span> <%= lang.nav.debts %>
                 </a>
             </li>
             <li class="nav-item">
                 <a href="/logout" class="nav-link">
-                    <span>🚪</span> Logout
+                    <span>🚪</span> <%= lang.common.logout %>
                 </a>
             </li>
         </ul>

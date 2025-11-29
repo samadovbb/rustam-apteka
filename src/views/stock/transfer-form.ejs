@@ -7,15 +7,15 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Transfer Stock to Seller</h3>
-                    <a href="/stock-transfer" class="btn btn-secondary">Back to List</a>
+                    <h3 class="card-title"><%= lang.stockTransfer.transferToSeller %></h3>
+                    <a href="/stock-transfer" class="btn btn-secondary"><%= lang.common.backToList %></a>
                 </div>
 
                 <% if (error) { %>
@@ -24,9 +24,9 @@
 
                 <form action="/stock-transfer" method="POST" id="transferForm" data-validate-form>
                     <div class="form-group">
-                        <label for="seller_id" class="form-label required">Seller</label>
+                        <label for="seller_id" class="form-label required"><%= lang.stockTransfer.seller %></label>
                         <select id="seller_id" name="seller_id" class="form-control" data-validate="required" required>
-                            <option value="">Select Seller</option>
+                            <option value=""><%= lang.stockTransfer.selectSeller %></option>
                             <% sellers.forEach(seller => { %>
                                 <option value="<%= seller.id %>"><%= seller.full_name %></option>
                             <% }) %>
@@ -35,34 +35,34 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Products from Warehouse</label>
+                        <label class="form-label"><%= lang.stockTransfer.productsFromWarehouse %></label>
                         <div id="productsList">
                             <div class="product-item" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;">
                                 <select class="form-control product-select" style="flex: 2;" required>
-                                    <option value="">Select Product</option>
+                                    <option value=""><%= lang.stockIntake.selectProduct %></option>
                                     <% warehouseStock.forEach(item => { %>
                                         <option value="<%= item.product_id %>" data-available="<%= item.quantity %>" data-sell="<%= item.sell_price %>">
-                                            <%= item.product_name %> (Available: <%= item.quantity %>)
+                                            <%= item.product_name %> (<%= lang.stockIntake.available %>: <%= item.quantity %>)
                                         </option>
                                     <% }) %>
                                 </select>
-                                <input type="number" class="form-control quantity-input" placeholder="Quantity" min="1" style="flex: 1;" required>
-                                <input type="number" step="0.01" class="form-control price-input" placeholder="Seller Price" min="0" style="flex: 1;" required>
+                                <input type="number" class="form-control quantity-input" placeholder="<%= lang.stockIntake.quantity %>" min="1" style="flex: 1;" required>
+                                <input type="number" step="0.01" class="form-control price-input" placeholder="<%= lang.stockTransfer.sellerPrice %>" min="0" style="flex: 1;" required>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="addProductRow()">+ Add Product</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addProductRow()"><%= lang.stockIntake.addProduct %></button>
                     </div>
 
                     <div class="form-group">
-                        <label for="notes" class="form-label">Notes</label>
+                        <label for="notes" class="form-label"><%= lang.common.notes %></label>
                         <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
                     </div>
 
                     <input type="hidden" name="items" id="itemsData">
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Transfer Stock</button>
-                        <a href="/stock-transfer" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary"><%= lang.stockTransfer.transferStock %></button>
+                        <a href="/stock-transfer" class="btn btn-secondary"><%= lang.buttons.cancel %></a>
                     </div>
                 </form>
             </div>
@@ -91,7 +91,7 @@ document.getElementById('transferForm').addEventListener('submit', function(e) {
         if (productId && quantity && price) {
             const available = parseInt(productSelect.selectedOptions[0].dataset.available);
             if (parseInt(quantity) > available) {
-                alert(`Only ${available} units available for this product`);
+                alert('<%= lang.stockTransfer.onlyAvailable %>'.replace('{qty}', available));
                 throw new Error('Insufficient stock');
             }
 
@@ -104,7 +104,7 @@ document.getElementById('transferForm').addEventListener('submit', function(e) {
     });
 
     if (items.length === 0) {
-        alert('Please add at least one product');
+        alert('<%= lang.validation.atLeastOneProduct %>');
         return;
     }
 

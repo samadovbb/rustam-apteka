@@ -7,34 +7,34 @@
         <div class="topbar">
             <h2><%= title %></h2>
             <div class="user-info">
-                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
             </div>
         </div>
 
         <div class="container">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">All Products</h3>
-                    <a href="/products/create" class="btn btn-primary">Add New Product</a>
+                    <h3 class="card-title"><%= lang.products.title %></h3>
+                    <a href="/products/create" class="btn btn-primary"><%= lang.products.addNew %></a>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Barcode</th>
-                                <th>Warranty (months)</th>
-                                <th>Purchase Price</th>
-                                <th>Sell Price</th>
-                                <th>Actions</th>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.table.name %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.products.warranty %></th>
+                                <th><%= lang.products.purchasePrice %></th>
+                                <th><%= lang.products.sellPrice %></th>
+                                <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (products.length === 0) { %>
                                 <tr>
-                                    <td colspan="7" class="text-center">No products found</td>
+                                    <td colspan="7" class="text-center"><%= lang.products.noProducts %></td>
                                 </tr>
                             <% } else { %>
                                 <% products.forEach(product => { %>
@@ -46,9 +46,9 @@
                                         <td>$<%= parseFloat(product.purchase_price || 0).toFixed(2) %></td>
                                         <td>$<%= parseFloat(product.sell_price || 0).toFixed(2) %></td>
                                         <td>
-                                            <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+                                            <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/products/<%= product.id %>/delete" method="POST" style="display: inline;">
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.common.confirmDelete %>')"><%= lang.buttons.delete %></button>
                                             </form>
                                         </td>
                                     </tr>
