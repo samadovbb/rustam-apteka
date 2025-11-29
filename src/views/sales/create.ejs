@@ -205,38 +205,18 @@ $(document).ready(function() {
         allowClear: true
     });
 
-    // Initialize Select2 for product selects (will be initialized dynamically)
-    $(document).on('focus', '.product-select:not(.select2-hidden-accessible)', function() {
-        if (!$(this).prop('disabled')) {
-            $(this).select2({
-                ajax: {
-                    url: '/products/api/search',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return {
-                            q: params.term || ''
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.map(function(product) {
-                                return {
-                                    id: product.id,
-                                    text: product.name + ' (' + product.barcode + ')',
-                                    product: product
-                                };
-                            })
-                        };
-                    },
-                    cache: true
-                },
-                placeholder: '<%= lang.sales.selectProduct %>',
-                minimumInputLength: 0,
-                allowClear: true,
-                dropdownParent: $(this).parent()
-            });
-        }
+    // Trigger change event when seller is selected (for sales-form.js compatibility)
+    $('#seller_id').on('select2:select', function (e) {
+        // Trigger native change event so sales-form.js can handle it
+        $(this).trigger('change');
     });
+
+    // Also trigger when cleared
+    $('#seller_id').on('select2:clear', function (e) {
+        $(this).trigger('change');
+    });
+
+    // Note: Product selects are NOT using Select2 on this page
+    // They are managed by sales-form.js based on seller inventory
 });
 </script>
