@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <%- body %>
+        </div>
+    </main>
+</div>
+
+<%- include('partials/footer') %>

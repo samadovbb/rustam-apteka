@@ -1,0 +1,26 @@
+<%- include('partials/header') %>
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h1 style="color: #ef4444;">⚠️ Error</h1>
+            <h2 style="font-size: 48px; color: #64748b;"><%= error.status || 500 %></h2>
+        </div>
+
+        <div class="alert alert-danger">
+            <%= message %>
+        </div>
+
+        <% if (env === 'development' && error.stack) { %>
+            <pre style="background: #f1f5f9; padding: 15px; border-radius: 6px; font-size: 12px; overflow: auto;">
+                <%= error.stack %>
+            </pre>
+        <% } %>
+
+        <div class="text-center mt-3">
+            <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

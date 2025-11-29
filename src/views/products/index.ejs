@@ -1,0 +1,65 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">All Products</h3>
+                    <a href="/products/create" class="btn btn-primary">Add New Product</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Barcode</th>
+                                <th>Warranty (months)</th>
+                                <th>Purchase Price</th>
+                                <th>Sell Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (products.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center">No products found</td>
+                                </tr>
+                            <% } else { %>
+                                <% products.forEach(product => { %>
+                                    <tr>
+                                        <td>#<%= product.id %></td>
+                                        <td><%= product.name %></td>
+                                        <td><%= product.barcode %></td>
+                                        <td><%= product.warranty_months %></td>
+                                        <td>$<%= product.purchase_price.toFixed(2) %></td>
+                                        <td>$<%= product.sell_price.toFixed(2) %></td>
+                                        <td>
+                                            <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+                                            <form action="/products/<%= product.id %>/delete" method="POST" style="display: inline;">
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

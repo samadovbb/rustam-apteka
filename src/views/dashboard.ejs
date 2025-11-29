@@ -1,0 +1,134 @@
+<%- include('partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Welcome, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Sales Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card success">
+                    <div class="stat-label">Today's Sales</div>
+                    <div class="stat-value">$<%= salesStats.today.total.toFixed(2) %></div>
+                    <small><%= salesStats.today.count %> transactions</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">This Week</div>
+                    <div class="stat-value">$<%= salesStats.thisWeek.total.toFixed(2) %></div>
+                    <small><%= salesStats.thisWeek.count %> transactions</small>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value">$<%= salesStats.thisMonth.total.toFixed(2) %></div>
+                    <small><%= salesStats.thisMonth.count %> transactions</small>
+                </div>
+
+                <div class="stat-card danger">
+                    <div class="stat-label">Active Debts</div>
+                    <div class="stat-value">$<%= (debtStats.total_active_debt || 0).toFixed(2) %></div>
+                    <small><%= debtStats.active_count || 0 %> customers</small>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Quick Actions</h3>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/sales/create" class="btn btn-primary">New Sale</a>
+                    <a href="/stock-intake/create" class="btn btn-success">Stock Intake</a>
+                    <a href="/stock-transfer/create" class="btn btn-secondary">Stock Transfer</a>
+                    <a href="/products/create" class="btn btn-secondary">Add Product</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Sales</h3>
+                    <a href="/sales" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Seller</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (recentSales.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center">No sales yet</td>
+                                </tr>
+                            <% } else { %>
+                                <% recentSales.forEach(sale => { %>
+                                    <tr>
+                                        <td>#<%= sale.id %></td>
+                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
+                                        <td><%= sale.customer_name %></td>
+                                        <td><%= sale.seller_name %></td>
+                                        <td>$<%= sale.total_amount.toFixed(2) %></td>
+                                        <td>$<%= sale.paid_amount.toFixed(2) %></td>
+                                        <td>
+                                            <% if (sale.status === 'paid') { %>
+                                                <span class="badge badge-success">Paid</span>
+                                            <% } else if (sale.status === 'partial') { %>
+                                                <span class="badge badge-warning">Partial</span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger">Unpaid</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <% if (lowStockItems.length > 0) { %>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Low Stock Alert</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Barcode</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% lowStockItems.forEach(item => { %>
+                                    <tr>
+                                        <td><%= item.product_name %></td>
+                                        <td><%= item.barcode %></td>
+                                        <td><span class="badge badge-danger"><%= item.quantity %></span></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </main>
+</div>
+
+<%- include('partials/footer') %>

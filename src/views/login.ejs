@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h1>MegaDent POS</h1>
+            <p>Dental Equipment Store Management System</p>
+        </div>
+
+        <% if (error) { %>
+            <div class="alert alert-danger">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/login" method="POST" data-validate-form>
+            <div class="form-group">
+                <label for="login" class="form-label required">Login</label>
+                <input
+                    type="text"
+                    id="login"
+                    name="login"
+                    class="form-control"
+                    data-validate="required"
+                    autocomplete="username"
+                    autofocus
+                >
+                <span class="form-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label required">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-control"
+                    data-validate="required"
+                    autocomplete="current-password"
+                >
+                <span class="form-error"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Login
+            </button>
+        </form>
+
+        <p class="text-center" style="margin-top: 20px; color: #64748b; font-size: 12px;">
+            Default: admin / admin123
+        </p>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
