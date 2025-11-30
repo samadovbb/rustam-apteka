@@ -155,16 +155,44 @@ class SalesController {
     }
 
     // API: Get latest sale date
+    // static async getLatestDate(req, res) {
+    //     try {
+    //         const result = await Sale.getLatestDate();
+    //         const date = result ? new Date(result).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    //         res.json({ date });
+    //     } catch (error) {
+    //         console.error('Get latest sale date error:', error);
+    //         res.json({ date: new Date().toISOString().split('T')[0] });
+    //     }
+    // }
+    // API: Get latest sale date
     static async getLatestDate(req, res) {
         try {
             const result = await Sale.getLatestDate();
-            res.json({ date: result || new Date().toISOString().split('T')[0] });
+            let date;
+            if (result) {
+                const dateObj = new Date(result);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            } else {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            }
+            res.json({ date });
         } catch (error) {
             console.error('Get latest sale date error:', error);
-            res.json({ date: new Date().toISOString().split('T')[0] });
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            res.json({ date: `${year}-${month}-${day}` });
         }
     }
-
     // Update sale date
     static async updateSaleDate(req, res) {
         try {

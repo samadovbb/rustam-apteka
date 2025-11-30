@@ -27,7 +27,7 @@
                     <p>
                         <strong><%= lang.common.date %>:</strong>
                         <span id="sale-date-display"><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></span>
-                        <button onclick="editSaleDate(<%= sale.id %>, '<%= new Date(sale.sale_date).toISOString().split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
+                        <button onclick="editSaleDate(<%= sale.id %>, '<%= sale.sale_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
                             ✏️
                         </button>
                     </p>
@@ -67,6 +67,14 @@
                                 </tr>
                             <% }) %>
                         </tbody>
+                        <tfoot>
+                            <tr style="font-weight: bold; background-color: #f8f9fa;">
+                                <td colspan="2" style="text-align: right;">Jami:</td>
+                                <td><%= items.reduce((sum, item) => sum + item.quantity, 0) %></td>
+                                <td></td>
+                                <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -97,13 +105,20 @@
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
                                         <td>
-                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= new Date(payment.payment_date).toISOString().split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
+                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
                                                 ✏️
                                             </button>
                                         </td>
                                     </tr>
                                 <% }) %>
                             </tbody>
+                            <tfoot>
+                                <tr style="font-weight: bold; background-color: #f8f9fa;">
+                                    <td style="text-align: right;">Jami to'lovlar:</td>
+                                    <td>$<%= parseFloat(payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0)).toFixed(2) %></td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 <% } %>
@@ -137,6 +152,15 @@
 <%- include('../partials/footer') %>
 
 <script>
+// Helper function to convert any date to local YYYY-MM-DD format
+function toLocalDateString(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 <% if (sale.remaining_amount > 0) { %>
 document.getElementById('paymentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -198,7 +222,9 @@ async function deleteSale(id) {
 
 async function editSaleDate(saleId, currentDate) {
     try {
-        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang', currentDate);
+        // Convert the current date to local YYYY-MM-DD format
+        const localDateStr = toLocalDateString(currentDate);
+        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang', localDateStr);
 
         if (selectedDate) {
             const response = await fetch(`/sales/${saleId}/date`, {
@@ -212,8 +238,10 @@ async function editSaleDate(saleId, currentDate) {
             const data = await response.json();
 
             if (data.success) {
-                // Update display
-                const displayDate = new Date(selectedDate).toLocaleDateString('ru-RU');
+                // Update display using local date parsing
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day);
+                const displayDate = localDate.toLocaleDateString('ru-RU');
                 document.getElementById('sale-date-display').textContent = displayDate;
 
                 Swal.fire('Yangilandi!', data.message, 'success');
@@ -229,7 +257,9 @@ async function editSaleDate(saleId, currentDate) {
 
 async function editPaymentDate(saleId, paymentId, currentDate) {
     try {
-        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang', currentDate);
+        // Convert the current date to local YYYY-MM-DD format
+        const localDateStr = toLocalDateString(currentDate);
+        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang', localDateStr);
 
         if (selectedDate) {
             const response = await fetch(`/sales/${saleId}/payment/${paymentId}/date`, {
@@ -243,8 +273,10 @@ async function editPaymentDate(saleId, paymentId, currentDate) {
             const data = await response.json();
 
             if (data.success) {
-                // Update display
-                const displayDate = new Date(selectedDate).toLocaleDateString('ru-RU');
+                // Update display using local date parsing
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day);
+                const displayDate = localDate.toLocaleDateString('ru-RU');
                 document.getElementById(`payment-date-${paymentId}`).textContent = displayDate;
 
                 Swal.fire('Yangilandi!', data.message, 'success');

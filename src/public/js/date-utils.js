@@ -83,6 +83,10 @@ async function showDatePicker(title, defaultDate) {
 
             // Add input mask for dd.MM.yyyy
             input.addEventListener('input', function(e) {
+                const cursorPosition = e.target.selectionStart;
+                const oldValue = e.target.value;
+                const oldLength = oldValue.length;
+                
                 let value = e.target.value.replace(/\D/g, '');
                 if (value.length >= 2) {
                     value = value.substring(0, 2) + '.' + value.substring(2);
@@ -93,7 +97,27 @@ async function showDatePicker(title, defaultDate) {
                 if (value.length > 10) {
                     value = value.substring(0, 10);
                 }
+                
                 e.target.value = value;
+                
+                // Restore cursor position
+                const newLength = value.length;
+                let newCursorPosition = cursorPosition;
+                
+                // Adjust cursor position if dots were added or removed
+                if (newLength > oldLength) {
+                    // Character was added, check if a dot was auto-inserted before cursor
+                    if (cursorPosition === 3 || cursorPosition === 6) {
+                        newCursorPosition = cursorPosition + 1;
+                    }
+                } else if (newLength < oldLength) {
+                    // Character was deleted
+                    if (oldValue[cursorPosition] === '.' && cursorPosition > 0) {
+                        newCursorPosition = cursorPosition - 1;
+                    }
+                }
+                
+                e.target.setSelectionRange(newCursorPosition, newCursorPosition);
             });
 
             // Allow enter key to confirm

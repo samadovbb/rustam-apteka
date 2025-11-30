@@ -5,10 +5,11 @@ class Sale {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
                    sel.full_name as seller_name,
-                   (s.total_amount - s.paid_amount) as remaining_amount
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
+            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
             ORDER BY s.sale_date DESC
             LIMIT ${parseInt(limit)}
         `;
@@ -19,10 +20,13 @@ class Sale {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
                    sel.full_name as seller_name,
-                   (s.total_amount - s.paid_amount) as remaining_amount
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
+                   d.id as debt_id, d.current_amount as debt_current_amount,
+                   d.original_amount as debt_original_amount, d.markup_type, d.markup_value
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
+            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
             WHERE s.id = ?
             LIMIT 1
         `;
@@ -292,8 +296,8 @@ class Sale {
         const AuditLog = require('./AuditLog');
 
         // Get old sale data
-        const [sales] = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
-
+        const sales = await query(`SELECT * FROM sales WHERE id = ${saleId}`, []);
+        console.log('Old Sale Data:', sales[0]);
         if (!sales[0]) {
             throw new Error('Sale not found');
         }
@@ -304,7 +308,7 @@ class Sale {
         await query('UPDATE sales SET sale_date = ? WHERE id = ?', [newDate, saleId]);
 
         // Get updated sale data
-        const [updatedSales] = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
+        const updatedSales = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
         const newData = { ...updatedSales[0] };
 
         // Log audit trail
@@ -317,7 +321,7 @@ class Sale {
         const AuditLog = require('./AuditLog');
 
         // Get payment data
-        const [payments] = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const payments = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
 
         if (!payments[0]) {
             throw new Error('Payment not found');
@@ -330,7 +334,7 @@ class Sale {
         await query('UPDATE payments SET payment_date = ? WHERE id = ?', [newDate, paymentId]);
 
         // Get updated payment data
-        const [updatedPayments] = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const updatedPayments = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
         const newData = { ...updatedPayments[0] };
 
         // Log audit trail for the sale

@@ -88,11 +88,29 @@ class DebtController {
 
     static async getLatestPaymentDate(req, res) {
         try {
-            const result = await Debt.getLatestPaymentDate();
-            res.json({ date: result || new Date().toISOString().split('T')[0] });
+            const result = await Sale.getLatestDate();
+            let date;
+            if (result) {
+                const dateObj = new Date(result);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            } else {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            }
+            res.json({ date });
         } catch (error) {
-            console.error('Get latest payment date error:', error);
-            res.json({ date: new Date().toISOString().split('T')[0] });
+            console.error('Get latest sale date error:', error);
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            res.json({ date: `${year}-${month}-${day}` });
         }
     }
 }

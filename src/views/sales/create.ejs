@@ -244,7 +244,7 @@ $(document).ready(function() {
     // They are managed by sales-form.js based on seller inventory
 
     // Override form submission to show date picker first
-    $('#salesForm').off('submit').on('submit', async function(e) {
+    $('#salesForm').on('submit', async function(e) {
         e.preventDefault();
 
         // Validate that we have items
