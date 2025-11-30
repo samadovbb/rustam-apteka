@@ -51,12 +51,9 @@
                             <tr>
                                 <th><%= lang.table.product %></th>
                                 <th><%= lang.table.barcode %></th>
-                                <th>Kirish sanasi</th>
                                 <th><%= lang.table.quantity %></th>
-                                <th>Kirish narxi</th>
                                 <th><%= lang.table.unitPrice %></th>
                                 <th><%= lang.table.subtotal %></th>
-                                <th>Foyda</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,25 +61,18 @@
                                 <tr>
                                     <td><%= item.product_name %></td>
                                     <td><%= item.barcode %></td>
-                                    <td><%= item.intake_date ? new Date(item.intake_date).toLocaleDateString('ru-RU') : '-' %></td>
                                     <td><%= item.quantity %></td>
-                                    <td>$<%= parseFloat(item.purchase_price_at_sale || 0).toFixed(2) %></td>
                                     <td>$<%= parseFloat(item.unit_price || 0).toFixed(2) %></td>
                                     <td>$<%= parseFloat(item.subtotal || 0).toFixed(2) %></td>
-                                    <td style="color: <%= (item.item_profit || 0) >= 0 ? 'green' : 'red' %>; font-weight: bold;">
-                                        $<%= parseFloat(item.item_profit || 0).toFixed(2) %>
-                                    </td>
                                 </tr>
                             <% }) %>
                         </tbody>
                         <tfoot>
                             <tr style="font-weight: bold; background-color: #f8f9fa;">
-                                <td colspan="3" style="text-align: right;">Jami:</td>
+                                <td colspan="2" style="text-align: right;">Jami:</td>
                                 <td><%= items.reduce((sum, item) => sum + item.quantity, 0) %></td>
-                                <td>$<%= parseFloat(profit.total_cost || 0).toFixed(2) %></td>
                                 <td></td>
                                 <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>
-                                <td style="color: green;">$<%= parseFloat(profit.total_profit || 0).toFixed(2) %></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -90,12 +80,6 @@
 
                 <div style="text-align: right; margin: 20px 0;">
                     <h4>Umumiy summa: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
-                    <p><strong>Jami xarajat:</strong> $<%= parseFloat(profit.total_cost || 0).toFixed(2) %></p>
-                    <p style="color: green; font-weight: bold;">
-                        <strong>Jami foyda:</strong> $<%= parseFloat(profit.total_profit || 0).toFixed(2) %>
-                        (<%= profit.total_revenue > 0 ? ((profit.total_profit / profit.total_revenue) * 100).toFixed(1) : '0' %>%)
-                    </p>
-                    <hr>
                     <p><strong>Boshlang'ich to'lov:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
                     <p style="color: <%= sale.remaining_amount > 0 ? 'red' : 'green' %>;">
                         <strong>Qoldiq qarz:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
