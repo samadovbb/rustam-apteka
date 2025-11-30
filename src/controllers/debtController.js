@@ -85,6 +85,16 @@ class DebtController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    static async getLatestPaymentDate(req, res) {
+        try {
+            const result = await Debt.getLatestPaymentDate();
+            res.json({ date: result || new Date().toISOString().split('T')[0] });
+        } catch (error) {
+            console.error('Get latest payment date error:', error);
+            res.json({ date: new Date().toISOString().split('T')[0] });
+        }
+    }
 }
 
 module.exports = DebtController;

@@ -79,7 +79,7 @@ function addProductRow() {
     container.appendChild(newRow);
 }
 
-document.getElementById('intakeForm').addEventListener('submit', function(e) {
+document.getElementById('intakeForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const items = [];
@@ -125,8 +125,45 @@ document.getElementById('intakeForm').addEventListener('submit', function(e) {
         return;
     }
 
-    document.getElementById('itemsData').value = JSON.stringify(items);
-    this.submit();
+    try {
+        // Fetch latest intake date
+        const response = await fetch('/stock-intake/api/latest-date');
+        const data = await response.json();
+        const defaultDate = data.date;
+
+        // Show date picker
+        const result = await Swal.fire({
+            title: 'Qabul sanasini tanlang',
+            input: 'date',
+            inputValue: defaultDate,
+            showCancelButton: true,
+            confirmButtonText: 'Tasdiqlash',
+            cancelButtonText: 'Bekor qilish',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Sana tanlanishi kerak!';
+                }
+            }
+        });
+
+        if (result.isConfirmed) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'intake_date';
+            dateInput.value = result.value;
+            this.appendChild(dateInput);
+
+            // Set items data
+            document.getElementById('itemsData').value = JSON.stringify(items);
+
+            // Submit the form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    }
 });
 
 // Initialize Select2 for supplier

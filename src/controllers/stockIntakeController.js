@@ -35,7 +35,7 @@ class StockIntakeController {
 
     static async store(req, res) {
         try {
-            const { supplier_id, notes, items } = req.body;
+            const { supplier_id, notes, items, intake_date } = req.body;
 
             // Parse items if it's a JSON string
             const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
@@ -78,7 +78,7 @@ class StockIntakeController {
                 });
             }
 
-            await StockIntake.create(supplier_id, processedItems, notes);
+            await StockIntake.create(supplier_id, processedItems, notes, intake_date || null);
             res.redirect('/stock-intake');
         } catch (error) {
             console.error('Stock intake store error:', error);
@@ -115,6 +115,16 @@ class StockIntakeController {
         } catch (error) {
             console.error('Stock intake view error:', error);
             res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    static async getLatestDate(req, res) {
+        try {
+            const result = await StockIntake.getLatestDate();
+            res.json({ date: result || new Date().toISOString().split('T')[0] });
+        } catch (error) {
+            console.error('Get latest intake date error:', error);
+            res.json({ date: new Date().toISOString().split('T')[0] });
         }
     }
 }

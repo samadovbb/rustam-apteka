@@ -80,7 +80,7 @@ function addProductRow() {
     container.appendChild(newRow);
 }
 
-document.getElementById('transferForm').addEventListener('submit', function(e) {
+document.getElementById('transferForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const items = [];
@@ -110,8 +110,45 @@ document.getElementById('transferForm').addEventListener('submit', function(e) {
         return;
     }
 
-    document.getElementById('itemsData').value = JSON.stringify(items);
-    this.submit();
+    try {
+        // Fetch latest transfer date
+        const response = await fetch('/stock-transfer/api/latest-date');
+        const data = await response.json();
+        const defaultDate = data.date;
+
+        // Show date picker
+        const result = await Swal.fire({
+            title: 'O\'tkazma sanasini tanlang',
+            input: 'date',
+            inputValue: defaultDate,
+            showCancelButton: true,
+            confirmButtonText: 'Tasdiqlash',
+            cancelButtonText: 'Bekor qilish',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Sana tanlanishi kerak!';
+                }
+            }
+        });
+
+        if (result.isConfirmed) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'transfer_date';
+            dateInput.value = result.value;
+            this.appendChild(dateInput);
+
+            // Set items data
+            document.getElementById('itemsData').value = JSON.stringify(items);
+
+            // Submit the form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    }
 });
 
 // Auto-fill suggested sell price

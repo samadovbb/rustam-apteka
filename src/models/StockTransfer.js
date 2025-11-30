@@ -35,7 +35,7 @@ class StockTransfer {
         return await query(sql, [transferId]);
     }
 
-    static async create(sellerId, items, notes = null) {
+    static async create(sellerId, items, notes = null, transferDate = null) {
         return await transaction(async (conn) => {
             // Validate warehouse has enough stock
             for (const item of items) {
@@ -50,10 +50,14 @@ class StockTransfer {
                 }
             }
 
-            // Insert stock transfer record
+            // Insert stock transfer record with optional transfer_date
             const [transferResult] = await conn.execute(
-                'INSERT INTO stock_transfers (seller_id, notes) VALUES (?, ?)',
-                [sellerId, notes]
+                transferDate
+                    ? 'INSERT INTO stock_transfers (seller_id, notes, transfer_date) VALUES (?, ?, ?)'
+                    : 'INSERT INTO stock_transfers (seller_id, notes) VALUES (?, ?)',
+                transferDate
+                    ? [sellerId, notes, transferDate]
+                    : [sellerId, notes]
             );
 
             const transferId = transferResult.insertId;
@@ -115,6 +119,17 @@ class StockTransfer {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(transfer_date) as latest_date
+            FROM stock_transfers
+            ORDER BY transfer_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
     }
 }
 

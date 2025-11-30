@@ -35,17 +35,21 @@ class StockIntake {
         return await query(sql, [intakeId]);
     }
 
-    static async create(supplierId, items, notes = null) {
+    static async create(supplierId, items, notes = null, intakeDate = null) {
         return await transaction(async (conn) => {
             // Calculate total amount
             const totalAmount = items.reduce((sum, item) =>
                 sum + (item.quantity * item.purchase_price), 0
             );
 
-            // Insert stock intake record
+            // Insert stock intake record with optional intake_date
             const [intakeResult] = await conn.execute(
-                'INSERT INTO stock_intakes (supplier_id, total_amount, notes) VALUES (?, ?, ?)',
-                [supplierId, totalAmount, notes]
+                intakeDate
+                    ? 'INSERT INTO stock_intakes (supplier_id, total_amount, notes, intake_date) VALUES (?, ?, ?, ?)'
+                    : 'INSERT INTO stock_intakes (supplier_id, total_amount, notes) VALUES (?, ?, ?)',
+                intakeDate
+                    ? [supplierId, totalAmount, notes, intakeDate]
+                    : [supplierId, totalAmount, notes]
             );
 
             const intakeId = intakeResult.insertId;
@@ -117,6 +121,17 @@ class StockIntake {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(intake_date) as latest_date
+            FROM stock_intakes
+            ORDER BY intake_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
     }
 }
 

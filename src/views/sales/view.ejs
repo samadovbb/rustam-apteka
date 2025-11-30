@@ -96,7 +96,7 @@
                 <% if (sale.remaining_amount > 0) { %>
                     <div class="card" style="margin-top: 20px; background: #fff3cd;">
                         <h4><%= lang.sales.addPayment %></h4>
-                        <form action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
+                        <form id="paymentForm" action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
                             <div class="form-group" style="flex: 1; margin: 0;">
                                 <label for="amount" class="form-label"><%= lang.sales.amount %></label>
                                 <input type="number" step="0.01" id="amount" name="amount" class="form-control" max="<%= sale.remaining_amount %>" required>
@@ -120,3 +120,48 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+<% if (sale.remaining_amount > 0) { %>
+document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    try {
+        // Fetch latest payment date
+        const response = await fetch('/debts/api/latest-payment-date');
+        const data = await response.json();
+        const defaultDate = data.date;
+
+        // Show date picker
+        const result = await Swal.fire({
+            title: 'To\'lov sanasini tanlang',
+            input: 'date',
+            inputValue: defaultDate,
+            showCancelButton: true,
+            confirmButtonText: 'Tasdiqlash',
+            cancelButtonText: 'Bekor qilish',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Sana tanlanishi kerak!';
+                }
+            }
+        });
+
+        if (result.isConfirmed) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'payment_date';
+            dateInput.value = result.value;
+            this.appendChild(dateInput);
+
+            // Submit the form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    }
+});
+<% } %>
+</script>

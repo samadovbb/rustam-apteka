@@ -242,5 +242,71 @@ $(document).ready(function() {
 
     // Note: Product selects are NOT using Select2 on this page
     // They are managed by sales-form.js based on seller inventory
+
+    // Override form submission to show date picker first
+    $('#salesForm').off('submit').on('submit', async function(e) {
+        e.preventDefault();
+
+        // Validate that we have items
+        const items = [];
+        document.querySelectorAll('.product-item').forEach(row => {
+            const productId = row.querySelector('.product-select').value;
+            const quantity = row.querySelector('.quantity-input').value;
+            const price = row.querySelector('.price-input').value;
+
+            if (productId && quantity && price) {
+                items.push({
+                    product_id: parseInt(productId),
+                    quantity: parseInt(quantity),
+                    unit_price: parseFloat(price)
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert('Kamida bitta mahsulot qo\'shing');
+            return;
+        }
+
+        try {
+            // Fetch latest sale date
+            const response = await fetch('/sales/api/latest-date');
+            const data = await response.json();
+            const defaultDate = data.date;
+
+            // Show date picker
+            const result = await Swal.fire({
+                title: 'Savdo sanasini tanlang',
+                input: 'date',
+                inputValue: defaultDate,
+                showCancelButton: true,
+                confirmButtonText: 'Tasdiqlash',
+                cancelButtonText: 'Bekor qilish',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Sana tanlanishi kerak!';
+                    }
+                }
+            });
+
+            if (result.isConfirmed) {
+                // Add the date to form
+                const dateInput = document.createElement('input');
+                dateInput.type = 'hidden';
+                dateInput.name = 'sale_date';
+                dateInput.value = result.value;
+                this.appendChild(dateInput);
+
+                // Set items data
+                document.getElementById('itemsData').value = JSON.stringify(items);
+
+                // Submit the form
+                this.submit();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Xatolik yuz berdi');
+        }
+    });
 });
 </script>

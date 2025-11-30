@@ -48,7 +48,7 @@ class Sale {
         return await query(sql, [saleId]);
     }
 
-    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null) {
+    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null) {
         return await transaction(async (conn) => {
             // Validate seller has enough stock and prices
             for (const item of items) {
@@ -81,11 +81,16 @@ class Sale {
                 status = 'partial';
             }
 
-            // Insert sale record
+            // Insert sale record with optional sale_date
             const [saleResult] = await conn.execute(
-                `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [customerId, sellerId, totalAmount, initialPayment, status]
+                saleDate
+                    ? `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status, sale_date)
+                       VALUES (?, ?, ?, ?, ?, ?)`
+                    : `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status)
+                       VALUES (?, ?, ?, ?, ?)`,
+                saleDate
+                    ? [customerId, sellerId, totalAmount, initialPayment, status, saleDate]
+                    : [customerId, sellerId, totalAmount, initialPayment, status]
             );
 
             const saleId = saleResult.insertId;
@@ -144,7 +149,7 @@ class Sale {
         });
     }
 
-    static async addPayment(saleId, amount, paymentMethod = 'cash') {
+    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null) {
         return await transaction(async (conn) => {
             // Get current sale
             const [sales] = await conn.execute(
@@ -172,10 +177,14 @@ class Sale {
                 [newPaidAmount, newStatus, saleId]
             );
 
-            // Insert payment record
+            // Insert payment record with optional payment_date
             const [paymentResult] = await conn.execute(
-                'INSERT INTO payments (sale_id, amount, payment_method) VALUES (?, ?, ?)',
-                [saleId, amount, paymentMethod]
+                paymentDate
+                    ? 'INSERT INTO payments (sale_id, amount, payment_method, payment_date) VALUES (?, ?, ?, ?)'
+                    : 'INSERT INTO payments (sale_id, amount, payment_method) VALUES (?, ?, ?)',
+                paymentDate
+                    ? [saleId, amount, paymentMethod, paymentDate]
+                    : [saleId, amount, paymentMethod]
             );
 
             // Update debt if exists
@@ -228,6 +237,17 @@ class Sale {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql, [status]);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(sale_date) as latest_date
+            FROM sales
+            ORDER BY sale_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
     }
 }
 

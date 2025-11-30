@@ -10,4 +10,7 @@ router.get('/create', StockTransferController.create);
 router.post('/', StockTransferController.store);
 router.get('/:id', StockTransferController.view);
 
+// API routes
+router.get('/api/latest-date', StockTransferController.getLatestDate);
+
 module.exports = router;

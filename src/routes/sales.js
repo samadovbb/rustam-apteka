@@ -13,5 +13,6 @@ router.post('/:id/payment', SalesController.addPayment);
 
 // API routes
 router.get('/api/seller/:seller_id/inventory', SalesController.getSellerInventory);
+router.get('/api/latest-date', SalesController.getLatestDate);
 
 module.exports = router;

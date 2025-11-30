@@ -43,7 +43,8 @@ class SalesController {
                 payment_method,
                 debt_markup_type,
                 debt_markup_value,
-                debt_grace_months
+                debt_grace_months,
+                sale_date
             } = req.body;
 
             // Find or create customer
@@ -80,7 +81,8 @@ class SalesController {
                 parsedItems,
                 parseFloat(initial_payment) || 0,
                 payment_method || 'cash',
-                debtConfig
+                debtConfig,
+                sale_date || null
             );
 
             res.redirect(`/sales/${saleId}`);
@@ -124,11 +126,12 @@ class SalesController {
 
     static async addPayment(req, res) {
         try {
-            const { amount, payment_method } = req.body;
+            const { amount, payment_method, payment_date } = req.body;
             await Sale.addPayment(
                 req.params.id,
                 parseFloat(amount),
-                payment_method || 'cash'
+                payment_method || 'cash',
+                payment_date || null
             );
 
             res.redirect(`/sales/${req.params.id}`);
@@ -146,6 +149,17 @@ class SalesController {
         } catch (error) {
             console.error('Get seller inventory error:', error);
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    // API: Get latest sale date
+    static async getLatestDate(req, res) {
+        try {
+            const result = await Sale.getLatestDate();
+            res.json({ date: result || new Date().toISOString().split('T')[0] });
+        } catch (error) {
+            console.error('Get latest sale date error:', error);
+            res.json({ date: new Date().toISOString().split('T')[0] });
         }
     }
 }
