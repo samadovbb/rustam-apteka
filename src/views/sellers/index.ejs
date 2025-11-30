@@ -42,7 +42,8 @@
                                         <td><%= seller.phone || '-' %></td>
                                         <td><%= parseFloat(seller.commission_percent || 0).toFixed(2) %>%</td>
                                         <td>
-                                            <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-sm btn-info"><%= lang.sellers.inventory %></a>
+                                            <a href="/sellers/<%= seller.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                            <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-sm btn-success"><%= lang.sellers.inventory %></a>
                                             <a href="/sellers/<%= seller.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/sellers/<%= seller.id %>/delete" method="POST" style="display: inline;">
                                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.products.deleteConfirm %>')"><%= lang.buttons.delete %></button>

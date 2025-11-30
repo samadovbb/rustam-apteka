@@ -1,0 +1,229 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Top Customers -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.reports.topCustomers || 'Top Customers' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th><%= lang.customers.customer || 'Customer' %></th>
+                                <th><%= lang.table.phone %></th>
+                                <th><%= lang.reports.purchases || 'Purchases' %></th>
+                                <th><%= lang.reports.totalSpent || 'Total Spent' %></th>
+                                <th><%= lang.reports.totalPaid || 'Total Paid' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topCustomers.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.reports.noData || 'No data' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% topCustomers.forEach((customer, index) => { %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= customer.full_name %></td>
+                                        <td><%= customer.phone %></td>
+                                        <td><%= customer.total_purchases %></td>
+                                        <td><%= parseFloat(customer.total_spent).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td><%= parseFloat(customer.total_paid).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td>
+                                            <a href="/customers/<%= customer.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Debtors -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.reports.topDebtors || 'Top Debtors' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th><%= lang.customers.customer || 'Customer' %></th>
+                                <th><%= lang.table.phone %></th>
+                                <th><%= lang.debts.totalDebt || 'Total Debt' %></th>
+                                <th><%= lang.debts.debtCount || 'Debt Count' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topDebtors.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center"><%= lang.reports.noData || 'No data' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% topDebtors.forEach((debtor, index) => { %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= debtor.full_name %></td>
+                                        <td><%= debtor.phone %></td>
+                                        <td style="color: red; font-weight: bold;">
+                                            <%= parseFloat(debtor.total_debt).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                                        </td>
+                                        <td><%= debtor.debt_count %></td>
+                                        <td>
+                                            <a href="/customers/<%= debtor.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.reports.topProducts || 'Top Selling Products' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th><%= lang.products.product || 'Product' %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.reports.unitsSold || 'Units Sold' %></th>
+                                <th><%= lang.reports.revenue || 'Revenue' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topProducts.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center"><%= lang.reports.noData || 'No data' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% topProducts.forEach((product, index) => { %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= product.name %></td>
+                                        <td><%= product.barcode %></td>
+                                        <td><%= product.total_sold %></td>
+                                        <td><%= parseFloat(product.total_revenue).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td>
+                                            <a href="/products/<%= product.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Sellers -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.reports.topSellers || 'Top Sellers' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th><%= lang.sellers.seller || 'Seller' %></th>
+                                <th><%= lang.table.phone %></th>
+                                <th><%= lang.sales.totalSales || 'Sales' %></th>
+                                <th><%= lang.sales.totalRevenue || 'Revenue' %></th>
+                                <th><%= lang.sales.collected || 'Collected' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topSellers.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.reports.noData || 'No data' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% topSellers.forEach((seller, index) => { %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= seller.full_name %></td>
+                                        <td><%= seller.phone || '-' %></td>
+                                        <td><%= seller.total_sales %></td>
+                                        <td><%= parseFloat(seller.total_revenue).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td><%= parseFloat(seller.total_collected).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td>
+                                            <a href="/sellers/<%= seller.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Low Stock Alert -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" style="color: #e74c3c;"><%= lang.reports.lowStock || 'Low Stock Alert' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.products.product || 'Product' %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.stock.warehouseQuantity || 'Warehouse Quantity' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (lowStockProducts.length === 0) { %>
+                                <tr>
+                                    <td colspan="5" class="text-center" style="color: green;"><%= lang.reports.noLowStock || 'All products have sufficient stock' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% lowStockProducts.forEach(product => { %>
+                                    <tr style="<%= product.warehouse_quantity === 0 ? 'background-color: #ffebee;' : '' %>">
+                                        <td>#<%= product.id %></td>
+                                        <td><%= product.name %></td>
+                                        <td><%= product.barcode %></td>
+                                        <td style="color: <%= product.warehouse_quantity === 0 ? 'red' : 'orange' %>; font-weight: bold;">
+                                            <%= product.warehouse_quantity %>
+                                        </td>
+                                        <td>
+                                            <a href="/products/<%= product.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

@@ -42,6 +42,7 @@
                                         <td><%= customer.phone %></td>
                                         <td><%= customer.address || '-' %></td>
                                         <td>
+                                            <a href="/customers/<%= customer.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
                                             <a href="/customers/<%= customer.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/customers/<%= customer.id %>/delete" method="POST" style="display: inline;">
                                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.products.deleteConfirm %>')"><%= lang.buttons.delete %></button>

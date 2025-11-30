@@ -94,6 +94,35 @@ class Supplier {
         `;
         const term = `%${searchTerm}%`;
         return await query(sql, [term, term, term]);
+    static async getStats(supplierId) {
+        const sql = `
+            SELECT
+                COUNT(DISTINCT si.id) as total_intakes,
+                COALESCE(SUM(si.total_amount), 0) as total_spent,
+                COALESCE(SUM(sii.quantity), 0) as total_items
+            FROM stock_intakes si
+            LEFT JOIN stock_intake_items sii ON si.id = sii.stock_intake_id
+            WHERE si.supplier_id = ?
+        `;
+        const results = await query(sql, [supplierId]);
+        return results[0] || {};
+    }
+
+    static async getTopProducts(supplierId, limit = 10) {
+        const sql = `
+            SELECT p.id, p.name, p.barcode,
+                   SUM(sii.quantity) as total_quantity,
+                   SUM(sii.quantity * sii.purchase_price) as total_value,
+                   COUNT(sii.id) as intake_count
+            FROM stock_intake_items sii
+            JOIN stock_intakes si ON sii.stock_intake_id = si.id
+            JOIN products p ON sii.product_id = p.id
+            WHERE si.supplier_id = ?
+            GROUP BY p.id, p.name, p.barcode
+            ORDER BY total_quantity DESC
+            LIMIT ${parseInt(limit)}
+        `;
+        return await query(sql, [supplierId]);
     }
 }
 

@@ -51,6 +51,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="/reports" class="nav-link <%= title.includes('Reports') || title.includes('Analytics') ? 'active' : '' %>">
+                    <span>📈</span> <%= lang.nav.reports || 'Reports' %>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="/logout" class="nav-link">
                     <span>🚪</span> <%= lang.common.logout %>
                 </a>

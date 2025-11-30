@@ -13,6 +13,9 @@ router.get('/', ProductController.index);
 router.get('/create', ProductController.create);
 router.post('/', ProductController.store);
 
+// View product
+router.get('/:id/view', ProductController.view);
+
 // Edit product
 router.get('/:id/edit', ProductController.edit);
 router.post('/:id', ProductController.update);
