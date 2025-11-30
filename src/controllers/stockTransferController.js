@@ -92,6 +92,17 @@ class StockTransferController {
             res.json({ date: new Date().toISOString().split('T')[0] });
         }
     }
+
+    // Delete a stock transfer
+    static async delete(req, res) {
+        try {
+            await StockTransfer.delete(req.params.id, req.user);
+            res.json({ success: true, message: 'O\'tkazma muvaffaqiyatli o\'chirildi' });
+        } catch (error) {
+            console.error('Delete stock transfer error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = StockTransferController;

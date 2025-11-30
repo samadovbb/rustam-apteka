@@ -162,6 +162,17 @@ class SalesController {
             res.json({ date: new Date().toISOString().split('T')[0] });
         }
     }
+
+    // Delete a sale
+    static async delete(req, res) {
+        try {
+            await Sale.delete(req.params.id, req.user);
+            res.json({ success: true, message: 'Savdo muvaffaqiyatli o\'chirildi' });
+        } catch (error) {
+            console.error('Delete sale error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = SalesController;
