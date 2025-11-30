@@ -25,6 +25,11 @@ module.exports = {
         yes: "Ha",
         no: "Yo'q",
         confirm: "Tasdiqlash",
+        currency: "$",
+        units: "dona",
+        months: "oy",
+        storeSubtitle: "Stomatologik uskunalar do'koni",
+        confirmDelete: "Ishonchingiz komilmi?",
     },
 
     // Authentication
@@ -52,6 +57,7 @@ module.exports = {
         stockTransfer: "O'tkazish",
         sales: "Sotuvlar",
         debts: "Qarzlar",
+        reports: "Hisobotlar",
     },
 
     // Dashboard
@@ -84,13 +90,29 @@ module.exports = {
         addNew: "Yangi mahsulot qo'shish",
         editProduct: "Mahsulotni tahrirlash",
         productName: "Mahsulot nomi",
+        productInfo: "Mahsulot ma'lumotlari",
+        product: "Mahsulot",
         barcode: "Shtrix-kod",
-        warranty: "Kafolat (oy)",
+        warranty: "Kafolat",
         purchasePrice: "Sotib olish narxi",
         sellPrice: "Sotish narxi",
+        unitPrice: "Birlik narxi",
+        sellerPrice: "Sotuvchi narxi",
+        warehouseStock: "Ombordagi zaxira",
         notFound: "Mahsulotlar topilmadi",
+        noProducts: "Mahsulotlar topilmadi",
         barcodeExists: "Bu shtrix-kod allaqachon mavjud",
         deleteConfirm: "Ishonchingiz komilmi?",
+        statistics: "Statistika",
+        totalIntake: "Jami qabul qilingan",
+        totalSold: "Jami sotilgan",
+        totalTransferred: "Jami o'tkazilgan",
+        intakeHistory: "Qabul qilish tarixi",
+        salesHistory: "Sotish tarixi",
+        transferHistory: "O'tkazish tarixi",
+        noIntakeHistory: "Qabul qilish tarixi yo'q",
+        noSalesHistory: "Sotish tarixi yo'q",
+        noTransferHistory: "O'tkazish tarixi yo'q",
     },
 
     // Suppliers
@@ -100,10 +122,22 @@ module.exports = {
         addNew: "Yangi ta'minotchi qo'shish",
         editSupplier: "Ta'minotchini tahrirlash",
         supplierName: "Ta'minotchi nomi",
+        supplierInfo: "Ta'minotchi ma'lumotlari",
+        supplier: "Ta'minotchi",
         phone: "Telefon",
         email: "Email",
         address: "Manzil",
         notFound: "Ta'minotchilar topilmadi",
+        noSuppliers: "Ta'minotchilar topilmadi",
+        statistics: "Statistika",
+        totalIntakes: "Jami qabullar",
+        totalSpent: "Jami sarflangan",
+        totalItems: "Jami mahsulotlar",
+        topProducts: "Top mahsulotlar",
+        intakeCount: "Qabul soni",
+        noProducts: "Mahsulotlar topilmadi",
+        intakeHistory: "Qabul qilish tarixi",
+        noIntakes: "Qabullar topilmadi",
     },
 
     // Sellers
@@ -112,13 +146,17 @@ module.exports = {
         allSellers: "Barcha sotuvchilar",
         addNew: "Yangi sotuvchi qo'shish",
         editSeller: "Sotuvchini tahrirlash",
+        sellerInfo: "Sotuvchi ma'lumotlari",
+        seller: "Sotuvchi",
         fullName: "To'liq ismi",
         phone: "Telefon",
-        commission: "Komissiya %",
+        commission: "Komissiya",
         inventory: "Ombor",
         notFound: "Sotuvchilar topilmadi",
         currentInventory: "Hozirgi ombor",
         noInventory: "Bu sotuvchida ombor mahsulotlari yo'q",
+        debtors: "Qarzdorlar",
+        noDebtors: "Qarzdorlar yo'q",
     },
 
     // Customers
@@ -127,6 +165,8 @@ module.exports = {
         allCustomers: "Barcha mijozlar",
         addNew: "Yangi mijoz qo'shish",
         editCustomer: "Mijozni tahrirlash",
+        customerInfo: "Mijoz ma'lumotlari",
+        customer: "Mijoz",
         fullName: "To'liq ismi",
         phone: "Telefon",
         address: "Manzil",
@@ -206,12 +246,21 @@ module.exports = {
         partial: "Qisman",
         unpaid: "To'lanmagan",
         notFound: "Sotuvlar topilmadi",
+        noSales: "Sotuvlar topilmadi",
         paymentHistory: "To'lov tarixi",
         addPayment: "To'lov qo'shish",
         amount: "Summa",
         method: "Usul",
         searchExisting: "Mavjud mijozni qidirish uchun yozing",
         selectSellerFirst: "Avval sotuvchini tanlang",
+        purchaseHistory: "Xarid tarixi",
+        saleDate: "Sotuv sanasi",
+        statistics: "Statistika",
+        totalSales: "Jami sotuvlar",
+        totalRevenue: "Jami daromad",
+        collected: "Yig'ilgan",
+        pending: "Kutilmoqda",
+        recentSales: "So'nggi sotuvlar",
     },
 
     // Debts
@@ -246,6 +295,10 @@ module.exports = {
         lastMarkupDate: "Oxirgi ustama sanasi",
         never: "Hech qachon",
         monthly: "oylik",
+        totalDebt: "Jami qarz",
+        activeDebts: "Faol qarzlar",
+        noDebts: "Faol qarzlar yo'q",
+        debtCount: "Qarzlar soni",
     },
 
     // Table Headers
@@ -277,6 +330,8 @@ module.exports = {
         totalValue: "Umumiy qiymat",
         method: "Usul",
         amount: "Summa",
+        items: "Mahsulotlar",
+        notes: "Izohlar",
     },
 
     // Status
@@ -324,6 +379,36 @@ module.exports = {
         updated: "Muvaffaqiyatli yangilandi",
         deleted: "Muvaffaqiyatli o'chirildi",
         created: "Muvaffaqiyatli yaratildi",
+    },
+
+    // Stock
+    stock: {
+        intakeDate: "Qabul sanasi",
+        totalAmount: "Umumiy summa",
+        warehouseQuantity: "Ombor miqdori",
+    },
+
+    // Transfers
+    transfers: {
+        transferDate: "O'tkazma sanasi",
+        recent: "So'nggi o'tkazmalar",
+        noTransfers: "O'tkazmalar topilmadi",
+    },
+
+    // Reports
+    reports: {
+        topCustomers: "Top mijozlar",
+        purchases: "Xaridlar",
+        totalSpent: "Jami sarflangan",
+        totalPaid: "Jami to'langan",
+        noData: "Ma'lumot topilmadi",
+        topDebtors: "Top qarzdorlar",
+        topProducts: "Top mahsulotlar",
+        unitsSold: "Sotilgan miqdor",
+        revenue: "Daromad",
+        topSellers: "Top sotuvchilar",
+        lowStock: "Kam qolgan mahsulotlar",
+        noLowStock: "Barcha mahsulotlar yetarli miqdorda mavjud",
     },
 
     // Buttons
