@@ -35,7 +35,9 @@ class StockTransfer {
         return await query(sql, [transferId]);
     }
 
-    static async create(sellerId, items, notes = null, transferDate = null) {
+    static async create(sellerId, items, notes = null, transferDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Validate warehouse has enough stock
             for (const item of items) {
@@ -90,6 +92,16 @@ class StockTransfer {
                     [sellerId, item.product_id, item.quantity, item.seller_price]
                 );
             }
+
+            // Log audit trail
+            const transferData = {
+                id: transferId,
+                seller_id: sellerId,
+                notes: notes,
+                transfer_date: transferDate,
+                items: items
+            };
+            await AuditLog.log('stock_transfers', transferId, 'insert', null, transferData, user);
 
             return transferId;
         });

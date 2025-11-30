@@ -61,12 +61,12 @@ class StockIntakeController {
                         warranty_months: 0,
                         purchase_price: item.purchase_price || 0,
                         sell_price: item.sell_price || item.purchase_price || 0
-                    });
+                    }, req.user);
                 } else if (productId && item.sell_price) {
                     // Update sell price if provided for existing product
                     const product = await Product.findById(productId);
                     if (product && product.sell_price != item.sell_price) {
-                        await Product.updatePrices(productId, item.purchase_price, item.sell_price);
+                        await Product.updatePrices(productId, item.purchase_price, item.sell_price, req.user);
                     }
                 }
 
@@ -78,7 +78,7 @@ class StockIntakeController {
                 });
             }
 
-            await StockIntake.create(supplier_id, processedItems, notes, intake_date || null);
+            await StockIntake.create(supplier_id, processedItems, notes, intake_date || null, req.user);
             res.redirect('/stock-intake');
         } catch (error) {
             console.error('Stock intake store error:', error);

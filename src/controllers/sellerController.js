@@ -24,7 +24,7 @@ class SellerController {
     static async store(req, res) {
         try {
             const { full_name, phone, commission_percent } = req.body;
-            await Seller.create({ full_name, phone, commission_percent });
+            await Seller.create({ full_name, phone, commission_percent }, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller create error:', error);
@@ -60,7 +60,7 @@ class SellerController {
     static async update(req, res) {
         try {
             const { full_name, phone, commission_percent } = req.body;
-            await Seller.update(req.params.id, { full_name, phone, commission_percent });
+            await Seller.update(req.params.id, { full_name, phone, commission_percent }, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller update error:', error);
@@ -75,7 +75,7 @@ class SellerController {
 
     static async delete(req, res) {
         try {
-            await Seller.delete(req.params.id);
+            await Seller.delete(req.params.id, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller delete error:', error);

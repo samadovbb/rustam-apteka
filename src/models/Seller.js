@@ -12,7 +12,9 @@ class Seller {
         return results[0] || null;
     }
 
-    static async create(data) {
+    static async create(data, user = null) {
+        const AuditLog = require('./AuditLog');
+
         const sql = `
             INSERT INTO sellers (full_name, phone, commission_percent)
             VALUES (?, ?, ?)
@@ -22,10 +24,21 @@ class Seller {
             data.phone || null,
             data.commission_percent || 0
         ]);
-        return result.insertId;
+
+        const sellerId = result.insertId;
+
+        // Log audit trail
+        await AuditLog.log('sellers', sellerId, 'insert', null, data, user);
+
+        return sellerId;
     }
 
-    static async update(id, data) {
+    static async update(id, data, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old data
+        const oldSeller = await this.findById(id);
+
         const sql = `
             UPDATE sellers
             SET full_name = ?, phone = ?, commission_percent = ?
@@ -37,11 +50,25 @@ class Seller {
             data.commission_percent || 0,
             id
         ]);
+
+        // Get new data
+        const newSeller = await this.findById(id);
+
+        // Log audit trail
+        await AuditLog.log('sellers', id, 'update', oldSeller, newSeller, user);
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get seller data before deletion
+        const seller = await this.findById(id);
+
         const sql = 'DELETE FROM sellers WHERE id = ?';
         await query(sql, [id]);
+
+        // Log audit trail
+        await AuditLog.log('sellers', id, 'delete', seller, null, user);
     }
 
     static async getInventory(sellerId) {

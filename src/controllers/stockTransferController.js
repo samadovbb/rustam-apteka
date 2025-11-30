@@ -43,7 +43,7 @@ class StockTransferController {
                 throw new Error('At least one product is required');
             }
 
-            await StockTransfer.create(seller_id, parsedItems, notes, transfer_date || null);
+            await StockTransfer.create(seller_id, parsedItems, notes, transfer_date || null, req.user);
             res.redirect('/stock-transfer');
         } catch (error) {
             console.error('Stock transfer store error:', error);

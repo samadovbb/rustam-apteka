@@ -35,7 +35,9 @@ class StockIntake {
         return await query(sql, [intakeId]);
     }
 
-    static async create(supplierId, items, notes = null, intakeDate = null) {
+    static async create(supplierId, items, notes = null, intakeDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Calculate total amount
             const totalAmount = items.reduce((sum, item) =>
@@ -80,6 +82,17 @@ class StockIntake {
                     [item.product_id, item.quantity]
                 );
             }
+
+            // Log audit trail
+            const intakeData = {
+                id: intakeId,
+                supplier_id: supplierId,
+                total_amount: totalAmount,
+                notes: notes,
+                intake_date: intakeDate,
+                items: items
+            };
+            await AuditLog.log('stock_intakes', intakeId, 'insert', null, intakeData, user);
 
             return intakeId;
         });

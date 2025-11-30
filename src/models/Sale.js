@@ -50,7 +50,9 @@ class Sale {
         return await query(sql, [saleId]);
     }
 
-    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null) {
+    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Validate seller has enough stock and prices
             for (const item of items) {
@@ -147,15 +149,31 @@ class Sale {
                 );
             }
 
+            // Log audit trail
+            const saleData = {
+                id: saleId,
+                customer_id: customerId,
+                seller_id: sellerId,
+                total_amount: totalAmount,
+                paid_amount: initialPayment,
+                status: status,
+                sale_date: saleDate,
+                items: items,
+                debt_config: debtConfig
+            };
+            await AuditLog.log('sales', saleId, 'insert', null, saleData, user);
+
             return saleId;
         });
     }
 
-    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null) {
+    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
-            // Get current sale
+            // Get current sale (old data for audit)
             const [sales] = await conn.execute(
-                'SELECT total_amount, paid_amount, customer_id FROM sales WHERE id = ?',
+                'SELECT * FROM sales WHERE id = ?',
                 [saleId]
             );
 
@@ -164,6 +182,7 @@ class Sale {
             }
 
             const sale = sales[0];
+            const oldData = { ...sale };
             const remainingAmount = sale.total_amount - sale.paid_amount;
 
             if (amount > remainingAmount) {
@@ -210,6 +229,23 @@ class Sale {
                     [debts[0].id, paymentResult.insertId, amount]
                 );
             }
+
+            // Get updated sale data for audit
+            const [updatedSales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+            const newData = {
+                ...updatedSales[0],
+                payment_added: {
+                    amount: amount,
+                    payment_method: paymentMethod,
+                    payment_date: paymentDate
+                }
+            };
+
+            // Log audit trail
+            await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
 
             return paymentResult.insertId;
         });

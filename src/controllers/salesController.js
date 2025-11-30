@@ -54,7 +54,7 @@ class SalesController {
                     full_name: customer_name,
                     phone: customer_phone,
                     address: customer_address
-                });
+                }, req.user);
                 customer = await Customer.findById(customerId);
             }
 
@@ -82,7 +82,8 @@ class SalesController {
                 parseFloat(initial_payment) || 0,
                 payment_method || 'cash',
                 debtConfig,
-                sale_date || null
+                sale_date || null,
+                req.user
             );
 
             res.redirect(`/sales/${saleId}`);
@@ -131,7 +132,8 @@ class SalesController {
                 req.params.id,
                 parseFloat(amount),
                 payment_method || 'cash',
-                payment_date || null
+                payment_date || null,
+                req.user
             );
 
             res.redirect(`/sales/${req.params.id}`);

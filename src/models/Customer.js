@@ -29,7 +29,9 @@ class Customer {
         return await query(sql, [term, term]);
     }
 
-    static async create(data) {
+    static async create(data, user = null) {
+        const AuditLog = require('./AuditLog');
+
         const sql = `
             INSERT INTO customers (full_name, phone, address)
             VALUES (?, ?, ?)
@@ -39,10 +41,21 @@ class Customer {
             data.phone,
             data.address || null
         ]);
-        return result.insertId;
+
+        const customerId = result.insertId;
+
+        // Log audit trail
+        await AuditLog.log('customers', customerId, 'insert', null, data, user);
+
+        return customerId;
     }
 
-    static async update(id, data) {
+    static async update(id, data, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old data
+        const oldCustomer = await this.findById(id);
+
         const sql = `
             UPDATE customers
             SET full_name = ?, phone = ?, address = ?
@@ -54,11 +67,25 @@ class Customer {
             data.address || null,
             id
         ]);
+
+        // Get new data
+        const newCustomer = await this.findById(id);
+
+        // Log audit trail
+        await AuditLog.log('customers', id, 'update', oldCustomer, newCustomer, user);
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get customer data before deletion
+        const customer = await this.findById(id);
+
         const sql = 'DELETE FROM customers WHERE id = ?';
         await query(sql, [id]);
+
+        // Log audit trail
+        await AuditLog.log('customers', id, 'delete', customer, null, user);
     }
 
     static async getPurchaseHistory(customerId, limit = 50) {
