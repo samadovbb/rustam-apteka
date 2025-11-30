@@ -94,6 +94,7 @@ class Supplier {
         `;
         const term = `%${searchTerm}%`;
         return await query(sql, [term, term, term]);
+    }
     static async getStats(supplierId) {
         const sql = `
             SELECT
