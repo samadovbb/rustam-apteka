@@ -43,7 +43,7 @@ document.getElementById('seller_id').addEventListener('change', async function()
             document.getElementById('addProductBtn').disabled = false;
         }
     } catch (error) {
-        alert('Failed to load seller inventory');
+        alert('Sotuvchining mahsulotlarini yuklashda xatolik');
     }
 });
 
@@ -105,6 +105,7 @@ function attachProductRowListeners(row) {
     const quantityInput = row.querySelector('.quantity-input');
     const priceInput = row.querySelector('.price-input');
     const subtotalSpan = row.querySelector('span');
+    let priceTimeout;
 
     productSelect.addEventListener('change', function() {
         const option = this.selectedOptions[0];
@@ -119,20 +120,29 @@ function attachProductRowListeners(row) {
         const option = productSelect.selectedOptions[0];
         const available = parseInt(option.dataset.available || 0);
         if (parseInt(this.value) > available) {
-            alert(`Only ${available} units available`);
+            alert(`Faqat ${available} dona mavjud`);
             this.value = available;
         }
         updateSubtotal(row);
     });
 
     priceInput.addEventListener('input', function() {
-        const option = productSelect.selectedOptions[0];
-        const minPrice = parseFloat(option.dataset.minPrice || 0);
-        if (parseFloat(this.value) < minPrice) {
-            alert(`Price cannot be below $${minPrice.toFixed(2)}`);
-            this.value = minPrice;
-        }
+        const inputValue = this.value;
+
+        // Update subtotal immediately while typing
         updateSubtotal(row);
+
+        // Validate price after user stops typing (500ms delay)
+        clearTimeout(priceTimeout);
+        priceTimeout = setTimeout(() => {
+            const option = productSelect.selectedOptions[0];
+            const minPrice = parseFloat(option.dataset.minPrice || 0);
+            if (parseFloat(inputValue) < minPrice) {
+                alert(`Narx $${minPrice.toFixed(2)} dan past bo'lishi mumkin emas`);
+                priceInput.value = minPrice;
+                updateSubtotal(row);
+            }
+        }, 500);
     });
 }
 
@@ -190,7 +200,7 @@ document.getElementById('salesForm').addEventListener('submit', function(e) {
     });
 
     if (items.length === 0) {
-        alert('Please add at least one product');
+        alert('Kamida bitta mahsulot qo\'shing');
         return;
     }
 

@@ -59,13 +59,13 @@ class DebtController {
             if (!result) {
                 return res.json({
                     success: false,
-                    message: 'Debt is still in grace period or not active'
+                    message: 'Qarz hali imtiyoz davrida yoki faol emas'
                 });
             }
 
             res.json({
                 success: true,
-                message: 'Markup applied successfully',
+                message: 'Ustama muvaffaqiyatli qo\'shildi',
                 result
             });
         } catch (error) {

@@ -22,6 +22,7 @@
                     <h4><%= lang.debts.debtInfo %></h4>
                     <p><strong><%= lang.table.id %>:</strong> #<%= debt.id %></p>
                     <p><strong><%= lang.debts.customer %>:</strong> <%= debt.customer_name %> (<%= debt.customer_phone %>)</p>
+                    <p><strong><%= lang.debts.sale %>:</strong> <a href="/sales/<%= debt.sale_id %>" class="btn btn-sm btn-primary">Savdoni ko'rish #<%= debt.sale_id %></a></p>
                     <p><strong><%= lang.debts.saleDate %>:</strong> <%= new Date(debt.sale_date).toLocaleDateString() %></p>
                     <p><strong><%= lang.debts.originalAmount %>:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
                     <p><strong><%= lang.debts.currentAmount %>:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></span></p>
