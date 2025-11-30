@@ -46,6 +46,7 @@
                                         <td>$<%= parseFloat(product.purchase_price || 0).toFixed(2) %></td>
                                         <td>$<%= parseFloat(product.sell_price || 0).toFixed(2) %></td>
                                         <td>
+                                            <a href="/products/<%= product.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
                                             <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/products/<%= product.id %>/delete" method="POST" style="display: inline;">
                                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.common.confirmDelete %>')"><%= lang.buttons.delete %></button>

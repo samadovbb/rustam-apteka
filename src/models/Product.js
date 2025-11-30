@@ -98,6 +98,78 @@ class Product {
         `;
         return await query(sql);
     }
+
+    static async getIntakeHistory(productId, limit = 50) {
+        const sql = `
+            SELECT sii.*, si.intake_date, si.id as intake_id,
+                   s.name as supplier_name
+            FROM stock_intake_items sii
+            JOIN stock_intakes si ON sii.stock_intake_id = si.id
+            JOIN suppliers s ON si.supplier_id = s.id
+            WHERE sii.product_id = ?
+            ORDER BY si.intake_date DESC
+            LIMIT ${parseInt(limit)}
+        `;
+        return await query(sql, [productId]);
+    }
+
+    static async getSalesHistory(productId, limit = 50) {
+        const sql = `
+            SELECT si.*, s.id as sale_id, s.sale_date,
+                   c.full_name as customer_name,
+                   sel.full_name as seller_name
+            FROM sale_items si
+            JOIN sales s ON si.sale_id = s.id
+            JOIN customers c ON s.customer_id = c.id
+            JOIN sellers sel ON s.seller_id = sel.id
+            WHERE si.product_id = ?
+            ORDER BY s.sale_date DESC
+            LIMIT ${parseInt(limit)}
+        `;
+        return await query(sql, [productId]);
+    }
+
+    static async getTransferHistory(productId, limit = 50) {
+        const sql = `
+            SELECT sti.*, st.transfer_date, st.id as transfer_id,
+                   sel.full_name as seller_name
+            FROM stock_transfer_items sti
+            JOIN stock_transfers st ON sti.stock_transfer_id = st.id
+            JOIN sellers sel ON st.seller_id = sel.id
+            WHERE sti.product_id = ?
+            ORDER BY st.transfer_date DESC
+            LIMIT ${parseInt(limit)}
+        `;
+        return await query(sql, [productId]);
+    }
+
+    static async getStats(productId) {
+        const intakeSql = `
+            SELECT COALESCE(SUM(quantity), 0) as total_intake
+            FROM stock_intake_items
+            WHERE product_id = ?
+        `;
+        const salesSql = `
+            SELECT COALESCE(SUM(quantity), 0) as total_sold
+            FROM sale_items
+            WHERE product_id = ?
+        `;
+        const transferSql = `
+            SELECT COALESCE(SUM(quantity), 0) as total_transferred
+            FROM stock_transfer_items
+            WHERE product_id = ?
+        `;
+
+        const intakeResults = await query(intakeSql, [productId]);
+        const salesResults = await query(salesSql, [productId]);
+        const transferResults = await query(transferSql, [productId]);
+
+        return {
+            total_intake: intakeResults[0]?.total_intake || 0,
+            total_sold: salesResults[0]?.total_sold || 0,
+            total_transferred: transferResults[0]?.total_transferred || 0
+        };
+    }
 }
 
 module.exports = Product;

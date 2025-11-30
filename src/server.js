@@ -20,6 +20,7 @@ const stockTransferRoutes = require('./routes/stock-transfer');
 const salesRoutes = require('./routes/sales');
 const debtRoutes = require('./routes/debts');
 const dashboardRoutes = require('./routes/dashboard');
+const reportsRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +53,7 @@ app.use('/stock-intake', stockIntakeRoutes);
 app.use('/stock-transfer', stockTransferRoutes);
 app.use('/sales', salesRoutes);
 app.use('/debts', debtRoutes);
+app.use('/reports', reportsRoutes);
 
 // 404 handler
 app.use((req, res) => {

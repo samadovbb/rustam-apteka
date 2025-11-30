@@ -76,6 +76,45 @@ class Seller {
         `;
         return await query(sql, [sellerId]);
     }
+
+    static async getDebtors(sellerId) {
+        const sql = `
+            SELECT DISTINCT c.id, c.full_name, c.phone,
+                   SUM(d.current_amount) as total_debt
+            FROM debts d
+            JOIN sales s ON d.sale_id = s.id
+            JOIN customers c ON d.customer_id = c.id
+            WHERE s.seller_id = ? AND d.status = 'active'
+            GROUP BY c.id, c.full_name, c.phone
+            ORDER BY total_debt DESC
+        `;
+        return await query(sql, [sellerId]);
+    }
+
+    static async getTransfers(sellerId, limit = 50) {
+        const sql = `
+            SELECT st.*
+            FROM stock_transfers st
+            WHERE st.seller_id = ?
+            ORDER BY st.transfer_date DESC
+            LIMIT ${parseInt(limit)}
+        `;
+        return await query(sql, [sellerId]);
+    }
+
+    static async getSalesStats(sellerId) {
+        const sql = `
+            SELECT
+                COUNT(*) as total_sales,
+                SUM(total_amount) as total_revenue,
+                SUM(paid_amount) as total_collected,
+                SUM(total_amount - paid_amount) as total_pending
+            FROM sales
+            WHERE seller_id = ?
+        `;
+        const results = await query(sql, [sellerId]);
+        return results[0] || {};
+    }
 }
 
 module.exports = Seller;

@@ -1,0 +1,208 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Product Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.products.productInfo || 'Product Information' %></h3>
+                    <div>
+                        <a href="/products/<%= product.id %>/edit" class="btn btn-secondary"><%= lang.buttons.edit %></a>
+                        <a href="/products" class="btn btn-outline"><%= lang.buttons.back || 'Back' %></a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div>
+                            <strong><%= lang.table.name %>:</strong> <%= product.name %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.barcode || 'Barcode' %>:</strong> <%= product.barcode %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.purchasePrice || 'Purchase Price' %>:</strong>
+                            <%= parseFloat(product.purchase_price).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.sellPrice || 'Sell Price' %>:</strong>
+                            <%= parseFloat(product.sell_price).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.warranty || 'Warranty' %>:</strong> <%= product.warranty_months %> <%= lang.common.months || 'months' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.warehouseStock || 'Warehouse Stock' %>:</strong>
+                            <span style="font-weight: bold; color: <%= (warehouseStock?.quantity || 0) > 0 ? 'green' : 'red' %>;">
+                                <%= warehouseStock?.quantity || 0 %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.products.statistics || 'Statistics' %></h3>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div>
+                            <strong><%= lang.products.totalIntake || 'Total Intake' %>:</strong><br>
+                            <%= stats.total_intake || 0 %> <%= lang.common.units || 'units' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.totalSold || 'Total Sold' %>:</strong><br>
+                            <%= stats.total_sold || 0 %> <%= lang.common.units || 'units' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.products.totalTransferred || 'Total Transferred' %>:</strong><br>
+                            <%= stats.total_transferred || 0 %> <%= lang.common.units || 'units' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intake History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.products.intakeHistory || 'Intake History' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.stock.intakeDate || 'Date' %></th>
+                                <th><%= lang.suppliers.supplier || 'Supplier' %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.products.purchasePrice || 'Purchase Price' %></th>
+                                <th><%= lang.table.total || 'Total' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (intakeHistory.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.products.noIntakeHistory || 'No intake history' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% intakeHistory.forEach(intake => { %>
+                                    <tr>
+                                        <td>#<%= intake.intake_id %></td>
+                                        <td><%= new Date(intake.intake_date).toLocaleDateString() %></td>
+                                        <td><%= intake.supplier_name %></td>
+                                        <td><%= intake.quantity %></td>
+                                        <td><%= parseFloat(intake.purchase_price).toFixed(2) %></td>
+                                        <td><%= parseFloat(intake.quantity * intake.purchase_price).toFixed(2) %></td>
+                                        <td>
+                                            <a href="/stock-intake/<%= intake.intake_id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.products.salesHistory || 'Sales History' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.sales.saleDate || 'Date' %></th>
+                                <th><%= lang.customers.customer || 'Customer' %></th>
+                                <th><%= lang.sellers.seller || 'Seller' %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.products.unitPrice || 'Unit Price' %></th>
+                                <th><%= lang.table.total || 'Total' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (salesHistory.length === 0) { %>
+                                <tr>
+                                    <td colspan="8" class="text-center"><%= lang.products.noSalesHistory || 'No sales history' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% salesHistory.forEach(sale => { %>
+                                    <tr>
+                                        <td>#<%= sale.sale_id %></td>
+                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
+                                        <td><%= sale.customer_name %></td>
+                                        <td><%= sale.seller_name %></td>
+                                        <td><%= sale.quantity %></td>
+                                        <td><%= parseFloat(sale.unit_price).toFixed(2) %></td>
+                                        <td><%= parseFloat(sale.quantity * sale.unit_price).toFixed(2) %></td>
+                                        <td>
+                                            <a href="/sales/<%= sale.sale_id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Transfer History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.products.transferHistory || 'Transfer History' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.transfers.transferDate || 'Date' %></th>
+                                <th><%= lang.sellers.seller || 'Seller' %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.products.sellerPrice || 'Seller Price' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (transferHistory.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center"><%= lang.products.noTransferHistory || 'No transfer history' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% transferHistory.forEach(transfer => { %>
+                                    <tr>
+                                        <td>#<%= transfer.transfer_id %></td>
+                                        <td><%= new Date(transfer.transfer_date).toLocaleDateString() %></td>
+                                        <td><%= transfer.seller_name %></td>
+                                        <td><%= transfer.quantity %></td>
+                                        <td><%= parseFloat(transfer.seller_price).toFixed(2) %></td>
+                                        <td>
+                                            <a href="/stock-transfer/<%= transfer.transfer_id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

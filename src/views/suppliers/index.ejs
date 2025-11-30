@@ -44,6 +44,7 @@
                                         <td><%= supplier.email || '-' %></td>
                                         <td><%= supplier.address || '-' %></td>
                                         <td>
+                                            <a href="/suppliers/<%= supplier.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
                                             <a href="/suppliers/<%= supplier.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>
                                             <form action="/suppliers/<%= supplier.id %>/delete" method="POST" style="display: inline;">
                                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('<%= lang.common.confirmDelete %>')"><%= lang.buttons.delete %></button>

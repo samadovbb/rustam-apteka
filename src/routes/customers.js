@@ -8,6 +8,7 @@ router.use(authMiddleware);
 router.get('/', CustomerController.index);
 router.get('/create', CustomerController.create);
 router.post('/', CustomerController.store);
+router.get('/:id/view', CustomerController.view);
 router.get('/:id/edit', CustomerController.edit);
 router.post('/:id', CustomerController.update);
 router.post('/:id/delete', CustomerController.delete);

@@ -1,0 +1,148 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Customer Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.customers.customerInfo || 'Customer Information' %></h3>
+                    <div>
+                        <a href="/customers/<%= customer.id %>/edit" class="btn btn-secondary"><%= lang.buttons.edit %></a>
+                        <a href="/customers" class="btn btn-outline"><%= lang.buttons.back || 'Back' %></a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div>
+                            <strong><%= lang.table.name %>:</strong> <%= customer.full_name %>
+                        </div>
+                        <div>
+                            <strong><%= lang.table.phone %>:</strong> <%= customer.phone %>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <strong><%= lang.table.address %>:</strong> <%= customer.address || '-' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.debts.totalDebt || 'Total Debt' %>:</strong>
+                            <span style="color: <%= totalDebt > 0 ? 'red' : 'green' %>; font-weight: bold;">
+                                <%= parseFloat(totalDebt).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Debts -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.debts.activeDebts || 'Active Debts' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.sales.saleDate || 'Sale Date' %></th>
+                                <th><%= lang.sales.totalAmount || 'Sale Amount' %></th>
+                                <th><%= lang.debts.originalAmount || 'Original Debt' %></th>
+                                <th><%= lang.debts.currentAmount || 'Current Amount' %></th>
+                                <th><%= lang.debts.markupType || 'Markup' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (debts.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.debts.noDebts || 'No active debts' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% debts.forEach(debt => { %>
+                                    <tr>
+                                        <td>#<%= debt.id %></td>
+                                        <td><%= new Date(debt.sale_date).toLocaleDateString() %></td>
+                                        <td><%= parseFloat(debt.total_amount).toFixed(2) %></td>
+                                        <td><%= parseFloat(debt.original_amount).toFixed(2) %></td>
+                                        <td><%= parseFloat(debt.current_amount).toFixed(2) %></td>
+                                        <td>
+                                            <% if (debt.markup_type === 'fixed') { %>
+                                                <%= parseFloat(debt.markup_value).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                                            <% } else { %>
+                                                <%= parseFloat(debt.markup_value).toFixed(0) %>%
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <a href="/debts/<%= debt.id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.sales.purchaseHistory || 'Purchase History' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.sales.saleDate || 'Date' %></th>
+                                <th><%= lang.sellers.seller || 'Seller' %></th>
+                                <th><%= lang.sales.totalAmount || 'Total' %></th>
+                                <th><%= lang.sales.paidAmount || 'Paid' %></th>
+                                <th><%= lang.table.status %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (sales.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.sales.noSales || 'No sales found' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% sales.forEach(sale => { %>
+                                    <tr>
+                                        <td>#<%= sale.id %></td>
+                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
+                                        <td><%= sale.seller_name %></td>
+                                        <td><%= parseFloat(sale.total_amount).toFixed(2) %></td>
+                                        <td><%= parseFloat(sale.paid_amount).toFixed(2) %></td>
+                                        <td>
+                                            <% if (sale.status === 'paid') { %>
+                                                <span class="badge badge-success"><%= lang.sales.paid || 'Paid' %></span>
+                                            <% } else if (sale.status === 'partial') { %>
+                                                <span class="badge badge-warning"><%= lang.sales.partial || 'Partial' %></span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger"><%= lang.sales.unpaid || 'Unpaid' %></span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <a href="/sales/<%= sale.id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>
