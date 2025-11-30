@@ -4,10 +4,12 @@ class Sale {
     static async getAll(limit = 100) {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
-                   sel.full_name as seller_name
+                   sel.full_name as seller_name,
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
+            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
             ORDER BY s.sale_date DESC
             LIMIT ${parseInt(limit)}
         `;
@@ -17,10 +19,14 @@ class Sale {
     static async findById(id) {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
-                   sel.full_name as seller_name
+                   sel.full_name as seller_name,
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
+                   d.id as debt_id, d.current_amount as debt_current_amount,
+                   d.original_amount as debt_original_amount, d.markup_type, d.markup_value
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
+            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
             WHERE s.id = ?
             LIMIT 1
         `;
@@ -48,7 +54,9 @@ class Sale {
         return await query(sql, [saleId]);
     }
 
-    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null) {
+    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Validate seller has enough stock and prices
             for (const item of items) {
@@ -81,11 +89,16 @@ class Sale {
                 status = 'partial';
             }
 
-            // Insert sale record
+            // Insert sale record with optional sale_date
             const [saleResult] = await conn.execute(
-                `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [customerId, sellerId, totalAmount, initialPayment, status]
+                saleDate
+                    ? `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status, sale_date)
+                       VALUES (?, ?, ?, ?, ?, ?)`
+                    : `INSERT INTO sales (customer_id, seller_id, total_amount, paid_amount, status)
+                       VALUES (?, ?, ?, ?, ?)`,
+                saleDate
+                    ? [customerId, sellerId, totalAmount, initialPayment, status, saleDate]
+                    : [customerId, sellerId, totalAmount, initialPayment, status]
             );
 
             const saleId = saleResult.insertId;
@@ -140,15 +153,31 @@ class Sale {
                 );
             }
 
+            // Log audit trail
+            const saleData = {
+                id: saleId,
+                customer_id: customerId,
+                seller_id: sellerId,
+                total_amount: totalAmount,
+                paid_amount: initialPayment,
+                status: status,
+                sale_date: saleDate,
+                items: items,
+                debt_config: debtConfig
+            };
+            await AuditLog.log('sales', saleId, 'insert', null, saleData, user);
+
             return saleId;
         });
     }
 
-    static async addPayment(saleId, amount, paymentMethod = 'cash') {
+    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
-            // Get current sale
+            // Get current sale (old data for audit)
             const [sales] = await conn.execute(
-                'SELECT total_amount, paid_amount, customer_id FROM sales WHERE id = ?',
+                'SELECT * FROM sales WHERE id = ?',
                 [saleId]
             );
 
@@ -157,6 +186,7 @@ class Sale {
             }
 
             const sale = sales[0];
+            const oldData = { ...sale };
             const remainingAmount = sale.total_amount - sale.paid_amount;
 
             if (amount > remainingAmount) {
@@ -172,10 +202,14 @@ class Sale {
                 [newPaidAmount, newStatus, saleId]
             );
 
-            // Insert payment record
+            // Insert payment record with optional payment_date
             const [paymentResult] = await conn.execute(
-                'INSERT INTO payments (sale_id, amount, payment_method) VALUES (?, ?, ?)',
-                [saleId, amount, paymentMethod]
+                paymentDate
+                    ? 'INSERT INTO payments (sale_id, amount, payment_method, payment_date) VALUES (?, ?, ?, ?)'
+                    : 'INSERT INTO payments (sale_id, amount, payment_method) VALUES (?, ?, ?)',
+                paymentDate
+                    ? [saleId, amount, paymentMethod, paymentDate]
+                    : [saleId, amount, paymentMethod]
             );
 
             // Update debt if exists
@@ -199,6 +233,23 @@ class Sale {
                     [debts[0].id, paymentResult.insertId, amount]
                 );
             }
+
+            // Get updated sale data for audit
+            const [updatedSales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+            const newData = {
+                ...updatedSales[0],
+                payment_added: {
+                    amount: amount,
+                    payment_method: paymentMethod,
+                    payment_date: paymentDate
+                }
+            };
+
+            // Log audit trail
+            await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
 
             return paymentResult.insertId;
         });
@@ -228,6 +279,119 @@ class Sale {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql, [status]);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(sale_date) as latest_date
+            FROM sales
+            ORDER BY sale_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
+    }
+
+    static async updateSaleDate(saleId, newDate, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old sale data
+        const sales = await query(`SELECT * FROM sales WHERE id = ${saleId}`, []);
+        console.log('Old Sale Data:', sales[0]);
+        if (!sales[0]) {
+            throw new Error('Sale not found');
+        }
+
+        const oldData = { ...sales[0] };
+
+        // Update sale date
+        await query('UPDATE sales SET sale_date = ? WHERE id = ?', [newDate, saleId]);
+
+        // Get updated sale data
+        const updatedSales = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
+        const newData = { ...updatedSales[0] };
+
+        // Log audit trail
+        await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
+
+        return true;
+    }
+
+    static async updatePaymentDate(paymentId, newDate, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get payment data
+        const payments = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+
+        if (!payments[0]) {
+            throw new Error('Payment not found');
+        }
+
+        const payment = payments[0];
+        const oldData = { ...payment };
+
+        // Update payment date
+        await query('UPDATE payments SET payment_date = ? WHERE id = ?', [newDate, paymentId]);
+
+        // Get updated payment data
+        const updatedPayments = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const newData = { ...updatedPayments[0] };
+
+        // Log audit trail for the sale
+        await AuditLog.log('payments', paymentId, 'update', oldData, newData, user);
+
+        return true;
+    }
+
+    static async delete(saleId, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get sale data for audit log
+            const [sales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Sale not found');
+            }
+
+            const sale = sales[0];
+
+            // Get sale items to restore inventory
+            const [items] = await conn.execute(
+                'SELECT * FROM sale_items WHERE sale_id = ?',
+                [saleId]
+            );
+
+            // Restore seller inventory for each item
+            for (const item of items) {
+                await conn.execute(
+                    `INSERT INTO seller_inventory (seller_id, product_id, quantity, seller_price)
+                     VALUES (?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
+                    [sale.seller_id, item.product_id, item.quantity, item.unit_price]
+                );
+            }
+
+            // Delete payments (will cascade delete debt_payments)
+            await conn.execute('DELETE FROM payments WHERE sale_id = ?', [saleId]);
+
+            // Delete debts
+            await conn.execute('DELETE FROM debts WHERE sale_id = ?', [saleId]);
+
+            // Delete sale items (will be cascaded)
+            await conn.execute('DELETE FROM sale_items WHERE sale_id = ?', [saleId]);
+
+            // Delete sale
+            await conn.execute('DELETE FROM sales WHERE id = ?', [saleId]);
+
+            // Log audit trail
+            await AuditLog.log('sales', saleId, 'delete', sale, null, user);
+
+            return true;
+        });
     }
 }
 

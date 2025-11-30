@@ -35,17 +35,23 @@ class StockIntake {
         return await query(sql, [intakeId]);
     }
 
-    static async create(supplierId, items, notes = null) {
+    static async create(supplierId, items, notes = null, intakeDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Calculate total amount
             const totalAmount = items.reduce((sum, item) =>
                 sum + (item.quantity * item.purchase_price), 0
             );
 
-            // Insert stock intake record
+            // Insert stock intake record with optional intake_date
             const [intakeResult] = await conn.execute(
-                'INSERT INTO stock_intakes (supplier_id, total_amount, notes) VALUES (?, ?, ?)',
-                [supplierId, totalAmount, notes]
+                intakeDate
+                    ? 'INSERT INTO stock_intakes (supplier_id, total_amount, notes, intake_date) VALUES (?, ?, ?, ?)'
+                    : 'INSERT INTO stock_intakes (supplier_id, total_amount, notes) VALUES (?, ?, ?)',
+                intakeDate
+                    ? [supplierId, totalAmount, notes, intakeDate]
+                    : [supplierId, totalAmount, notes]
             );
 
             const intakeId = intakeResult.insertId;
@@ -77,15 +83,40 @@ class StockIntake {
                 );
             }
 
+            // Log audit trail
+            const intakeData = {
+                id: intakeId,
+                supplier_id: supplierId,
+                total_amount: totalAmount,
+                notes: notes,
+                intake_date: intakeDate,
+                items: items
+            };
+            await AuditLog.log('stock_intakes', intakeId, 'insert', null, intakeData, user);
+
             return intakeId;
         });
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
+            // Get intake data for audit log
+            const [intakes] = await conn.execute(
+                'SELECT * FROM stock_intakes WHERE id = ?',
+                [id]
+            );
+
+            if (!intakes[0]) {
+                throw new Error('Stock intake not found');
+            }
+
+            const intake = intakes[0];
+
             // Get items before deletion
             const [items] = await conn.execute(
-                'SELECT product_id, quantity FROM stock_intake_items WHERE stock_intake_id = ?',
+                'SELECT * FROM stock_intake_items WHERE stock_intake_id = ?',
                 [id]
             );
 
@@ -101,6 +132,11 @@ class StockIntake {
 
             // Delete intake (items will be deleted by CASCADE)
             await conn.execute('DELETE FROM stock_intakes WHERE id = ?', [id]);
+
+            // Log audit trail
+            await AuditLog.log('stock_intakes', id, 'delete', { ...intake, items }, null, user);
+
+            return true;
         });
     }
 
@@ -117,6 +153,17 @@ class StockIntake {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(intake_date) as latest_date
+            FROM stock_intakes
+            ORDER BY intake_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
     }
 }
 

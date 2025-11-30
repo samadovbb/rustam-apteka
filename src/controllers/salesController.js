@@ -43,7 +43,8 @@ class SalesController {
                 payment_method,
                 debt_markup_type,
                 debt_markup_value,
-                debt_grace_months
+                debt_grace_months,
+                sale_date
             } = req.body;
 
             // Find or create customer
@@ -53,7 +54,7 @@ class SalesController {
                     full_name: customer_name,
                     phone: customer_phone,
                     address: customer_address
-                });
+                }, req.user);
                 customer = await Customer.findById(customerId);
             }
 
@@ -80,7 +81,9 @@ class SalesController {
                 parsedItems,
                 parseFloat(initial_payment) || 0,
                 payment_method || 'cash',
-                debtConfig
+                debtConfig,
+                sale_date || null,
+                req.user
             );
 
             res.redirect(`/sales/${saleId}`);
@@ -124,11 +127,13 @@ class SalesController {
 
     static async addPayment(req, res) {
         try {
-            const { amount, payment_method } = req.body;
+            const { amount, payment_method, payment_date } = req.body;
             await Sale.addPayment(
                 req.params.id,
                 parseFloat(amount),
-                payment_method || 'cash'
+                payment_method || 'cash',
+                payment_date || null,
+                req.user
             );
 
             res.redirect(`/sales/${req.params.id}`);
@@ -146,6 +151,88 @@ class SalesController {
         } catch (error) {
             console.error('Get seller inventory error:', error);
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    // API: Get latest sale date
+    // static async getLatestDate(req, res) {
+    //     try {
+    //         const result = await Sale.getLatestDate();
+    //         const date = result ? new Date(result).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    //         res.json({ date });
+    //     } catch (error) {
+    //         console.error('Get latest sale date error:', error);
+    //         res.json({ date: new Date().toISOString().split('T')[0] });
+    //     }
+    // }
+    // API: Get latest sale date
+    static async getLatestDate(req, res) {
+        try {
+            const result = await Sale.getLatestDate();
+            let date;
+            if (result) {
+                const dateObj = new Date(result);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            } else {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                date = `${year}-${month}-${day}`;
+            }
+            res.json({ date });
+        } catch (error) {
+            console.error('Get latest sale date error:', error);
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            res.json({ date: `${year}-${month}-${day}` });
+        }
+    }
+    // Update sale date
+    static async updateSaleDate(req, res) {
+        try {
+            const { sale_date } = req.body;
+            if (!sale_date) {
+                return res.status(400).json({ success: false, error: 'Sana kiritilishi kerak' });
+            }
+
+            await Sale.updateSaleDate(req.params.id, sale_date, req.user);
+            res.json({ success: true, message: 'Savdo sanasi muvaffaqiyatli yangilandi' });
+        } catch (error) {
+            console.error('Update sale date error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Update payment date
+    static async updatePaymentDate(req, res) {
+        try {
+            const { payment_date } = req.body;
+            if (!payment_date) {
+                return res.status(400).json({ success: false, error: 'Sana kiritilishi kerak' });
+            }
+
+            await Sale.updatePaymentDate(req.params.payment_id, payment_date, req.user);
+            res.json({ success: true, message: 'To\'lov sanasi muvaffaqiyatli yangilandi' });
+        } catch (error) {
+            console.error('Update payment date error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Delete a sale
+    static async delete(req, res) {
+        try {
+            await Sale.delete(req.params.id, req.user);
+            res.json({ success: true, message: 'Savdo muvaffaqiyatli o\'chirildi' });
+        } catch (error) {
+            console.error('Delete sale error:', error);
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 }

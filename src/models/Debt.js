@@ -191,6 +191,18 @@ class Debt {
         const results = await query(sql);
         return results[0] || {};
     }
+
+    static async getLatestPaymentDate() {
+        const sql = `
+            SELECT DATE(p.payment_date) as latest_date
+            FROM payments p
+            JOIN debt_payments dp ON p.id = dp.payment_id
+            ORDER BY p.payment_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
+    }
 }
 
 module.exports = Debt;

@@ -35,7 +35,9 @@ class StockTransfer {
         return await query(sql, [transferId]);
     }
 
-    static async create(sellerId, items, notes = null) {
+    static async create(sellerId, items, notes = null, transferDate = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
             // Validate warehouse has enough stock
             for (const item of items) {
@@ -50,10 +52,14 @@ class StockTransfer {
                 }
             }
 
-            // Insert stock transfer record
+            // Insert stock transfer record with optional transfer_date
             const [transferResult] = await conn.execute(
-                'INSERT INTO stock_transfers (seller_id, notes) VALUES (?, ?)',
-                [sellerId, notes]
+                transferDate
+                    ? 'INSERT INTO stock_transfers (seller_id, notes, transfer_date) VALUES (?, ?, ?)'
+                    : 'INSERT INTO stock_transfers (seller_id, notes) VALUES (?, ?)',
+                transferDate
+                    ? [sellerId, notes, transferDate]
+                    : [sellerId, notes]
             );
 
             const transferId = transferResult.insertId;
@@ -87,6 +93,16 @@ class StockTransfer {
                 );
             }
 
+            // Log audit trail
+            const transferData = {
+                id: transferId,
+                seller_id: sellerId,
+                notes: notes,
+                transfer_date: transferDate,
+                items: items
+            };
+            await AuditLog.log('stock_transfers', transferId, 'insert', null, transferData, user);
+
             return transferId;
         });
     }
@@ -115,6 +131,68 @@ class StockTransfer {
             LIMIT ${parseInt(limit)}
         `;
         return await query(sql);
+    }
+
+    static async getLatestDate() {
+        const sql = `
+            SELECT DATE(transfer_date) as latest_date
+            FROM stock_transfers
+            ORDER BY transfer_date DESC
+            LIMIT 1
+        `;
+        const results = await query(sql);
+        return results[0]?.latest_date || null;
+    }
+
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get transfer data for audit log
+            const [transfers] = await conn.execute(
+                'SELECT * FROM stock_transfers WHERE id = ?',
+                [id]
+            );
+
+            if (!transfers[0]) {
+                throw new Error('Stock transfer not found');
+            }
+
+            const transfer = transfers[0];
+
+            // Get items to reverse inventory changes
+            const [items] = await conn.execute(
+                'SELECT * FROM stock_transfer_items WHERE stock_transfer_id = ?',
+                [id]
+            );
+
+            // Reverse inventory changes
+            for (const item of items) {
+                // Add back to warehouse
+                await conn.execute(
+                    `UPDATE warehouse_inventory
+                     SET quantity = quantity + ?
+                     WHERE product_id = ?`,
+                    [item.quantity, item.product_id]
+                );
+
+                // Deduct from seller inventory
+                await conn.execute(
+                    `UPDATE seller_inventory
+                     SET quantity = GREATEST(0, quantity - ?)
+                     WHERE seller_id = ? AND product_id = ?`,
+                    [item.quantity, transfer.seller_id, item.product_id]
+                );
+            }
+
+            // Delete transfer (items will be deleted by CASCADE)
+            await conn.execute('DELETE FROM stock_transfers WHERE id = ?', [id]);
+
+            // Log audit trail
+            await AuditLog.log('stock_transfers', id, 'delete', { ...transfer, items }, null, user);
+
+            return true;
+        });
     }
 }
 

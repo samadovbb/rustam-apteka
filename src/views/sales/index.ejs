@@ -42,7 +42,7 @@
                                 <% sales.forEach(sale => { %>
                                     <tr>
                                         <td>#<%= sale.id %></td>
-                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></td>
                                         <td><%= sale.customer_name %></td>
                                         <td><%= sale.seller_name %></td>
                                         <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>

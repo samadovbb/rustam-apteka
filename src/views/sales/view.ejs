@@ -15,13 +15,22 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
-                    <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    <div>
+                        <button onclick="deleteSale(<%= sale.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
+                        <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <h4><%= lang.sales.saleInfo %></h4>
                     <p><strong><%= lang.table.id %>:</strong> #<%= sale.id %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(sale.sale_date).toLocaleDateString() %></p>
+                    <p>
+                        <strong><%= lang.common.date %>:</strong>
+                        <span id="sale-date-display"><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></span>
+                        <button onclick="editSaleDate(<%= sale.id %>, '<%= sale.sale_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
+                            ✏️
+                        </button>
+                    </p>
                     <p><strong><%= lang.table.customer %>:</strong> <%= sale.customer_name %> (<%= sale.customer_phone %>)</p>
                     <p><strong><%= lang.table.seller %>:</strong> <%= sale.seller_name %></p>
                     <p><strong><%= lang.common.status %>:</strong>
@@ -58,14 +67,22 @@
                                 </tr>
                             <% }) %>
                         </tbody>
+                        <tfoot>
+                            <tr style="font-weight: bold; background-color: #f8f9fa;">
+                                <td colspan="2" style="text-align: right;">Jami:</td>
+                                <td><%= items.reduce((sum, item) => sum + item.quantity, 0) %></td>
+                                <td></td>
+                                <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
                 <div style="text-align: right; margin: 20px 0;">
-                    <h4><%= lang.sales.totalAmount %>: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
-                    <p><strong><%= lang.sales.paidAmount %>:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
+                    <h4>Umumiy summa: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
+                    <p><strong>Boshlang'ich to'lov:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
                     <p style="color: <%= sale.remaining_amount > 0 ? 'red' : 'green' %>;">
-                        <strong><%= lang.sales.remainingAmount %>:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
+                        <strong>Qoldiq qarz:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
                     </p>
                 </div>
 
@@ -78,17 +95,30 @@
                                     <th><%= lang.common.date %></th>
                                     <th><%= lang.sales.amount %></th>
                                     <th><%= lang.sales.method %></th>
+                                    <th>Harakat</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% payments.forEach(payment => { %>
                                     <tr>
-                                        <td><%= new Date(payment.payment_date).toLocaleDateString() %></td>
+                                        <td id="payment-date-<%= payment.id %>"><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
+                                        <td>
+                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
+                                                ✏️
+                                            </button>
+                                        </td>
                                     </tr>
                                 <% }) %>
                             </tbody>
+                            <tfoot>
+                                <tr style="font-weight: bold; background-color: #f8f9fa;">
+                                    <td style="text-align: right;">Jami to'lovlar:</td>
+                                    <td>$<%= parseFloat(payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0)).toFixed(2) %></td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 <% } %>
@@ -96,7 +126,7 @@
                 <% if (sale.remaining_amount > 0) { %>
                     <div class="card" style="margin-top: 20px; background: #fff3cd;">
                         <h4><%= lang.sales.addPayment %></h4>
-                        <form action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
+                        <form id="paymentForm" action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
                             <div class="form-group" style="flex: 1; margin: 0;">
                                 <label for="amount" class="form-label"><%= lang.sales.amount %></label>
                                 <input type="number" step="0.01" id="amount" name="amount" class="form-control" max="<%= sale.remaining_amount %>" required>
@@ -120,3 +150,143 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+// Helper function to convert any date to local YYYY-MM-DD format
+function toLocalDateString(date) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+<% if (sale.remaining_amount > 0) { %>
+document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    try {
+        // Fetch latest payment date
+        const response = await fetch('/debts/api/latest-payment-date');
+        const data = await response.json();
+        const defaultDate = data.date;
+
+        // Show date picker with custom format
+        const selectedDate = await showDatePicker('To\'lov sanasini tanlang', defaultDate);
+
+        if (selectedDate) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'payment_date';
+            dateInput.value = selectedDate;
+            this.appendChild(dateInput);
+
+            // Submit the form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    }
+});
+<% } %>
+
+async function deleteSale(id) {
+    const result = await Swal.fire({
+        title: 'Ishonchingiz komilmi?',
+        text: 'Bu savdoni o\'chirishni xohlaysizmi? Bu harakat inventarizatsiyani tiklaydi va bekor qilib bo\'lmaydi!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ha, o\'chirish',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/sales/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('O\'chirildi!', data.message, 'success')
+                    .then(() => window.location.href = '/sales');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Xato!', 'O\'chirishda xatolik yuz berdi', 'error');
+        }
+    }
+}
+
+async function editSaleDate(saleId, currentDate) {
+    try {
+        // Convert the current date to local YYYY-MM-DD format
+        const localDateStr = toLocalDateString(currentDate);
+        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang', localDateStr);
+
+        if (selectedDate) {
+            const response = await fetch(`/sales/${saleId}/date`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sale_date: selectedDate })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update display using local date parsing
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day);
+                const displayDate = localDate.toLocaleDateString('ru-RU');
+                document.getElementById('sale-date-display').textContent = displayDate;
+
+                Swal.fire('Yangilandi!', data.message, 'success');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
+    }
+}
+
+async function editPaymentDate(saleId, paymentId, currentDate) {
+    try {
+        // Convert the current date to local YYYY-MM-DD format
+        const localDateStr = toLocalDateString(currentDate);
+        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang', localDateStr);
+
+        if (selectedDate) {
+            const response = await fetch(`/sales/${saleId}/payment/${paymentId}/date`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ payment_date: selectedDate })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update display using local date parsing
+                const [year, month, day] = selectedDate.split('-');
+                const localDate = new Date(year, month - 1, day);
+                const displayDate = localDate.toLocaleDateString('ru-RU');
+                document.getElementById(`payment-date-${paymentId}`).textContent = displayDate;
+
+                Swal.fire('Yangilandi!', data.message, 'success');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
+    }
+}
+</script>

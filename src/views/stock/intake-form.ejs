@@ -38,16 +38,15 @@
                         <label class="form-label"><%= lang.stockIntake.products %></label>
                         <div id="productsList">
                             <div class="product-item" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;">
-                                <select class="form-control product-select" style="flex: 2;" required>
-                                    <option value=""><%= lang.stockIntake.selectProduct %></option>
-                                    <% products.forEach(product => { %>
-                                        <option value="<%= product.id %>" data-purchase="<%= product.purchase_price %>" data-sell="<%= product.sell_price %>">
-                                            <%= product.name %> (<%= product.barcode %>)
-                                        </option>
-                                    <% }) %>
-                                </select>
+                                <div style="flex: 2; position: relative;">
+                                    <input type="text" class="form-control product-input" placeholder="<%= lang.stockIntake.selectProduct %>" required autocomplete="off">
+                                    <input type="hidden" class="product-id-input">
+                                    <input type="hidden" class="product-barcode-input">
+                                    <div class="product-suggestions" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; width: 100%;"></div>
+                                </div>
                                 <input type="number" class="form-control quantity-input" placeholder="<%= lang.stockIntake.quantity %>" min="1" style="flex: 1;" required>
                                 <input type="number" step="0.01" class="form-control price-input" placeholder="<%= lang.stockIntake.purchasePrice %>" min="0" style="flex: 1;" required>
+                                <input type="number" step="0.01" class="form-control sell-price-input" placeholder="<%= lang.stockIntake.sellPrice || 'Sell Price' %>" min="0" style="flex: 1;">
                             </div>
                         </div>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="addProductRow()"><%= lang.stockIntake.addProduct %></button>
@@ -70,6 +69,8 @@
     </main>
 </div>
 
+<%- include('../partials/footer') %>
+
 <script>
 function addProductRow() {
     const container = document.getElementById('productsList');
@@ -78,21 +79,44 @@ function addProductRow() {
     container.appendChild(newRow);
 }
 
-document.getElementById('intakeForm').addEventListener('submit', function(e) {
+document.getElementById('intakeForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const items = [];
     document.querySelectorAll('.product-item').forEach(row => {
-        const productId = row.querySelector('.product-select').value;
+        const productInput = row.querySelector('.product-input').value.trim();
+        const productId = row.querySelector('.product-id-input').value;
+        const productBarcode = row.querySelector('.product-barcode-input').value;
         const quantity = row.querySelector('.quantity-input').value;
-        const price = row.querySelector('.price-input').value;
+        const purchasePrice = row.querySelector('.price-input').value;
+        const sellPrice = row.querySelector('.sell-price-input').value;
 
-        if (productId && quantity && price) {
-            items.push({
-                product_id: parseInt(productId),
+        if (productInput && quantity && purchasePrice) {
+            const item = {
                 quantity: parseInt(quantity),
-                purchase_price: parseFloat(price)
-            });
+                purchase_price: parseFloat(purchasePrice)
+            };
+
+            // If product exists (has ID), use product_id
+            if (productId) {
+                item.product_id = parseInt(productId);
+                // Update sell price if provided
+                if (sellPrice) {
+                    item.sell_price = parseFloat(sellPrice);
+                }
+            } else {
+                // New product - send name and barcode (if available)
+                item.product_name = productInput;
+                if (productBarcode) {
+                    item.barcode = productBarcode;
+                }
+                // Sell price is optional but can be set
+                if (sellPrice) {
+                    item.sell_price = parseFloat(sellPrice);
+                }
+            }
+
+            items.push(item);
         }
     });
 
@@ -101,20 +125,194 @@ document.getElementById('intakeForm').addEventListener('submit', function(e) {
         return;
     }
 
-    document.getElementById('itemsData').value = JSON.stringify(items);
-    this.submit();
-});
+    try {
+        // Fetch latest intake date
+        const response = await fetch('/stock-intake/api/latest-date');
+        const data = await response.json();
+        const defaultDate = data.date;
 
-// Auto-fill last prices when product selected
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('product-select')) {
-        const option = e.target.selectedOptions[0];
-        const row = e.target.closest('.product-item');
-        if (option.dataset.purchase) {
-            row.querySelector('.price-input').value = option.dataset.purchase;
+        // Show date picker with custom format
+        const selectedDate = await showDatePicker('Qabul sanasini tanlang', defaultDate);
+
+        if (selectedDate) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'intake_date';
+            dateInput.value = selectedDate;
+            this.appendChild(dateInput);
+
+            // Set items data
+            document.getElementById('itemsData').value = JSON.stringify(items);
+
+            // Submit the form
+            this.submit();
         }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
     }
 });
-</script>
 
-<%- include('../partials/footer') %>
+// Initialize Select2 for supplier
+$(document).ready(function() {
+    $('#supplier_id').select2({
+        ajax: {
+            url: '/suppliers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || ''
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(supplier) {
+                        return {
+                            id: supplier.id,
+                            text: supplier.name
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.stockIntake.selectSupplier %>',
+        minimumInputLength: 0,
+        allowClear: true
+    });
+
+    // Product autocomplete functionality
+    let searchTimeout = null;
+
+    // Setup autocomplete for all product inputs
+    function setupProductAutocomplete(input) {
+        const container = $(input).closest('.product-item');
+        const suggestionsDiv = container.find('.product-suggestions');
+        const productIdInput = container.find('.product-id-input');
+        const productBarcodeInput = container.find('.product-barcode-input');
+        const purchasePriceInput = container.find('.price-input');
+        const sellPriceInput = container.find('.sell-price-input');
+
+        $(input).on('input', function() {
+            const query = $(this).val().trim();
+
+            // Clear timeout if user is still typing
+            clearTimeout(searchTimeout);
+
+            if (query.length < 1) {
+                suggestionsDiv.hide().empty();
+                productIdInput.val('');
+                productBarcodeInput.val('');
+                return;
+            }
+
+            // Search after 300ms delay
+            searchTimeout = setTimeout(function() {
+                $.ajax({
+                    url: '/products/api/search',
+                    method: 'GET',
+                    data: { q: query },
+                    dataType: 'json',
+                    success: function(products) {
+                        suggestionsDiv.empty();
+
+                        if (products.length > 0) {
+                            products.forEach(function(product) {
+                                const item = $('<div>')
+                                    .css({
+                                        padding: '8px 12px',
+                                        cursor: 'pointer',
+                                        borderBottom: '1px solid #eee'
+                                    })
+                                    .text(product.name + ' (' + product.barcode + ')')
+                                    .hover(
+                                        function() { $(this).css('background-color', '#f0f0f0'); },
+                                        function() { $(this).css('background-color', 'white'); }
+                                    )
+                                    .on('click', function() {
+                                        // Fill in the product details
+                                        $(input).val(product.name);
+                                        productIdInput.val(product.id);
+                                        productBarcodeInput.val(product.barcode);
+                                        purchasePriceInput.val(product.purchase_price || '');
+                                        sellPriceInput.val(product.sell_price || '');
+                                        suggestionsDiv.hide();
+                                    });
+
+                                suggestionsDiv.append(item);
+                            });
+
+                            suggestionsDiv.show();
+                        } else {
+                            // Show "Create new product" option
+                            const createItem = $('<div>')
+                                .css({
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid #eee',
+                                    fontStyle: 'italic',
+                                    color: '#666'
+                                })
+                                .html('<strong>Create new:</strong> ' + query)
+                                .hover(
+                                    function() { $(this).css('background-color', '#f0f0f0'); },
+                                    function() { $(this).css('background-color', 'white'); }
+                                )
+                                .on('click', function() {
+                                    // Keep the typed name, clear the ID (indicates new product)
+                                    productIdInput.val('');
+                                    productBarcodeInput.val('');
+                                    suggestionsDiv.hide();
+                                });
+
+                            suggestionsDiv.append(createItem).show();
+                        }
+                    },
+                    error: function() {
+                        suggestionsDiv.hide();
+                    }
+                });
+            }, 300);
+        });
+
+        // Hide suggestions when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.product-item').length) {
+                $('.product-suggestions').hide();
+            }
+        });
+
+        // Handle blur event
+        $(input).on('blur', function() {
+            // Delay to allow click on suggestion
+            setTimeout(function() {
+                suggestionsDiv.hide();
+            }, 200);
+        });
+    }
+
+    // Initialize autocomplete for existing inputs
+    $('.product-input').each(function() {
+        setupProductAutocomplete(this);
+    });
+
+    // Override addProductRow to setup autocomplete on new rows
+    window.originalAddProductRow = window.addProductRow;
+    window.addProductRow = function() {
+        const container = document.getElementById('productsList');
+        const newRow = container.querySelector('.product-item').cloneNode(true);
+
+        // Clear all inputs
+        $(newRow).find('input').val('');
+        $(newRow).find('.product-suggestions').hide().empty();
+
+        container.appendChild(newRow);
+
+        // Setup autocomplete for new row
+        const productInput = $(newRow).find('.product-input')[0];
+        setupProductAutocomplete(productInput);
+    };
+});
+</script>
