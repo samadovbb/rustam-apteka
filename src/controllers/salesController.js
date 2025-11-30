@@ -104,6 +104,7 @@ class SalesController {
             const sale = await Sale.findById(req.params.id);
             const items = await Sale.getItems(req.params.id);
             const payments = await Sale.getPayments(req.params.id);
+            const profit = await Sale.calculateProfit(req.params.id);
 
             if (!sale) {
                 return res.status(404).render('error', {
@@ -117,7 +118,8 @@ class SalesController {
                 title: `Sale #${sale.id}`,
                 sale,
                 items,
-                payments
+                payments,
+                profit
             });
         } catch (error) {
             console.error('Sale view error:', error);

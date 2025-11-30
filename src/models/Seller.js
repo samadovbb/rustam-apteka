@@ -113,6 +113,8 @@ class Seller {
         `;
         const term = `%${searchTerm}%`;
         return await query(sql, [term, term]);
+    }
+    
     static async getDebtors(sellerId) {
         const sql = `
             SELECT DISTINCT c.id, c.full_name, c.phone,

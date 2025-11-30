@@ -112,6 +112,8 @@ class SellerController {
         } catch (error) {
             console.error('Seller search error:', error);
             res.status(500).json({ error: error.message });
+        }
+    }
     static async view(req, res) {
         try {
             const seller = await Seller.findById(req.params.id);

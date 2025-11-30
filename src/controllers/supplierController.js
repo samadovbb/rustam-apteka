@@ -96,6 +96,8 @@ class SupplierController {
         } catch (error) {
             console.error('Supplier search error:', error);
             res.status(500).json({ error: error.message });
+        }
+    }
     static async view(req, res) {
         try {
             const supplier = await Supplier.findById(req.params.id);
