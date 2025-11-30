@@ -70,6 +70,8 @@
     </main>
 </div>
 
+<%- include('../partials/footer') %>
+
 <script>
 function addProductRow() {
     const container = document.getElementById('productsList');
@@ -78,7 +80,7 @@ function addProductRow() {
     container.appendChild(newRow);
 }
 
-document.getElementById('transferForm').addEventListener('submit', function(e) {
+document.getElementById('transferForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const items = [];
@@ -108,8 +110,33 @@ document.getElementById('transferForm').addEventListener('submit', function(e) {
         return;
     }
 
-    document.getElementById('itemsData').value = JSON.stringify(items);
-    this.submit();
+    try {
+        // Fetch latest transfer date
+        const response = await fetch('/stock-transfer/api/latest-date');
+        const data = await response.json();
+        const defaultDate = data.date;
+
+        // Show date picker with custom format
+        const selectedDate = await showDatePicker('O\'tkazma sanasini tanlang', defaultDate);
+
+        if (selectedDate) {
+            // Add the date to form
+            const dateInput = document.createElement('input');
+            dateInput.type = 'hidden';
+            dateInput.name = 'transfer_date';
+            dateInput.value = selectedDate;
+            this.appendChild(dateInput);
+
+            // Set items data
+            document.getElementById('itemsData').value = JSON.stringify(items);
+
+            // Submit the form
+            this.submit();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Xatolik yuz berdi');
+    }
 });
 
 // Auto-fill suggested sell price
@@ -122,6 +149,99 @@ document.addEventListener('change', function(e) {
         }
     }
 });
-</script>
 
-<%- include('../partials/footer') %>
+// Initialize Select2 for seller
+$(document).ready(function() {
+    $('#seller_id').select2({
+        ajax: {
+            url: '/sellers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || ''
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(seller) {
+                        return {
+                            id: seller.id,
+                            text: seller.full_name
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.stockTransfer.selectSeller %>',
+        minimumInputLength: 0,
+        allowClear: true
+    });
+
+    // Initialize Select2 for product selects (warehouse stock only)
+    function initializeProductSelect(element) {
+        $(element).select2({
+            ajax: {
+                url: '/products/api/search',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(function(product) {
+                            return {
+                                id: product.id,
+                                text: product.name + ' (' + product.barcode + ')',
+                                product: product
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            placeholder: '<%= lang.stockIntake.selectProduct %>',
+            minimumInputLength: 0,
+            allowClear: true,
+            dropdownParent: $(element).parent()
+        });
+
+        // Auto-fill prices when product is selected
+        $(element).on('select2:select', function (e) {
+            var product = e.params.data.product;
+            var row = $(this).closest('.product-item');
+            if (product.sell_price) {
+                row.find('.price-input').val(product.sell_price);
+            }
+        });
+    }
+
+    // Initialize existing product select
+    $('.product-select').each(function() {
+        initializeProductSelect(this);
+    });
+
+    // Override addProductRow to initialize Select2 on new rows
+    window.originalAddProductRow = window.addProductRow;
+    window.addProductRow = function() {
+        const container = document.getElementById('productsList');
+        const newRow = container.querySelector('.product-item').cloneNode(true);
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+
+        // Remove Select2 from cloned select
+        const select = newRow.querySelector('.product-select');
+        $(select).removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden').removeAttr('tabindex');
+        $(select).next('.select2-container').remove();
+        select.value = '';
+
+        container.appendChild(newRow);
+
+        // Initialize Select2 on new row
+        initializeProductSelect(select);
+    };
+});
+</script>

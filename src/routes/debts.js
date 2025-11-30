@@ -10,4 +10,7 @@ router.get('/:id', DebtController.view);
 router.post('/:id/apply-markup', DebtController.applyManualMarkup);
 router.post('/:id/status', DebtController.updateStatus);
 
+// API routes
+router.get('/api/latest-payment-date', DebtController.getLatestPaymentDate);
+
 module.exports = router;

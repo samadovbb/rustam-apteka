@@ -15,13 +15,16 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.stockTransfer.transferDetails %></h3>
-                    <a href="/stock-transfer" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    <div>
+                        <button onclick="deleteTransfer(<%= transfer.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
+                        <a href="/stock-transfer" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <p><strong><%= lang.table.id %>:</strong> #<%= transfer.id %></p>
                     <p><strong><%= lang.stockTransfer.seller %>:</strong> <%= transfer.seller_name %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString('ru-RU') %></p>
                     <% if (transfer.notes) { %>
                         <p><strong><%= lang.common.notes %>:</strong> <%= transfer.notes %></p>
                     <% } %>
@@ -57,3 +60,33 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+async function deleteTransfer(id) {
+    const result = await Swal.fire({
+        title: 'Ishonchingiz komilmi?',
+        text: 'Bu o\'tkazmani o\'chirishni xohlaysizmi? Bu harakat ombor va sotuvchi inventarizatsiyasini tiklaydi va bekor qilib bo\'lmaydi!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ha, o\'chirish',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/stock-transfer/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('O\'chirildi!', data.message, 'success')
+                    .then(() => window.location.href = '/stock-transfer');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Xato!', 'O\'chirishda xatolik yuz berdi', 'error');
+        }
+    }
+}
+</script>

@@ -43,7 +43,7 @@ class ProductController {
                 warranty_months: parseInt(warranty_months) || 0,
                 purchase_price: parseFloat(purchase_price) || 0,
                 sell_price: parseFloat(sell_price) || 0
-            });
+            }, req.user);
 
             res.redirect('/products');
         } catch (error) {
@@ -101,7 +101,7 @@ class ProductController {
                 warranty_months: parseInt(warranty_months) || 0,
                 purchase_price: parseFloat(purchase_price) || 0,
                 sell_price: parseFloat(sell_price) || 0
-            });
+            }, req.user);
 
             res.redirect('/products');
         } catch (error) {
@@ -118,7 +118,7 @@ class ProductController {
     // Delete product
     static async delete(req, res) {
         try {
-            await Product.delete(req.params.id);
+            await Product.delete(req.params.id, req.user);
             res.redirect('/products');
         } catch (error) {
             console.error('Product delete error:', error);

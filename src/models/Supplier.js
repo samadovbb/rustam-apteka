@@ -12,7 +12,9 @@ class Supplier {
         return results[0] || null;
     }
 
-    static async create(data) {
+    static async create(data, user = null) {
+        const AuditLog = require('./AuditLog');
+
         const sql = `
             INSERT INTO suppliers (name, phone, email, address)
             VALUES (?, ?, ?, ?)
@@ -23,10 +25,21 @@ class Supplier {
             data.email || null,
             data.address || null
         ]);
-        return result.insertId;
+
+        const supplierId = result.insertId;
+
+        // Log audit trail
+        await AuditLog.log('suppliers', supplierId, 'insert', null, data, user);
+
+        return supplierId;
     }
 
-    static async update(id, data) {
+    static async update(id, data, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old data
+        const oldSupplier = await this.findById(id);
+
         const sql = `
             UPDATE suppliers
             SET name = ?, phone = ?, email = ?, address = ?
@@ -39,11 +52,25 @@ class Supplier {
             data.address || null,
             id
         ]);
+
+        // Get new data
+        const newSupplier = await this.findById(id);
+
+        // Log audit trail
+        await AuditLog.log('suppliers', id, 'update', oldSupplier, newSupplier, user);
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get supplier data before deletion
+        const supplier = await this.findById(id);
+
         const sql = 'DELETE FROM suppliers WHERE id = ?';
         await query(sql, [id]);
+
+        // Log audit trail
+        await AuditLog.log('suppliers', id, 'delete', supplier, null, user);
     }
 
     static async getStockIntakeHistory(supplierId) {
@@ -58,6 +85,15 @@ class Supplier {
         return await query(sql, [supplierId]);
     }
 
+    static async search(searchTerm) {
+        const sql = `
+            SELECT * FROM suppliers
+            WHERE name LIKE ? OR phone LIKE ? OR email LIKE ?
+            ORDER BY name ASC
+            LIMIT 50
+        `;
+        const term = `%${searchTerm}%`;
+        return await query(sql, [term, term, term]);
     static async getStats(supplierId) {
         const sql = `
             SELECT

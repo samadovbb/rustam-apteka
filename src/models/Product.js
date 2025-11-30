@@ -29,7 +29,9 @@ class Product {
         return await query(sql, [term, term]);
     }
 
-    static async create(data) {
+    static async create(data, user = null) {
+        const AuditLog = require('./AuditLog');
+
         const sql = `
             INSERT INTO products
             (name, barcode, warranty_months, purchase_price, sell_price, last_price_update_at)
@@ -42,10 +44,21 @@ class Product {
             data.purchase_price || 0,
             data.sell_price || 0
         ]);
-        return result.insertId;
+
+        const productId = result.insertId;
+
+        // Log audit trail
+        await AuditLog.log('products', productId, 'insert', null, data, user);
+
+        return productId;
     }
 
-    static async update(id, data) {
+    static async update(id, data, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old data
+        const oldProduct = await this.findById(id);
+
         const sql = `
             UPDATE products
             SET name = ?, barcode = ?, warranty_months = ?,
@@ -61,20 +74,45 @@ class Product {
             data.sell_price,
             id
         ]);
+
+        // Get new data
+        const newProduct = await this.findById(id);
+
+        // Log audit trail
+        await AuditLog.log('products', id, 'update', oldProduct, newProduct, user);
     }
 
-    static async updatePrices(id, purchasePrice, sellPrice) {
+    static async updatePrices(id, purchasePrice, sellPrice, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old data
+        const oldProduct = await this.findById(id);
+
         const sql = `
             UPDATE products
             SET purchase_price = ?, sell_price = ?, last_price_update_at = NOW()
             WHERE id = ?
         `;
         await query(sql, [purchasePrice, sellPrice, id]);
+
+        // Get new data
+        const newProduct = await this.findById(id);
+
+        // Log audit trail
+        await AuditLog.log('products', id, 'update', oldProduct, newProduct, user);
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get product data before deletion
+        const product = await this.findById(id);
+
         const sql = 'DELETE FROM products WHERE id = ?';
         await query(sql, [id]);
+
+        // Log audit trail
+        await AuditLog.log('products', id, 'delete', product, null, user);
     }
 
     static async getWarehouseStock(productId) {

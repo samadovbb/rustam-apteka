@@ -1,5 +1,6 @@
 // Sales Form Client-Side Logic
-let sellerInventory = [];
+// Make these global so they can be accessed by Select2 handlers
+window.sellerInventory = [];
 
 // Customer phone search
 let searchTimeout;
@@ -29,7 +30,7 @@ document.getElementById('seller_id').addEventListener('change', async function()
     const sellerId = this.value;
 
     if (!sellerId) {
-        sellerInventory = [];
+        window.sellerInventory = [];
         updateProductSelects();
         return;
     }
@@ -37,21 +38,22 @@ document.getElementById('seller_id').addEventListener('change', async function()
     try {
         const response = await fetch(`/sales/api/seller/${sellerId}/inventory`);
         if (response.ok) {
-            sellerInventory = await response.json();
+            window.sellerInventory = await response.json();
             updateProductSelects();
             document.getElementById('addProductBtn').disabled = false;
         }
     } catch (error) {
-        alert('Failed to load seller inventory');
+        alert('Sotuvchining mahsulotlarini yuklashda xatolik');
     }
 });
 
-function updateProductSelects() {
+// Expose updateProductSelects globally so Select2 handlers can call it
+window.updateProductSelects = function updateProductSelects() {
     document.querySelectorAll('.product-select').forEach(select => {
         select.innerHTML = '<option value="">Select Product</option>';
 
-        if (sellerInventory.length > 0) {
-            sellerInventory.forEach(item => {
+        if (window.sellerInventory.length > 0) {
+            window.sellerInventory.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.product_id;
                 option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.seller_price).toFixed(2)})`;
@@ -68,7 +70,7 @@ function updateProductSelects() {
 
     const firstInput = document.querySelector('.quantity-input');
     const firstPriceInput = document.querySelector('.price-input');
-    if (sellerInventory.length > 0) {
+    if (window.sellerInventory.length > 0) {
         firstInput.disabled = false;
         firstPriceInput.disabled = false;
     }
@@ -103,6 +105,7 @@ function attachProductRowListeners(row) {
     const quantityInput = row.querySelector('.quantity-input');
     const priceInput = row.querySelector('.price-input');
     const subtotalSpan = row.querySelector('span');
+    let priceTimeout;
 
     productSelect.addEventListener('change', function() {
         const option = this.selectedOptions[0];
@@ -117,20 +120,29 @@ function attachProductRowListeners(row) {
         const option = productSelect.selectedOptions[0];
         const available = parseInt(option.dataset.available || 0);
         if (parseInt(this.value) > available) {
-            alert(`Only ${available} units available`);
+            alert(`Faqat ${available} dona mavjud`);
             this.value = available;
         }
         updateSubtotal(row);
     });
 
     priceInput.addEventListener('input', function() {
-        const option = productSelect.selectedOptions[0];
-        const minPrice = parseFloat(option.dataset.minPrice || 0);
-        if (parseFloat(this.value) < minPrice) {
-            alert(`Price cannot be below $${minPrice.toFixed(2)}`);
-            this.value = minPrice;
-        }
+        const inputValue = this.value;
+
+        // Update subtotal immediately while typing
         updateSubtotal(row);
+
+        // Validate price after user stops typing (500ms delay)
+        clearTimeout(priceTimeout);
+        priceTimeout = setTimeout(() => {
+            const option = productSelect.selectedOptions[0];
+            const minPrice = parseFloat(option.dataset.minPrice || 0);
+            if (parseFloat(inputValue) < minPrice) {
+                alert(`Narx $${minPrice.toFixed(2)} dan past bo'lishi mumkin emas`);
+                priceInput.value = minPrice;
+                updateSubtotal(row);
+            }
+        }, 500);
     });
 }
 
@@ -188,7 +200,7 @@ document.getElementById('salesForm').addEventListener('submit', function(e) {
     });
 
     if (items.length === 0) {
-        alert('Please add at least one product');
+        alert('Kamida bitta mahsulot qo\'shing');
         return;
     }
 
