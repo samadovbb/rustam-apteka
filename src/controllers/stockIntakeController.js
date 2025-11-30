@@ -127,6 +127,17 @@ class StockIntakeController {
             res.json({ date: new Date().toISOString().split('T')[0] });
         }
     }
+
+    // Delete a stock intake
+    static async delete(req, res) {
+        try {
+            await StockIntake.delete(req.params.id, req.user);
+            res.json({ success: true, message: 'Qabul muvaffaqiyatli o\'chirildi' });
+        } catch (error) {
+            console.error('Delete stock intake error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = StockIntakeController;

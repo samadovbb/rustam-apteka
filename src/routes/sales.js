@@ -10,6 +10,7 @@ router.get('/create', SalesController.create);
 router.post('/', SalesController.store);
 router.get('/:id', SalesController.view);
 router.post('/:id/payment', SalesController.addPayment);
+router.delete('/:id', SalesController.delete);
 
 // API routes
 router.get('/api/seller/:seller_id/inventory', SalesController.getSellerInventory);

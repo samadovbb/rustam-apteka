@@ -15,7 +15,10 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.stockIntake.intakeDetails %></h3>
-                    <a href="/stock-intake" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    <div>
+                        <button onclick="deleteIntake(<%= intake.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
+                        <a href="/stock-intake" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -58,3 +61,33 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+async function deleteIntake(id) {
+    const result = await Swal.fire({
+        title: 'Ishonchingiz komilmi?',
+        text: 'Bu qabulni o\'chirishni xohlaysizmi? Bu harakat ombor inventarizatsiyasini kamaytiradi va bekor qilib bo\'lmaydi!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ha, o\'chirish',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/stock-intake/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('O\'chirildi!', data.message, 'success')
+                    .then(() => window.location.href = '/stock-intake');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Xato!', 'O\'chirishda xatolik yuz berdi', 'error');
+        }
+    }
+}
+</script>

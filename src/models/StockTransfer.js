@@ -131,6 +131,57 @@ class StockTransfer {
         const results = await query(sql);
         return results[0]?.latest_date || null;
     }
+
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get transfer data for audit log
+            const [transfers] = await conn.execute(
+                'SELECT * FROM stock_transfers WHERE id = ?',
+                [id]
+            );
+
+            if (!transfers[0]) {
+                throw new Error('Stock transfer not found');
+            }
+
+            const transfer = transfers[0];
+
+            // Get items to reverse inventory changes
+            const [items] = await conn.execute(
+                'SELECT * FROM stock_transfer_items WHERE stock_transfer_id = ?',
+                [id]
+            );
+
+            // Reverse inventory changes
+            for (const item of items) {
+                // Add back to warehouse
+                await conn.execute(
+                    `UPDATE warehouse_inventory
+                     SET quantity = quantity + ?
+                     WHERE product_id = ?`,
+                    [item.quantity, item.product_id]
+                );
+
+                // Deduct from seller inventory
+                await conn.execute(
+                    `UPDATE seller_inventory
+                     SET quantity = GREATEST(0, quantity - ?)
+                     WHERE seller_id = ? AND product_id = ?`,
+                    [item.quantity, transfer.seller_id, item.product_id]
+                );
+            }
+
+            // Delete transfer (items will be deleted by CASCADE)
+            await conn.execute('DELETE FROM stock_transfers WHERE id = ?', [id]);
+
+            // Log audit trail
+            await AuditLog.log('stock_transfers', id, 'delete', { ...transfer, items }, null, user);
+
+            return true;
+        });
+    }
 }
 
 module.exports = StockTransfer;

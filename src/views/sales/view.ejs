@@ -15,7 +15,10 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
-                    <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    <div>
+                        <button onclick="deleteSale(<%= sale.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
+                        <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -164,4 +167,32 @@ document.getElementById('paymentForm').addEventListener('submit', async function
     }
 });
 <% } %>
+
+async function deleteSale(id) {
+    const result = await Swal.fire({
+        title: 'Ishonchingiz komilmi?',
+        text: 'Bu savdoni o\'chirishni xohlaysizmi? Bu harakat inventarizatsiyani tiklaydi va bekor qilib bo\'lmaydi!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ha, o\'chirish',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/sales/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('O\'chirildi!', data.message, 'success')
+                    .then(() => window.location.href = '/sales');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Xato!', 'O\'chirishda xatolik yuz berdi', 'error');
+        }
+    }
+}
 </script>
