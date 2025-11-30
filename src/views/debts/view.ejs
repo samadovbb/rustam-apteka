@@ -23,7 +23,7 @@
                     <p><strong><%= lang.table.id %>:</strong> #<%= debt.id %></p>
                     <p><strong><%= lang.debts.customer %>:</strong> <%= debt.customer_name %> (<%= debt.customer_phone %>)</p>
                     <p><strong><%= lang.debts.sale %>:</strong> <a href="/sales/<%= debt.sale_id %>" class="btn btn-sm btn-primary">Savdoni ko'rish #<%= debt.sale_id %></a></p>
-                    <p><strong><%= lang.debts.saleDate %>:</strong> <%= new Date(debt.sale_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.debts.saleDate %>:</strong> <%= new Date(debt.sale_date).toLocaleDateString('ru-RU') %></p>
                     <p><strong><%= lang.debts.originalAmount %>:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
                     <p><strong><%= lang.debts.currentAmount %>:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></span></p>
                     <p><strong><%= lang.debts.markupType %>:</strong>
@@ -33,8 +33,8 @@
                             <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% <%= lang.debts.monthly %>
                         <% } %>
                     </p>
-                    <p><strong><%= lang.sales.gracePeriod %>:</strong> <%= debt.grace_period_months %> <%= lang.debts.monthly %> (<%= lang.debts.graceEnd %> <%= new Date(debt.grace_end_date).toLocaleDateString() %>)</p>
-                    <p><strong><%= lang.debts.lastMarkupDate %>:</strong> <%= debt.last_markup_date ? new Date(debt.last_markup_date).toLocaleDateString() : lang.debts.never %></p>
+                    <p><strong><%= lang.sales.gracePeriod %>:</strong> <%= debt.grace_period_months %> <%= lang.debts.monthly %> (<%= lang.debts.graceEnd %> <%= new Date(debt.grace_end_date).toLocaleDateString('ru-RU') %>)</p>
+                    <p><strong><%= lang.debts.lastMarkupDate %>:</strong> <%= debt.last_markup_date ? new Date(debt.last_markup_date).toLocaleDateString('ru-RU') : lang.debts.never %></p>
                     <p><strong><%= lang.common.status %>:</strong>
                         <% if (debt.status === 'active') { %>
                             <span class="badge badge-danger"><%= lang.status.active %></span>
@@ -60,7 +60,7 @@
                             <tbody>
                                 <% paymentHistory.forEach(payment => { %>
                                     <tr>
-                                        <td><%= new Date(payment.payment_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
                                     </tr>
@@ -85,7 +85,7 @@
                             <tbody>
                                 <% markupLogs.forEach(log => { %>
                                     <tr>
-                                        <td><%= new Date(log.calculation_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(log.calculation_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(log.remaining_debt || 0).toFixed(2) %></td>
                                         <td>
                                             <% if (debt.markup_type === 'fixed') { %>

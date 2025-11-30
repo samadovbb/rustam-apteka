@@ -24,7 +24,7 @@
                 <div style="margin-bottom: 20px;">
                     <p><strong><%= lang.table.id %>:</strong> #<%= transfer.id %></p>
                     <p><strong><%= lang.stockTransfer.seller %>:</strong> <%= transfer.seller_name %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(transfer.transfer_date).toLocaleDateString('ru-RU') %></p>
                     <% if (transfer.notes) { %>
                         <p><strong><%= lang.common.notes %>:</strong> <%= transfer.notes %></p>
                     <% } %>

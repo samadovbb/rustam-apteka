@@ -63,7 +63,7 @@
                                     <tr>
                                         <td>#<%= debt.id %></td>
                                         <td><%= debt.customer_name %><br><small><%= debt.customer_phone %></small></td>
-                                        <td><%= new Date(debt.sale_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(debt.sale_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(debt.original_amount || 0).toFixed(2) %></td>
                                         <td>$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></td>
                                         <td>
@@ -73,7 +73,7 @@
                                                 <%= parseFloat(debt.markup_value || 0).toFixed(2) %>%
                                             <% } %>
                                         </td>
-                                        <td><%= debt.grace_end_date ? new Date(debt.grace_end_date).toLocaleDateString() : '-' %></td>
+                                        <td><%= debt.grace_end_date ? new Date(debt.grace_end_date).toLocaleDateString('ru-RU') : '-' %></td>
                                         <td>
                                             <% if (debt.status === 'active') { %>
                                                 <span class="badge badge-danger"><%= lang.status.active %></span>

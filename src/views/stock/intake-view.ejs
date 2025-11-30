@@ -24,7 +24,7 @@
                 <div style="margin-bottom: 20px;">
                     <p><strong><%= lang.table.id %>:</strong> #<%= intake.id %></p>
                     <p><strong><%= lang.stockIntake.supplier %>:</strong> <%= intake.supplier_name %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(intake.intake_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(intake.intake_date).toLocaleDateString('ru-RU') %></p>
                     <p><strong><%= lang.stockIntake.totalAmount %>:</strong> $<%= parseFloat(intake.total_amount || 0).toFixed(2) %></p>
                     <% if (intake.notes) { %>
                         <p><strong><%= lang.common.notes %>:</strong> <%= intake.notes %></p>

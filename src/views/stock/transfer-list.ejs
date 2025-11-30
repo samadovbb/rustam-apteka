@@ -37,7 +37,7 @@
                                 <% transfers.forEach(transfer => { %>
                                     <tr>
                                         <td>#<%= transfer.id %></td>
-                                        <td><%= new Date(transfer.transfer_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(transfer.transfer_date).toLocaleDateString('ru-RU') %></td>
                                         <td><%= transfer.seller_name %></td>
                                         <td>
                                             <a href="/stock-transfer/<%= transfer.id %>" class="btn btn-sm btn-primary"><%= lang.buttons.view %></a>
