@@ -27,7 +27,7 @@
                     <p>
                         <strong><%= lang.common.date %>:</strong>
                         <span id="sale-date-display"><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></span>
-                        <button onclick="editSaleDate(<%= sale.id %>, '<%= sale.sale_date.split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
+                        <button onclick="editSaleDate(<%= sale.id %>, '<%= new Date(sale.sale_date).toISOString().split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
                             ✏️
                         </button>
                     </p>
@@ -97,7 +97,7 @@
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
                                         <td>
-                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date.split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
+                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= new Date(payment.payment_date).toISOString().split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
                                                 ✏️
                                             </button>
                                         </td>
