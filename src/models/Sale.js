@@ -36,13 +36,27 @@ class Sale {
 
     static async getItems(saleId) {
         const sql = `
-            SELECT si.*, p.name as product_name, p.barcode
+            SELECT si.*, p.name as product_name, p.barcode,
+                   (si.quantity * (si.unit_price - si.purchase_price_at_sale)) as item_profit
             FROM sale_items si
             JOIN products p ON si.product_id = p.id
             WHERE si.sale_id = ?
             ORDER BY p.name ASC
         `;
         return await query(sql, [saleId]);
+    }
+
+    static async calculateProfit(saleId) {
+        const sql = `
+            SELECT
+                SUM(si.quantity * si.unit_price) as total_revenue,
+                SUM(si.quantity * si.purchase_price_at_sale) as total_cost,
+                SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as total_profit
+            FROM sale_items si
+            WHERE si.sale_id = ?
+        `;
+        const results = await query(sql, [saleId]);
+        return results[0] || { total_revenue: 0, total_cost: 0, total_profit: 0 };
     }
 
     static async getPayments(saleId) {
@@ -105,10 +119,21 @@ class Sale {
 
             // Insert sale items and update seller inventory
             for (const item of items) {
+                // Get product's purchase price and last intake date for profit calculation
+                const [productInfo] = await conn.execute(
+                    `SELECT purchase_price, last_price_update_at
+                     FROM products
+                     WHERE id = ?`,
+                    [item.product_id]
+                );
+
+                const purchasePriceAtSale = productInfo[0]?.purchase_price || 0;
+                const intakeDate = productInfo[0]?.last_price_update_at || null;
+
                 await conn.execute(
-                    `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price)
-                     VALUES (?, ?, ?, ?)`,
-                    [saleId, item.product_id, item.quantity, item.unit_price]
+                    `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, purchase_price_at_sale, intake_date)
+                     VALUES (?, ?, ?, ?, ?, ?)`,
+                    [saleId, item.product_id, item.quantity, item.unit_price, purchasePriceAtSale, intakeDate]
                 );
 
                 // Deduct from seller inventory
