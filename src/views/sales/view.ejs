@@ -24,7 +24,7 @@
                 <div style="margin-bottom: 20px;">
                     <h4><%= lang.sales.saleInfo %></h4>
                     <p><strong><%= lang.table.id %>:</strong> #<%= sale.id %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(sale.sale_date).toLocaleDateString() %></p>
+                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></p>
                     <p><strong><%= lang.table.customer %>:</strong> <%= sale.customer_name %> (<%= sale.customer_phone %>)</p>
                     <p><strong><%= lang.table.seller %>:</strong> <%= sale.seller_name %></p>
                     <p><strong><%= lang.common.status %>:</strong>
@@ -65,10 +65,10 @@
                 </div>
 
                 <div style="text-align: right; margin: 20px 0;">
-                    <h4><%= lang.sales.totalAmount %>: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
-                    <p><strong><%= lang.sales.paidAmount %>:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
+                    <h4>Umumiy summa: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
+                    <p><strong>Boshlang'ich to'lov:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
                     <p style="color: <%= sale.remaining_amount > 0 ? 'red' : 'green' %>;">
-                        <strong><%= lang.sales.remainingAmount %>:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
+                        <strong>Qoldiq qarz:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
                     </p>
                 </div>
 
@@ -86,7 +86,7 @@
                             <tbody>
                                 <% payments.forEach(payment => { %>
                                     <tr>
-                                        <td><%= new Date(payment.payment_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
                                     </tr>
@@ -135,27 +135,15 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         const data = await response.json();
         const defaultDate = data.date;
 
-        // Show date picker
-        const result = await Swal.fire({
-            title: 'To\'lov sanasini tanlang',
-            input: 'date',
-            inputValue: defaultDate,
-            showCancelButton: true,
-            confirmButtonText: 'Tasdiqlash',
-            cancelButtonText: 'Bekor qilish',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'Sana tanlanishi kerak!';
-                }
-            }
-        });
+        // Show date picker with custom format
+        const selectedDate = await showDatePicker('To\'lov sanasini tanlang', defaultDate);
 
-        if (result.isConfirmed) {
+        if (selectedDate) {
             // Add the date to form
             const dateInput = document.createElement('input');
             dateInput.type = 'hidden';
             dateInput.name = 'payment_date';
-            dateInput.value = result.value;
+            dateInput.value = selectedDate;
             this.appendChild(dateInput);
 
             // Submit the form

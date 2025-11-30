@@ -131,27 +131,15 @@ document.getElementById('intakeForm').addEventListener('submit', async function(
         const data = await response.json();
         const defaultDate = data.date;
 
-        // Show date picker
-        const result = await Swal.fire({
-            title: 'Qabul sanasini tanlang',
-            input: 'date',
-            inputValue: defaultDate,
-            showCancelButton: true,
-            confirmButtonText: 'Tasdiqlash',
-            cancelButtonText: 'Bekor qilish',
-            inputValidator: (value) => {
-                if (!value) {
-                    return 'Sana tanlanishi kerak!';
-                }
-            }
-        });
+        // Show date picker with custom format
+        const selectedDate = await showDatePicker('Qabul sanasini tanlang', defaultDate);
 
-        if (result.isConfirmed) {
+        if (selectedDate) {
             // Add the date to form
             const dateInput = document.createElement('input');
             dateInput.type = 'hidden';
             dateInput.name = 'intake_date';
-            dateInput.value = result.value;
+            dateInput.value = selectedDate;
             this.appendChild(dateInput);
 
             // Set items data
