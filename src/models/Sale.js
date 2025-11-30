@@ -288,6 +288,57 @@ class Sale {
         return results[0]?.latest_date || null;
     }
 
+    static async updateSaleDate(saleId, newDate, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get old sale data
+        const [sales] = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
+
+        if (!sales[0]) {
+            throw new Error('Sale not found');
+        }
+
+        const oldData = { ...sales[0] };
+
+        // Update sale date
+        await query('UPDATE sales SET sale_date = ? WHERE id = ?', [newDate, saleId]);
+
+        // Get updated sale data
+        const [updatedSales] = await query('SELECT * FROM sales WHERE id = ?', [saleId]);
+        const newData = { ...updatedSales[0] };
+
+        // Log audit trail
+        await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
+
+        return true;
+    }
+
+    static async updatePaymentDate(paymentId, newDate, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get payment data
+        const [payments] = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+
+        if (!payments[0]) {
+            throw new Error('Payment not found');
+        }
+
+        const payment = payments[0];
+        const oldData = { ...payment };
+
+        // Update payment date
+        await query('UPDATE payments SET payment_date = ? WHERE id = ?', [newDate, paymentId]);
+
+        // Get updated payment data
+        const [updatedPayments] = await query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const newData = { ...updatedPayments[0] };
+
+        // Log audit trail for the sale
+        await AuditLog.log('payments', paymentId, 'update', oldData, newData, user);
+
+        return true;
+    }
+
     static async delete(saleId, user = null) {
         const AuditLog = require('./AuditLog');
 

@@ -165,6 +165,38 @@ class SalesController {
         }
     }
 
+    // Update sale date
+    static async updateSaleDate(req, res) {
+        try {
+            const { sale_date } = req.body;
+            if (!sale_date) {
+                return res.status(400).json({ success: false, error: 'Sana kiritilishi kerak' });
+            }
+
+            await Sale.updateSaleDate(req.params.id, sale_date, req.user);
+            res.json({ success: true, message: 'Savdo sanasi muvaffaqiyatli yangilandi' });
+        } catch (error) {
+            console.error('Update sale date error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Update payment date
+    static async updatePaymentDate(req, res) {
+        try {
+            const { payment_date } = req.body;
+            if (!payment_date) {
+                return res.status(400).json({ success: false, error: 'Sana kiritilishi kerak' });
+            }
+
+            await Sale.updatePaymentDate(req.params.payment_id, payment_date, req.user);
+            res.json({ success: true, message: 'To\'lov sanasi muvaffaqiyatli yangilandi' });
+        } catch (error) {
+            console.error('Update payment date error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // Delete a sale
     static async delete(req, res) {
         try {

@@ -24,7 +24,13 @@
                 <div style="margin-bottom: 20px;">
                     <h4><%= lang.sales.saleInfo %></h4>
                     <p><strong><%= lang.table.id %>:</strong> #<%= sale.id %></p>
-                    <p><strong><%= lang.common.date %>:</strong> <%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></p>
+                    <p>
+                        <strong><%= lang.common.date %>:</strong>
+                        <span id="sale-date-display"><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></span>
+                        <button onclick="editSaleDate(<%= sale.id %>, '<%= sale.sale_date.split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
+                            ✏️
+                        </button>
+                    </p>
                     <p><strong><%= lang.table.customer %>:</strong> <%= sale.customer_name %> (<%= sale.customer_phone %>)</p>
                     <p><strong><%= lang.table.seller %>:</strong> <%= sale.seller_name %></p>
                     <p><strong><%= lang.common.status %>:</strong>
@@ -81,14 +87,20 @@
                                     <th><%= lang.common.date %></th>
                                     <th><%= lang.sales.amount %></th>
                                     <th><%= lang.sales.method %></th>
+                                    <th>Harakat</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% payments.forEach(payment => { %>
                                     <tr>
-                                        <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
+                                        <td id="payment-date-<%= payment.id %>"><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
+                                        <td>
+                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date.split('T')[0] %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
+                                                ✏️
+                                            </button>
+                                        </td>
                                     </tr>
                                 <% }) %>
                             </tbody>
@@ -181,6 +193,68 @@ async function deleteSale(id) {
         } catch (error) {
             Swal.fire('Xato!', 'O\'chirishda xatolik yuz berdi', 'error');
         }
+    }
+}
+
+async function editSaleDate(saleId, currentDate) {
+    try {
+        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang', currentDate);
+
+        if (selectedDate) {
+            const response = await fetch(`/sales/${saleId}/date`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sale_date: selectedDate })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update display
+                const displayDate = new Date(selectedDate).toLocaleDateString('ru-RU');
+                document.getElementById('sale-date-display').textContent = displayDate;
+
+                Swal.fire('Yangilandi!', data.message, 'success');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
+    }
+}
+
+async function editPaymentDate(saleId, paymentId, currentDate) {
+    try {
+        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang', currentDate);
+
+        if (selectedDate) {
+            const response = await fetch(`/sales/${saleId}/payment/${paymentId}/date`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ payment_date: selectedDate })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update display
+                const displayDate = new Date(selectedDate).toLocaleDateString('ru-RU');
+                document.getElementById(`payment-date-${paymentId}`).textContent = displayDate;
+
+                Swal.fire('Yangilandi!', data.message, 'success');
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
     }
 }
 </script>
