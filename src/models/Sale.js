@@ -4,7 +4,8 @@ class Sale {
     static async getAll(limit = 100) {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
-                   sel.full_name as seller_name
+                   sel.full_name as seller_name,
+                   (s.total_amount - s.paid_amount) as remaining_amount
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
@@ -17,7 +18,8 @@ class Sale {
     static async findById(id) {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
-                   sel.full_name as seller_name
+                   sel.full_name as seller_name,
+                   (s.total_amount - s.paid_amount) as remaining_amount
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
@@ -248,6 +250,57 @@ class Sale {
         `;
         const results = await query(sql);
         return results[0]?.latest_date || null;
+    }
+
+    static async delete(saleId, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get sale data for audit log
+            const [sales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Sale not found');
+            }
+
+            const sale = sales[0];
+
+            // Get sale items to restore inventory
+            const [items] = await conn.execute(
+                'SELECT * FROM sale_items WHERE sale_id = ?',
+                [saleId]
+            );
+
+            // Restore seller inventory for each item
+            for (const item of items) {
+                await conn.execute(
+                    `INSERT INTO seller_inventory (seller_id, product_id, quantity, seller_price)
+                     VALUES (?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
+                    [sale.seller_id, item.product_id, item.quantity, item.unit_price]
+                );
+            }
+
+            // Delete payments (will cascade delete debt_payments)
+            await conn.execute('DELETE FROM payments WHERE sale_id = ?', [saleId]);
+
+            // Delete debts
+            await conn.execute('DELETE FROM debts WHERE sale_id = ?', [saleId]);
+
+            // Delete sale items (will be cascaded)
+            await conn.execute('DELETE FROM sale_items WHERE sale_id = ?', [saleId]);
+
+            // Delete sale
+            await conn.execute('DELETE FROM sales WHERE id = ?', [saleId]);
+
+            // Log audit trail
+            await AuditLog.log('sales', saleId, 'delete', sale, null, user);
+
+            return true;
+        });
     }
 }
 

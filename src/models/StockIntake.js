@@ -85,11 +85,25 @@ class StockIntake {
         });
     }
 
-    static async delete(id) {
+    static async delete(id, user = null) {
+        const AuditLog = require('./AuditLog');
+
         return await transaction(async (conn) => {
+            // Get intake data for audit log
+            const [intakes] = await conn.execute(
+                'SELECT * FROM stock_intakes WHERE id = ?',
+                [id]
+            );
+
+            if (!intakes[0]) {
+                throw new Error('Stock intake not found');
+            }
+
+            const intake = intakes[0];
+
             // Get items before deletion
             const [items] = await conn.execute(
-                'SELECT product_id, quantity FROM stock_intake_items WHERE stock_intake_id = ?',
+                'SELECT * FROM stock_intake_items WHERE stock_intake_id = ?',
                 [id]
             );
 
@@ -105,6 +119,11 @@ class StockIntake {
 
             // Delete intake (items will be deleted by CASCADE)
             await conn.execute('DELETE FROM stock_intakes WHERE id = ?', [id]);
+
+            // Log audit trail
+            await AuditLog.log('stock_intakes', id, 'delete', { ...intake, items }, null, user);
+
+            return true;
         });
     }
 
