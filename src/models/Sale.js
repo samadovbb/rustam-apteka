@@ -529,10 +529,9 @@ class Sale {
                 );
             }
 
-            // Update sale totals
+            // Update sale totals (remaining_amount will be auto-calculated)
             const newTotalAmount = sale.total_amount - totalRefund;
             const newPaidAmount = Math.min(sale.paid_amount, newTotalAmount);
-            const newRemainingAmount = newTotalAmount - newPaidAmount;
 
             let newStatus = 'unpaid';
             if (newPaidAmount >= newTotalAmount) {
@@ -545,10 +544,9 @@ class Sale {
                 `UPDATE sales
                  SET total_amount = ?,
                      paid_amount = ?,
-                     remaining_amount = ?,
                      status = ?
                  WHERE id = ?`,
-                [newTotalAmount, newPaidAmount, newRemainingAmount, newStatus, saleId]
+                [newTotalAmount, newPaidAmount, newStatus, saleId]
             );
 
             // Update debt if exists
