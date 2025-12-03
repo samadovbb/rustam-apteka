@@ -14,6 +14,11 @@ router.put('/:id/date', SalesController.updateSaleDate);
 router.put('/:id/payment/:payment_id/date', SalesController.updatePaymentDate);
 router.delete('/:id', SalesController.delete);
 
+// New features: change seller and return items
+router.put('/:id/seller', SalesController.changeSeller);
+router.post('/:id/return', SalesController.returnItems);
+router.get('/:id/returns', SalesController.getReturns);
+
 // API routes
 router.get('/api/seller/:seller_id/inventory', SalesController.getSellerInventory);
 router.get('/api/latest-date', SalesController.getLatestDate);

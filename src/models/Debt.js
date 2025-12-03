@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/database');
+const AuditLog = require('./AuditLog');
 
 class Debt {
     static async getAll(status = 'active', limit = 100) {
@@ -134,6 +135,66 @@ class Debt {
                 previousAmount: currentAmount,
                 markupValue,
                 newAmount: totalAfterMarkup
+            };
+        });
+    }
+
+    static async changeGracePeriod(debtId, newGracePeriodMonths, user = null) {
+        return await transaction(async (conn) => {
+            // Get current debt details
+            const [debts] = await conn.execute(
+                'SELECT * FROM debts WHERE id = ?',
+                [debtId]
+            );
+
+            if (!debts[0]) {
+                throw new Error('Debt not found');
+            }
+
+            const debt = debts[0];
+            const oldGracePeriod = debt.grace_period_months;
+
+            // Calculate new grace_end_date
+            // grace_end_date = sale_date + grace_period_months
+            const [sales] = await conn.execute(
+                'SELECT sale_date FROM sales WHERE id = ?',
+                [debt.sale_id]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Associated sale not found');
+            }
+
+            const saleDate = new Date(sales[0].sale_date);
+            const newGraceEndDate = new Date(saleDate);
+            newGraceEndDate.setMonth(newGraceEndDate.getMonth() + parseInt(newGracePeriodMonths));
+
+            // Update debt with new grace period
+            await conn.execute(
+                `UPDATE debts SET
+                    grace_period_months = ?,
+                    grace_end_date = ?,
+                    original_grace_period_months = COALESCE(original_grace_period_months, ?),
+                    grace_period_changed_at = NOW()
+                WHERE id = ?`,
+                [newGracePeriodMonths, newGraceEndDate, oldGracePeriod, debtId]
+            );
+
+            // Log the change
+            await AuditLog.log(
+                'debts',
+                debtId,
+                'update',
+                { grace_period_months: oldGracePeriod },
+                { grace_period_months: newGracePeriodMonths },
+                user
+            );
+
+            return {
+                debtId,
+                oldGracePeriod,
+                newGracePeriod: newGracePeriodMonths,
+                newGraceEndDate
             };
         });
     }

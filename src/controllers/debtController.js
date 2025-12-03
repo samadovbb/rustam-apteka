@@ -113,6 +113,32 @@ class DebtController {
             res.json({ date: `${year}-${month}-${day}` });
         }
     }
+
+    // Change grace period
+    static async changeGracePeriod(req, res) {
+        try {
+            const { grace_period_months } = req.body;
+
+            if (!grace_period_months) {
+                return res.status(400).json({ success: false, error: 'Imtiyoz davri kiritilishi kerak' });
+            }
+
+            const result = await Debt.changeGracePeriod(
+                req.params.id,
+                parseInt(grace_period_months),
+                req.user
+            );
+
+            res.json({
+                success: true,
+                message: 'Imtiyoz davri muvaffaqiyatli o\'zgartirildi',
+                result
+            });
+        } catch (error) {
+            console.error('Change grace period error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = DebtController;

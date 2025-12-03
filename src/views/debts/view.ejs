@@ -33,7 +33,16 @@
                             <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% <%= lang.debts.monthly %>
                         <% } %>
                     </p>
-                    <p><strong><%= lang.sales.gracePeriod %>:</strong> <%= debt.grace_period_months %> <%= lang.debts.monthly %> (<%= lang.debts.graceEnd %> <%= new Date(debt.grace_end_date).toLocaleDateString('ru-RU') %>)</p>
+                    <p>
+                        <strong><%= lang.sales.gracePeriod %>:</strong>
+                        <span id="grace-period-display"><%= debt.grace_period_months %> <%= lang.debts.monthly %></span>
+                        (<%= lang.debts.graceEnd %> <span id="grace-end-display"><%= new Date(debt.grace_end_date).toLocaleDateString('ru-RU') %></span>)
+                        <% if (debt.status === 'active') { %>
+                            <button onclick="changeGracePeriod(<%= debt.id %>, <%= debt.grace_period_months %>)" class="btn btn-sm btn-link" title="Imtiyoz davrini o'zgartirish" style="padding: 0 5px; font-size: 0.9em;">
+                                ✏️
+                            </button>
+                        <% } %>
+                    </p>
                     <p><strong><%= lang.debts.lastMarkupDate %>:</strong> <%= debt.last_markup_date ? new Date(debt.last_markup_date).toLocaleDateString('ru-RU') : lang.debts.never %></p>
                     <p><strong><%= lang.common.status %>:</strong>
                         <% if (debt.status === 'active') { %>
@@ -124,3 +133,50 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+async function changeGracePeriod(debtId, currentGracePeriod) {
+    const { value: newGracePeriod } = await Swal.fire({
+        title: 'Imtiyoz davrini o\'zgartirish',
+        input: 'number',
+        inputLabel: 'Yangi imtiyoz davri (oylar)',
+        inputValue: currentGracePeriod,
+        inputAttributes: {
+            min: 0,
+            step: 1
+        },
+        showCancelButton: true,
+        confirmButtonText: 'O\'zgartirish',
+        cancelButtonText: 'Bekor qilish',
+        inputValidator: (value) => {
+            if (!value || value < 0) {
+                return 'Iltimos, to\'g\'ri qiymat kiriting!'
+            }
+        }
+    });
+
+    if (newGracePeriod && newGracePeriod !== String(currentGracePeriod)) {
+        try {
+            const response = await fetch(`/debts/${debtId}/grace-period`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ grace_period_months: parseInt(newGracePeriod) })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire('Yangilandi!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('Xato!', 'Imtiyoz davrini o\'zgartirishda xatolik yuz berdi', 'error');
+        }
+    }
+}
+</script>

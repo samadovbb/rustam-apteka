@@ -15,6 +15,7 @@ router.post('/:id/delete', SellerController.delete);
 router.get('/:id/inventory', SellerController.inventory);
 
 // API routes
+router.get('/api/all', SellerController.getAllApi);
 router.get('/api/search', SellerController.search);
 
 module.exports = router;

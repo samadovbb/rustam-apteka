@@ -237,6 +237,60 @@ class SalesController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+
+    // Change seller
+    static async changeSeller(req, res) {
+        try {
+            const { seller_id } = req.body;
+            if (!seller_id) {
+                return res.status(400).json({ success: false, error: 'Sotuvchi tanlanishi kerak' });
+            }
+
+            await Sale.changeSeller(req.params.id, seller_id, req.user);
+            res.json({ success: true, message: 'Sotuvchi muvaffaqiyatli o\'zgartirildi' });
+        } catch (error) {
+            console.error('Change seller error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Return items
+    static async returnItems(req, res) {
+        try {
+            const { items, reason } = req.body;
+
+            if (!items || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({ success: false, error: 'Qaytariladigan mahsulotlar tanlanishi kerak' });
+            }
+
+            const result = await Sale.returnItems(
+                req.params.id,
+                items,
+                reason || null,
+                req.user
+            );
+
+            res.json({
+                success: true,
+                message: 'Mahsulotlar muvaffaqiyatli qaytarildi',
+                result
+            });
+        } catch (error) {
+            console.error('Return items error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Get return history
+    static async getReturns(req, res) {
+        try {
+            const returns = await Sale.getReturns(req.params.id);
+            res.json({ success: true, returns });
+        } catch (error) {
+            console.error('Get returns error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = SalesController;

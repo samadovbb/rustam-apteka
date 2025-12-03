@@ -10,6 +10,9 @@ router.get('/:id', DebtController.view);
 router.post('/:id/apply-markup', DebtController.applyManualMarkup);
 router.post('/:id/status', DebtController.updateStatus);
 
+// New feature: change grace period
+router.put('/:id/grace-period', DebtController.changeGracePeriod);
+
 // API routes
 router.get('/api/latest-payment-date', DebtController.getLatestPaymentDate);
 

@@ -143,6 +143,17 @@ class SellerController {
             res.status(500).render('error', { title: 'Error', message: error.message, error });
         }
     }
+
+    // API: Get all sellers
+    static async getAllApi(req, res) {
+        try {
+            const sellers = await Seller.getAll();
+            res.json(sellers);
+        } catch (error) {
+            console.error('Get all sellers API error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = SellerController;
