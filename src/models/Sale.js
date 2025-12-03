@@ -511,13 +511,12 @@ class Sale {
                         [sale_item_id]
                     );
                 } else {
-                    // Partial return - update quantity
+                    // Partial return - update quantity (subtotal will be auto-calculated)
                     const newQuantity = item.quantity - quantity;
-                    const newSubtotal = newQuantity * item.unit_price;
 
                     await conn.execute(
-                        'UPDATE sale_items SET quantity = ?, subtotal = ? WHERE id = ?',
-                        [newQuantity, newSubtotal, sale_item_id]
+                        'UPDATE sale_items SET quantity = ? WHERE id = ?',
+                        [newQuantity, sale_item_id]
                     );
                 }
 
