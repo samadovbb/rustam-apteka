@@ -70,6 +70,48 @@ class Debt {
         return await query(sql, [debtId]);
     }
 
+    // Calculate debt with markup WITHOUT updating database (for display only)
+    static calculateDebtWithMarkup(debt) {
+        const now = new Date();
+        const graceEnd = new Date(debt.grace_end_date);
+        const currentAmount = parseFloat(debt.current_amount);
+
+        // If still in grace period, no markup applies
+        if (now < graceEnd) {
+            return {
+                baseAmount: currentAmount,
+                monthsOverdue: 0,
+                markupAmount: 0,
+                totalWithMarkup: currentAmount
+            };
+        }
+
+        // Calculate months past grace period
+        const monthsOverdue = Math.max(0, Math.floor(
+            (now.getTime() - graceEnd.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+        ));
+
+        let markupAmount = 0;
+
+        if (debt.markup_type === 'fixed') {
+            // Fixed markup per month
+            markupAmount = parseFloat(debt.markup_value) * monthsOverdue;
+        } else {
+            // Percent markup - simple interest (not compound)
+            const markupPercent = parseFloat(debt.markup_value);
+            markupAmount = (currentAmount * markupPercent * monthsOverdue) / 100;
+        }
+
+        return {
+            baseAmount: currentAmount,
+            monthsOverdue,
+            markupAmount,
+            totalWithMarkup: currentAmount + markupAmount
+        };
+    }
+
+    // Legacy method - kept for manual markup application (rarely used)
+    // This is now DEPRECATED - markup should be calculated dynamically
     static async applyMarkup(debtId) {
         return await transaction(async (conn) => {
             // Get debt details

@@ -25,7 +25,25 @@
                     <p><strong><%= lang.debts.sale %>:</strong> <a href="/sales/<%= debt.sale_id %>" class="btn btn-sm btn-primary">Savdoni ko'rish #<%= debt.sale_id %></a></p>
                     <p><strong><%= lang.debts.saleDate %>:</strong> <%= new Date(debt.sale_date).toLocaleDateString('ru-RU') %></p>
                     <p><strong><%= lang.debts.originalAmount %>:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
-                    <p><strong><%= lang.debts.currentAmount %>:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></span></p>
+                    <p><strong>Joriy qarz (asosiy):</strong> $<%= parseFloat(debtCalculation.baseAmount || 0).toFixed(2) %></p>
+
+                    <% if (debtCalculation.monthsOverdue > 0) { %>
+                        <p style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                            <strong>Imtiyoz muddati tugagan:</strong> <%= debtCalculation.monthsOverdue %> oy oldin<br>
+                            <strong>Ustama (hisoblangan):</strong>
+                            <% if (debt.markup_type === 'fixed') { %>
+                                $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> × <%= debtCalculation.monthsOverdue %> oy =
+                            <% } else { %>
+                                <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% × <%= debtCalculation.monthsOverdue %> oy =
+                            <% } %>
+                            <span style="color: orange; font-weight: bold;">$<%= parseFloat(debtCalculation.markupAmount || 0).toFixed(2) %></span><br>
+                            <strong>Jami qarz (ustama bilan):</strong>
+                            <span style="color: red; font-size: 1.3em; font-weight: bold;">$<%= parseFloat(debtCalculation.totalWithMarkup || 0).toFixed(2) %></span>
+                        </p>
+                    <% } else { %>
+                        <p><strong>Jami qarz:</strong> <span style="color: red; font-size: 1.2em;">$<%= parseFloat(debtCalculation.baseAmount || 0).toFixed(2) %></span></p>
+                    <% } %>
+
                     <p><strong><%= lang.debts.markupType %>:</strong>
                         <% if (debt.markup_type === 'fixed') { %>
                             <%= lang.debts.fixed %>: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> <%= lang.debts.monthly %>

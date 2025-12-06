@@ -40,9 +40,13 @@ class DebtController {
                 markupLogs = await Debt.getPercentMarkupLogs(req.params.id);
             }
 
+            // Calculate current debt with markup dynamically (not from database)
+            const debtCalculation = Debt.calculateDebtWithMarkup(debt);
+
             res.render('debts/view', {
                 title: `Debt #${debt.id}`,
                 debt,
+                debtCalculation,
                 paymentHistory,
                 markupLogs
             });

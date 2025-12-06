@@ -147,18 +147,27 @@ class Sale {
 
             // Record initial payment if > 0
             if (initialPayment > 0) {
+                // Use sale_date for payment_date if provided, otherwise use current timestamp
+                const paymentDate = saleDate || null;
+
                 await conn.execute(
-                    `INSERT INTO payments (sale_id, amount, payment_method)
-                     VALUES (?, ?, ?)`,
-                    [saleId, initialPayment, paymentMethod]
+                    paymentDate
+                        ? `INSERT INTO payments (sale_id, amount, payment_method, payment_date)
+                           VALUES (?, ?, ?, ?)`
+                        : `INSERT INTO payments (sale_id, amount, payment_method)
+                           VALUES (?, ?, ?)`,
+                    paymentDate
+                        ? [saleId, initialPayment, paymentMethod, paymentDate]
+                        : [saleId, initialPayment, paymentMethod]
                 );
             }
 
             // Create debt record if there's remaining amount
             const remainingAmount = totalAmount - initialPayment;
             if (remainingAmount > 0 && debtConfig) {
-                const graceEndDate = new Date();
-                graceEndDate.setMonth(graceEndDate.getMonth() + (debtConfig.grace_period_months || 0));
+                // Calculate grace_end_date based on sale_date, not current date
+                const baseDateForGrace = saleDate ? new Date(saleDate) : new Date();
+                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + (debtConfig.grace_period_months || 0));
 
                 await conn.execute(
                     `INSERT INTO debts
@@ -173,7 +182,7 @@ class Sale {
                         debtConfig.markup_type,
                         debtConfig.markup_value,
                         debtConfig.grace_period_months || 0,
-                        graceEndDate.toISOString().split('T')[0]
+                        baseDateForGrace.toISOString().split('T')[0]
                     ]
                 );
             }
