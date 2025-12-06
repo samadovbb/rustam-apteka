@@ -328,6 +328,17 @@ class SalesController {
             const Sale = require('../models/Sale');
             const Debt = require('../models/Debt');
 
+            // Payment method translation helper
+            const translatePaymentMethod = (method) => {
+                const translations = {
+                    'cash': 'naqt',
+                    'card': 'karta',
+                    'transfer': 'o\'tkazma',
+                    'other': 'boshqa'
+                };
+                return translations[method] || method;
+            };
+
             const sale = await Sale.findById(req.params.id);
             const items = await Sale.getItems(req.params.id);
             const payments = await Sale.getPayments(req.params.id);
@@ -471,7 +482,7 @@ class SalesController {
                         '',
                         new Date(payment.payment_date).toLocaleDateString('ru-RU'),
                         `$${parseFloat(payment.amount).toFixed(2)}`,
-                        payment.payment_method,
+                        translatePaymentMethod(payment.payment_method),
                         ''
                     ]);
                 });
@@ -505,7 +516,7 @@ class SalesController {
                         '',
                         new Date(payment.payment_date).toLocaleDateString('ru-RU'),
                         `-$${parseFloat(payment.amount).toFixed(2)}`,
-                        payment.payment_method,
+                        translatePaymentMethod(payment.payment_method),
                         ''
                     ]);
                     row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };

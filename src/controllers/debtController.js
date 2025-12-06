@@ -149,6 +149,17 @@ class DebtController {
         try {
             const ExcelJS = require('exceljs');
 
+            // Payment method translation helper
+            const translatePaymentMethod = (method) => {
+                const translations = {
+                    'cash': 'naqt',
+                    'card': 'karta',
+                    'transfer': 'o\'tkazma',
+                    'other': 'boshqa'
+                };
+                return translations[method] || method;
+            };
+
             const debt = await Debt.findById(req.params.id);
 
             if (!debt) {
@@ -248,7 +259,7 @@ class DebtController {
                         '',
                         new Date(payment.payment_date).toLocaleDateString('ru-RU'),
                         `-$${parseFloat(payment.amount).toFixed(2)}`,
-                        payment.payment_method
+                        translatePaymentMethod(payment.payment_method)
                     ]);
                     row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
                     row.eachCell((cell, colNumber) => {
