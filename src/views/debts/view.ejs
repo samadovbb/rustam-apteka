@@ -74,7 +74,7 @@
                 </div>
 
                 <% if (paymentHistory.length > 0) { %>
-                    <h4><%= lang.sales.paymentHistory %></h4>
+                    <h4>Qarz bo'yicha to'lovlar tarixi (qarzni kamaytiradi)</h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -88,7 +88,7 @@
                                 <% paymentHistory.forEach(payment => { %>
                                     <tr>
                                         <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
-                                        <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
+                                        <td style="color: green; font-weight: bold;">-$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
                                     </tr>
                                 <% }) %>
@@ -98,7 +98,7 @@
                 <% } %>
 
                 <% if (markupLogs.length > 0) { %>
-                    <h4><%= lang.debts.markupHistory %></h4>
+                    <h4>Ustama tarixi (qarzni oshiradi)</h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -114,11 +114,11 @@
                                     <tr>
                                         <td><%= new Date(log.calculation_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(log.remaining_debt || 0).toFixed(2) %></td>
-                                        <td>
+                                        <td style="color: orange; font-weight: bold;">
                                             <% if (debt.markup_type === 'fixed') { %>
                                                 +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
                                             <% } else { %>
-                                                <%= parseFloat(log.markup_percent || 0).toFixed(2) %>% = $<%= parseFloat(log.markup_value || 0).toFixed(2) %>
+                                                <%= parseFloat(log.markup_percent || 0).toFixed(2) %>% = +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
                                             <% } %>
                                         </td>
                                         <td>$<%= parseFloat(log.total_after_markup || 0).toFixed(2) %></td>

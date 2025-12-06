@@ -165,6 +165,100 @@
                         </form>
                     </div>
                 <% } %>
+
+                <!-- Debt Information Section -->
+                <% if (debt) { %>
+                    <hr style="margin: 30px 0;">
+                    <h3>Qarz ma'lumotlari</h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <p><strong>Asl qarz:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
+                        <p><strong>Joriy qarz (asosiy):</strong> $<%= parseFloat(debtCalculation.baseAmount || 0).toFixed(2) %></p>
+
+                        <% if (debtCalculation.monthsOverdue > 0) { %>
+                            <p style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                                <strong>Imtiyoz muddati tugagan:</strong> <%= debtCalculation.monthsOverdue %> oy oldin<br>
+                                <strong>Ustama (hisoblangan):</strong>
+                                <% if (debt.markup_type === 'fixed') { %>
+                                    $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> × <%= debtCalculation.monthsOverdue %> oy =
+                                <% } else { %>
+                                    <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% × <%= debtCalculation.monthsOverdue %> oy =
+                                <% } %>
+                                <span style="color: orange; font-weight: bold;">$<%= parseFloat(debtCalculation.markupAmount || 0).toFixed(2) %></span><br>
+                                <strong>Jami qarz (ustama bilan):</strong>
+                                <span style="color: red; font-size: 1.2em; font-weight: bold;">$<%= parseFloat(debtCalculation.totalWithMarkup || 0).toFixed(2) %></span>
+                            </p>
+                        <% } %>
+
+                        <p><strong>Holat:</strong>
+                            <% if (debt.status === 'active') { %>
+                                <span class="badge badge-danger">Faol</span>
+                            <% } else if (debt.status === 'paid') { %>
+                                <span class="badge badge-success">To'landi</span>
+                            <% } else { %>
+                                <span class="badge badge-secondary">Bekor qilindi</span>
+                            <% } %>
+                        </p>
+                    </div>
+
+                    <!-- Debt Payment History -->
+                    <% if (debtPaymentHistory.length > 0) { %>
+                        <h4>Qarz bo'yicha to'lovlar tarixi</h4>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sana</th>
+                                        <th>Summa</th>
+                                        <th>To'lov turi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% debtPaymentHistory.forEach(payment => { %>
+                                        <tr>
+                                            <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
+                                            <td style="color: green; font-weight: bold;">-$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
+                                            <td><%= payment.payment_method %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+
+                    <!-- Markup History -->
+                    <% if (markupLogs.length > 0) { %>
+                        <h4 style="margin-top: 20px;">Ustama tarixi</h4>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sana</th>
+                                        <th>Qarz (oldingi)</th>
+                                        <th>Ustama</th>
+                                        <th>Qarz (keyingi)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% markupLogs.forEach(log => { %>
+                                        <tr>
+                                            <td><%= new Date(log.calculation_date).toLocaleDateString('ru-RU') %></td>
+                                            <td>$<%= parseFloat(log.remaining_debt || 0).toFixed(2) %></td>
+                                            <td style="color: orange; font-weight: bold;">
+                                                <% if (debt.markup_type === 'fixed') { %>
+                                                    +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
+                                                <% } else { %>
+                                                    <%= parseFloat(log.markup_percent || 0).toFixed(2) %>% = +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
+                                                <% } %>
+                                            </td>
+                                            <td>$<%= parseFloat(log.total_after_markup || 0).toFixed(2) %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+                <% } %>
             </div>
         </div>
     </main>

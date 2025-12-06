@@ -114,12 +114,41 @@ class SalesController {
                 });
             }
 
+            // Fetch debt information if exists
+            const Debt = require('../models/Debt');
+            let debt = null;
+            let debtCalculation = null;
+            let debtPaymentHistory = [];
+            let markupLogs = [];
+
+            if (sale.debt_id) {
+                debt = await Debt.findById(sale.debt_id);
+                if (debt) {
+                    // Calculate current debt with markup
+                    debtCalculation = Debt.calculateDebtWithMarkup(debt);
+
+                    // Get debt payment history
+                    debtPaymentHistory = await Debt.getPaymentHistory(sale.debt_id);
+
+                    // Get markup logs
+                    if (debt.markup_type === 'fixed') {
+                        markupLogs = await Debt.getFixedMarkupLogs(sale.debt_id);
+                    } else {
+                        markupLogs = await Debt.getPercentMarkupLogs(sale.debt_id);
+                    }
+                }
+            }
+
             res.render('sales/view', {
                 title: `Sale #${sale.id}`,
                 sale,
                 items,
                 payments,
-                profit
+                profit,
+                debt,
+                debtCalculation,
+                debtPaymentHistory,
+                markupLogs
             });
         } catch (error) {
             console.error('Sale view error:', error);
