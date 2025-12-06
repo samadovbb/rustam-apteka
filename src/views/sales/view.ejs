@@ -16,6 +16,9 @@
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
                     <div>
+                        <a href="/sales/<%= sale.id %>/export" class="btn btn-success" style="margin-right: 10px; background-color: #28a745;">
+                            📊 Excel ga eksport qilish
+                        </a>
                         <button onclick="deleteSale(<%= sale.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
                         <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
                     </div>

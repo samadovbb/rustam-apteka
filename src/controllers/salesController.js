@@ -320,6 +320,163 @@ class SalesController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+
+    // Export sale to Excel
+    static async exportToExcel(req, res) {
+        try {
+            const ExcelJS = require('exceljs');
+            const Sale = require('../models/Sale');
+            const Debt = require('../models/Debt');
+
+            const sale = await Sale.findById(req.params.id);
+            const items = await Sale.getItems(req.params.id);
+            const payments = await Sale.getPayments(req.params.id);
+
+            if (!sale) {
+                return res.status(404).send('Sale not found');
+            }
+
+            // Fetch debt information if exists
+            let debt = null;
+            let debtCalculation = null;
+
+            if (sale.debt_id) {
+                debt = await Debt.findById(sale.debt_id);
+                if (debt) {
+                    debtCalculation = Debt.calculateDebtWithMarkup(debt);
+                }
+            }
+
+            // Create workbook
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Hisob');
+
+            // Set column widths
+            worksheet.columns = [
+                { width: 5 },
+                { width: 30 },
+                { width: 15 },
+                { width: 15 },
+                { width: 15 }
+            ];
+
+            // Title
+            worksheet.mergeCells('A1:E1');
+            worksheet.getCell('A1').value = 'HISOB-FAKTURA';
+            worksheet.getCell('A1').font = { size: 18, bold: true };
+            worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+            // Sale info
+            worksheet.addRow([]);
+            worksheet.addRow(['', 'Hisob raqami:', `#${sale.id}`]);
+            worksheet.addRow(['', 'Sana:', new Date(sale.sale_date).toLocaleDateString('ru-RU')]);
+            worksheet.addRow(['', 'Mijoz:', sale.customer_name]);
+            worksheet.addRow(['', 'Telefon:', sale.customer_phone]);
+            worksheet.addRow(['', 'Sotuvchi:', sale.seller_name]);
+            worksheet.addRow([]);
+
+            // Items table header
+            const headerRow = worksheet.addRow(['', 'Mahsulot', 'Miqdor', 'Narx', 'Jami']);
+            headerRow.font = { bold: true };
+            headerRow.eachCell((cell) => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFE0E0E0' }
+                };
+                cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            // Items
+            items.forEach(item => {
+                const row = worksheet.addRow([
+                    '',
+                    item.product_name,
+                    item.quantity,
+                    `$${parseFloat(item.unit_price).toFixed(2)}`,
+                    `$${parseFloat(item.subtotal).toFixed(2)}`
+                ]);
+                row.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+            });
+
+            // Total
+            worksheet.addRow([]);
+            const totalRow = worksheet.addRow(['', '', '', 'Jami:', `$${parseFloat(sale.total_amount).toFixed(2)}`]);
+            totalRow.font = { bold: true, size: 12 };
+            totalRow.getCell(5).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFFF00' }
+            };
+
+            // Payment info
+            worksheet.addRow([]);
+            worksheet.addRow(['', 'To\'langan:', `$${parseFloat(sale.paid_amount).toFixed(2)}`]);
+            const remainingRow = worksheet.addRow(['', 'Qoldiq:', `$${parseFloat(sale.remaining_amount).toFixed(2)}`]);
+            if (sale.remaining_amount > 0) {
+                remainingRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
+            }
+
+            // Debt info
+            if (debt && debtCalculation) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'QARZ MA\'LUMOTLARI']).font = { bold: true, size: 12 };
+                worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
+                worksheet.addRow(['', 'Joriy qarz:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
+
+                if (debtCalculation.monthsOverdue > 0) {
+                    worksheet.addRow(['', 'Imtiyoz muddati tugagan:', `${debtCalculation.monthsOverdue} oy oldin`]);
+                    worksheet.addRow(['', 'Ustama:', `$${parseFloat(debtCalculation.markupAmount).toFixed(2)}`]);
+                    const totalDebtRow = worksheet.addRow(['', 'Jami qarz (ustama bilan):', `$${parseFloat(debtCalculation.totalWithMarkup).toFixed(2)}`]);
+                    totalDebtRow.font = { bold: true };
+                    totalDebtRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
+                }
+            }
+
+            // Payment history
+            if (payments.length > 0) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'TO\'LOVLAR TARIXI']).font = { bold: true, size: 12 };
+                const paymentHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Usul', '']);
+                paymentHeaderRow.font = { bold: true };
+
+                payments.forEach(payment => {
+                    worksheet.addRow([
+                        '',
+                        new Date(payment.payment_date).toLocaleDateString('ru-RU'),
+                        `$${parseFloat(payment.amount).toFixed(2)}`,
+                        payment.payment_method,
+                        ''
+                    ]);
+                });
+            }
+
+            // Set response headers
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=Hisob_${sale.id}_${Date.now()}.xlsx`);
+
+            // Write to response
+            await workbook.xlsx.write(res);
+            res.end();
+        } catch (error) {
+            console.error('Export to Excel error:', error);
+            res.status(500).send('Error generating Excel file');
+        }
+    }
 }
 
 module.exports = SalesController;

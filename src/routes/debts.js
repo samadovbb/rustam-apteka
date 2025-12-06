@@ -13,6 +13,9 @@ router.post('/:id/status', DebtController.updateStatus);
 // New feature: change grace period
 router.put('/:id/grace-period', DebtController.changeGracePeriod);
 
+// Export to Excel
+router.get('/:id/export', DebtController.exportToExcel);
+
 // API routes
 router.get('/api/latest-payment-date', DebtController.getLatestPaymentDate);
 

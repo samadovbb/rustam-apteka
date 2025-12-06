@@ -19,6 +19,9 @@ router.put('/:id/seller', SalesController.changeSeller);
 router.post('/:id/return', SalesController.returnItems);
 router.get('/:id/returns', SalesController.getReturns);
 
+// Export to Excel
+router.get('/:id/export', SalesController.exportToExcel);
+
 // API routes
 router.get('/api/seller/:seller_id/inventory', SalesController.getSellerInventory);
 router.get('/api/latest-date', SalesController.getLatestDate);

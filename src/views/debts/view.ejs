@@ -15,7 +15,12 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.debts.debtDetails %></h3>
-                    <a href="/debts" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    <div>
+                        <a href="/debts/<%= debt.id %>/export" class="btn btn-success" style="margin-right: 10px; background-color: #28a745;">
+                            📊 Excel ga eksport qilish
+                        </a>
+                        <a href="/debts" class="btn btn-secondary"><%= lang.common.backToList %></a>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
