@@ -339,11 +339,23 @@ class SalesController {
             // Fetch debt information if exists
             let debt = null;
             let debtCalculation = null;
+            let debtPaymentHistory = [];
+            let markupLogs = [];
 
             if (sale.debt_id) {
                 debt = await Debt.findById(sale.debt_id);
                 if (debt) {
                     debtCalculation = Debt.calculateDebtWithMarkup(debt);
+
+                    // Get debt payment history
+                    debtPaymentHistory = await Debt.getPaymentHistory(sale.debt_id);
+
+                    // Get markup logs
+                    if (debt.markup_type === 'fixed') {
+                        markupLogs = await Debt.getFixedMarkupLogs(sale.debt_id);
+                    } else {
+                        markupLogs = await Debt.getPercentMarkupLogs(sale.debt_id);
+                    }
                 }
             }
 
@@ -462,6 +474,100 @@ class SalesController {
                         payment.payment_method,
                         ''
                     ]);
+                });
+            }
+
+            // Debt payment history (separate from sale payments)
+            if (debtPaymentHistory.length > 0) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'QARZ BO\'YICHA TO\'LOVLAR TARIXI (qarzni kamaytiradi)']).font = { bold: true, size: 12 };
+
+                const debtPaymentHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Usul', '']);
+                debtPaymentHeaderRow.font = { bold: true };
+                debtPaymentHeaderRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1 && colNumber <= 4) {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFE0FFE0' }
+                        };
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                debtPaymentHistory.forEach(payment => {
+                    const row = worksheet.addRow([
+                        '',
+                        new Date(payment.payment_date).toLocaleDateString('ru-RU'),
+                        `-$${parseFloat(payment.amount).toFixed(2)}`,
+                        payment.payment_method,
+                        ''
+                    ]);
+                    row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber > 1 && colNumber <= 4) {
+                            cell.border = {
+                                top: { style: 'thin' },
+                                left: { style: 'thin' },
+                                bottom: { style: 'thin' },
+                                right: { style: 'thin' }
+                            };
+                        }
+                    });
+                });
+            }
+
+            // Markup history
+            if (markupLogs.length > 0) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'USTAMA TARIXI (qarzni oshiradi)']).font = { bold: true, size: 12 };
+
+                const markupHeaderRow = worksheet.addRow(['', 'Sana', 'Qarz (oldingi)', 'Ustama', 'Qarz (keyingi)']);
+                markupHeaderRow.font = { bold: true };
+                markupHeaderRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFFFE0E0' }
+                        };
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                markupLogs.forEach(log => {
+                    const markupValue = debt.markup_type === 'fixed'
+                        ? `+$${parseFloat(log.markup_value || 0).toFixed(2)}`
+                        : `${parseFloat(log.markup_percent || 0).toFixed(2)}% = +$${parseFloat(log.markup_value || 0).toFixed(2)}`;
+
+                    const row = worksheet.addRow([
+                        '',
+                        new Date(log.calculation_date).toLocaleDateString('ru-RU'),
+                        `$${parseFloat(log.remaining_debt || 0).toFixed(2)}`,
+                        markupValue,
+                        `$${parseFloat(log.total_after_markup || 0).toFixed(2)}`
+                    ]);
+                    row.getCell(4).font = { color: { argb: 'FFFF9900' }, bold: true };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber > 1) {
+                            cell.border = {
+                                top: { style: 'thin' },
+                                left: { style: 'thin' },
+                                bottom: { style: 'thin' },
+                                right: { style: 'thin' }
+                            };
+                        }
+                    });
                 });
             }
 
