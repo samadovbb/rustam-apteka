@@ -151,13 +151,14 @@ class DebtController {
 
             // Payment method translation helper
             const translatePaymentMethod = (method) => {
+                if (!method) return method;
                 const translations = {
                     'cash': 'naqt',
                     'card': 'karta',
                     'transfer': 'o\'tkazma',
                     'other': 'boshqa'
                 };
-                return translations[method] || method;
+                return translations[method.toLowerCase()] || method;
             };
 
             const debt = await Debt.findById(req.params.id);

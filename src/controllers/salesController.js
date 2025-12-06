@@ -330,13 +330,14 @@ class SalesController {
 
             // Payment method translation helper
             const translatePaymentMethod = (method) => {
+                if (!method) return method;
                 const translations = {
                     'cash': 'naqt',
                     'card': 'karta',
                     'transfer': 'o\'tkazma',
                     'other': 'boshqa'
                 };
-                return translations[method] || method;
+                return translations[method.toLowerCase()] || method;
             };
 
             const sale = await Sale.findById(req.params.id);
