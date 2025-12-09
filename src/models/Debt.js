@@ -76,6 +76,16 @@ class Debt {
         const graceEnd = new Date(debt.grace_end_date);
         const currentAmount = parseFloat(debt.current_amount);
 
+        // If no markup type is set, return current amount with no markup
+        if (!debt.markup_type || !debt.markup_value) {
+            return {
+                baseAmount: currentAmount,
+                monthsOverdue: 0,
+                markupAmount: 0,
+                totalWithMarkup: currentAmount
+            };
+        }
+
         // If still in grace period, no markup applies
         if (now < graceEnd) {
             return {
@@ -96,7 +106,7 @@ class Debt {
         if (debt.markup_type === 'fixed') {
             // Fixed markup per month
             markupAmount = parseFloat(debt.markup_value) * monthsOverdue;
-        } else {
+        } else if (debt.markup_type === 'percent') {
             // Percent markup - simple interest (not compound)
             const markupPercent = parseFloat(debt.markup_value);
             markupAmount = (currentAmount * markupPercent * monthsOverdue) / 100;
@@ -245,6 +255,8 @@ class Debt {
         const sql = `
             SELECT id FROM debts
             WHERE status = 'active'
+            AND markup_type IS NOT NULL
+            AND markup_value IS NOT NULL
             AND grace_end_date < CURDATE()
             AND (last_markup_date IS NULL OR last_markup_date < DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
         `;

@@ -181,7 +181,7 @@ class Sale {
                         remainingAmount,
                         remainingAmount,
                         debtConfig?.markup_type || null,
-                        debtConfig?.markup_value || 0,
+                        debtConfig?.markup_value || null,
                         gracePeriodMonths,
                         baseDateForGrace.toISOString().split('T')[0]
                     ]
