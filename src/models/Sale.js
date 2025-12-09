@@ -164,10 +164,11 @@ class Sale {
 
             // Create debt record if there's remaining amount
             const remainingAmount = totalAmount - initialPayment;
-            if (remainingAmount > 0 && debtConfig) {
+            if (remainingAmount > 0) {
                 // Calculate grace_end_date based on sale_date, not current date
                 const baseDateForGrace = saleDate ? new Date(saleDate) : new Date();
-                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + (debtConfig.grace_period_months || 0));
+                const gracePeriodMonths = debtConfig?.grace_period_months || 0;
+                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + gracePeriodMonths);
 
                 await conn.execute(
                     `INSERT INTO debts
@@ -179,9 +180,9 @@ class Sale {
                         customerId,
                         remainingAmount,
                         remainingAmount,
-                        debtConfig.markup_type,
-                        debtConfig.markup_value,
-                        debtConfig.grace_period_months || 0,
+                        debtConfig?.markup_type || null,
+                        debtConfig?.markup_value || 0,
+                        gracePeriodMonths,
                         baseDateForGrace.toISOString().split('T')[0]
                     ]
                 );
@@ -221,14 +222,30 @@ class Sale {
 
             const sale = sales[0];
             const oldData = { ...sale };
-            const remainingAmount = sale.total_amount - sale.paid_amount;
+
+            // Check if there's an active debt
+            const [debts] = await conn.execute(
+                'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
+                [saleId]
+            );
+
+            // Calculate remaining amount considering debt with markup
+            const remainingAmount = debts[0] ? debts[0].current_amount : (sale.total_amount - sale.paid_amount);
 
             if (amount > remainingAmount) {
                 throw new Error('Payment amount exceeds remaining balance');
             }
 
             const newPaidAmount = sale.paid_amount + amount;
-            const newStatus = newPaidAmount >= sale.total_amount ? 'paid' : 'partial';
+
+            // Determine new status: only mark as 'paid' if no active debt or debt will be fully paid
+            let newStatus;
+            if (debts[0]) {
+                const newDebtAmount = Math.max(0, debts[0].current_amount - amount);
+                newStatus = newDebtAmount === 0 ? 'paid' : 'partial';
+            } else {
+                newStatus = newPaidAmount >= sale.total_amount ? 'paid' : 'partial';
+            }
 
             // Update sale
             await conn.execute(
@@ -247,11 +264,6 @@ class Sale {
             );
 
             // Update debt if exists
-            const [debts] = await conn.execute(
-                'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
-                [saleId]
-            );
-
             if (debts[0]) {
                 const newDebtAmount = Math.max(0, debts[0].current_amount - amount);
                 const debtStatus = newDebtAmount === 0 ? 'paid' : 'active';

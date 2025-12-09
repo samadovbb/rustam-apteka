@@ -57,6 +57,10 @@ app.use('/reports', reportsRoutes);
 
 // 404 handler
 app.use((req, res) => {
+    // Ensure lang is available even if middleware didn't run
+    if (!res.locals.lang) {
+        res.locals.lang = require('./config/lang-uz');
+    }
     res.status(404).render('error', {
         title: 'Page Not Found',
         message: 'The page you are looking for does not exist',
@@ -67,6 +71,10 @@ app.use((req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
     console.error('Error:', err);
+    // Ensure lang is available even if middleware didn't run
+    if (!res.locals.lang) {
+        res.locals.lang = require('./config/lang-uz');
+    }
     res.status(err.status || 500).render('error', {
         title: 'Error',
         message: err.message || 'Internal Server Error',
