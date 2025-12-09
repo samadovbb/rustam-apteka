@@ -80,7 +80,7 @@ class SalesController {
                 seller_id,
                 parsedItems,
                 parseFloat(initial_payment) || 0,
-                payment_method || 'cash',
+                payment_method || 'naqt',
                 debtConfig,
                 sale_date || null,
                 req.user
@@ -162,7 +162,7 @@ class SalesController {
             await Sale.addPayment(
                 req.params.id,
                 parseFloat(amount),
-                payment_method || 'cash',
+                payment_method || 'naqt',
                 payment_date || null,
                 req.user
             );
@@ -332,7 +332,7 @@ class SalesController {
             const translatePaymentMethod = (method) => {
                 if (!method) return method;
                 const translations = {
-                    'cash': 'naqt',
+                    'naqt': 'naqt',
                     'card': 'karta',
                     'transfer': 'o\'tkazma',
                     'other': 'boshqa'

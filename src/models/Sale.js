@@ -68,7 +68,7 @@ class Sale {
         return await query(sql, [saleId]);
     }
 
-    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null, user = null) {
+    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'naqt', debtConfig = null, saleDate = null, user = null) {
         const AuditLog = require('./AuditLog');
 
         return await transaction(async (conn) => {
@@ -205,7 +205,7 @@ class Sale {
         });
     }
 
-    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null, user = null) {
+    static async addPayment(saleId, amount, paymentMethod = 'naqt', paymentDate = null, user = null) {
         const AuditLog = require('./AuditLog');
 
         return await transaction(async (conn) => {

@@ -153,7 +153,7 @@ class DebtController {
             const translatePaymentMethod = (method) => {
                 if (!method) return method;
                 const translations = {
-                    'cash': 'naqt',
+                    'naqt': 'naqt',
                     'card': 'karta',
                     'transfer': 'o\'tkazma',
                     'other': 'boshqa'

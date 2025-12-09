@@ -215,7 +215,7 @@ CREATE TABLE payments (
     sale_id INT NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    payment_method ENUM('cash', 'card', 'transfer', 'other') DEFAULT 'cash',
+    payment_method ENUM('naqt', 'card', 'transfer', 'other') DEFAULT 'naqt',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
