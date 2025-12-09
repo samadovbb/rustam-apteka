@@ -180,33 +180,5 @@ function checkDebtSection() {
     }
 }
 
-// Form submission
-document.getElementById('salesForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const items = [];
-    document.querySelectorAll('.product-item').forEach(row => {
-        const productId = row.querySelector('.product-select').value;
-        const quantity = row.querySelector('.quantity-input').value;
-        const price = row.querySelector('.price-input').value;
-
-        if (productId && quantity && price) {
-            items.push({
-                product_id: parseInt(productId),
-                quantity: parseInt(quantity),
-                unit_price: parseFloat(price)
-            });
-        }
-    });
-
-    if (items.length === 0) {
-        alert('Kamida bitta mahsulot qo\'shing');
-        return;
-    }
-
-    document.getElementById('itemsData').value = JSON.stringify(items);
-    this.submit();
-});
-
 // Attach listeners to first row
 attachProductRowListeners(document.querySelector('.product-item'));

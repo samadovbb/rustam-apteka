@@ -155,6 +155,39 @@ class ProductController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // View product details
+    static async view(req, res) {
+        try {
+            const product = await Product.findById(req.params.id);
+            if (!product) {
+                return res.status(404).render('error', {
+                    title: 'Not Found',
+                    message: 'Product not found',
+                    error: {}
+                });
+            }
+
+            const intakeHistory = await Product.getIntakeHistory(req.params.id);
+            const salesHistory = await Product.getSalesHistory(req.params.id);
+            const transferHistory = await Product.getTransferHistory(req.params.id);
+            const stats = await Product.getStats(req.params.id);
+            const warehouseStock = await Product.getWarehouseStock(req.params.id);
+
+            res.render('products/view', {
+                title: `${product.name} - Details`,
+                product,
+                intakeHistory,
+                salesHistory,
+                transferHistory,
+                stats,
+                warehouseStock
+            });
+        } catch (error) {
+            console.error('Product view error:', error);
+            res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
 }
 
 module.exports = ProductController;

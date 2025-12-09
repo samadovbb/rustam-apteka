@@ -1,0 +1,152 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Supplier Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.suppliers.supplierInfo || 'Supplier Information' %></h3>
+                    <div>
+                        <a href="/suppliers/<%= supplier.id %>/edit" class="btn btn-secondary"><%= lang.buttons.edit %></a>
+                        <a href="/suppliers" class="btn btn-outline"><%= lang.buttons.back || 'Back' %></a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div>
+                            <strong><%= lang.table.name %>:</strong> <%= supplier.name %>
+                        </div>
+                        <div>
+                            <strong><%= lang.table.phone %>:</strong> <%= supplier.phone || '-' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.table.email || 'Email' %>:</strong> <%= supplier.email || '-' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.table.address %>:</strong> <%= supplier.address || '-' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.suppliers.statistics || 'Statistics' %></h3>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div>
+                            <strong><%= lang.suppliers.totalIntakes || 'Total Intakes' %>:</strong><br>
+                            <%= stats.total_intakes || 0 %>
+                        </div>
+                        <div>
+                            <strong><%= lang.suppliers.totalSpent || 'Total Spent' %>:</strong><br>
+                            <%= parseFloat(stats.total_spent || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                        </div>
+                        <div>
+                            <strong><%= lang.suppliers.totalItems || 'Total Items' %>:</strong><br>
+                            <%= stats.total_items || 0 %> <%= lang.common.units || 'units' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.suppliers.topProducts || 'Top Products from this Supplier' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.products.product || 'Product' %></th>
+                                <th><%= lang.table.barcode %></th>
+                                <th><%= lang.table.quantity %></th>
+                                <th><%= lang.table.total || 'Total Value' %></th>
+                                <th><%= lang.suppliers.intakeCount || 'Intake Count' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topProducts.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center"><%= lang.suppliers.noProducts || 'No products' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% topProducts.forEach(product => { %>
+                                    <tr>
+                                        <td>#<%= product.id %></td>
+                                        <td><%= product.name %></td>
+                                        <td><%= product.barcode %></td>
+                                        <td><%= product.total_quantity %></td>
+                                        <td><%= parseFloat(product.total_value).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td><%= product.intake_count %></td>
+                                        <td>
+                                            <a href="/products/<%= product.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Stock Intake History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><%= lang.suppliers.intakeHistory || 'Stock Intake History' %></h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><%= lang.table.id %></th>
+                                <th><%= lang.intakeDate || 'Date' %></th>
+                                <th><%= lang.table.items || 'Items' %></th>
+                                <th><%= lang.totalAmount || 'Total Amount' %></th>
+                                <th><%= lang.table.notes || 'Notes' %></th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (intakes.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center"><%= lang.suppliers.noIntakes || 'No intakes found' %></td>
+                                </tr>
+                            <% } else { %>
+                                <% intakes.forEach(intake => { %>
+                                    <tr>
+                                        <td>#<%= intake.id %></td>
+                                        <td><%= new Date(intake.intake_date).toLocaleDateString() %></td>
+                                        <td><%= intake.items_count %></td>
+                                        <td><%= parseFloat(intake.total_amount).toFixed(2) %> <%= lang.common.currency || 'UZS' %></td>
+                                        <td><%= intake.notes || '-' %></td>
+                                        <td>
+                                            <a href="/stock-intake/<%= intake.id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>

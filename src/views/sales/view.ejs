@@ -16,6 +16,9 @@
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
                     <div>
+                        <a href="/sales/<%= sale.id %>/export" class="btn btn-success" style="margin-right: 10px; background-color: #28a745;">
+                            📊 Excel ga eksport qilish
+                        </a>
                         <button onclick="deleteSale(<%= sale.id %>)" class="btn btn-danger" style="margin-right: 10px;">O'chirish</button>
                         <a href="/sales" class="btn btn-secondary"><%= lang.common.backToList %></a>
                     </div>
@@ -32,7 +35,13 @@
                         </button>
                     </p>
                     <p><strong><%= lang.table.customer %>:</strong> <%= sale.customer_name %> (<%= sale.customer_phone %>)</p>
-                    <p><strong><%= lang.table.seller %>:</strong> <%= sale.seller_name %></p>
+                    <p>
+                        <strong><%= lang.table.seller %>:</strong>
+                        <span id="seller-name-display"><%= sale.seller_name %></span>
+                        <button onclick="changeSeller(<%= sale.id %>, <%= sale.seller_id %>)" class="btn btn-sm btn-link" title="Sotuvchini o'zgartirish" style="padding: 0 5px; font-size: 0.9em;">
+                            ✏️
+                        </button>
+                    </p>
                     <p><strong><%= lang.common.status %>:</strong>
                         <% if (sale.status === 'paid') { %>
                             <span class="badge badge-success"><%= lang.status.paid %></span>
@@ -44,11 +53,17 @@
                     </p>
                 </div>
 
-                <h4><%= lang.sales.products %></h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;"><%= lang.sales.products %></h4>
+                    <button onclick="showReturnDialog(<%= sale.id %>)" class="btn btn-warning">Mahsulotlarni qaytarish</button>
+                </div>
                 <div class="table-responsive">
-                    <table>
+                    <table id="items-table">
                         <thead>
                             <tr>
+                                <th style="width: 50px;">
+                                    <input type="checkbox" id="select-all-items" onchange="toggleAllItems(this)">
+                                </th>
                                 <th><%= lang.table.product %></th>
                                 <th><%= lang.table.barcode %></th>
                                 <th><%= lang.table.quantity %></th>
@@ -59,6 +74,14 @@
                         <tbody>
                             <% items.forEach(item => { %>
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="item-checkbox"
+                                               data-item-id="<%= item.id %>"
+                                               data-product-id="<%= item.product_id %>"
+                                               data-quantity="<%= item.quantity %>"
+                                               data-unit-price="<%= item.unit_price %>"
+                                               data-product-name="<%= item.product_name %>">
+                                    </td>
                                     <td><%= item.product_name %></td>
                                     <td><%= item.barcode %></td>
                                     <td><%= item.quantity %></td>
@@ -69,6 +92,7 @@
                         </tbody>
                         <tfoot>
                             <tr style="font-weight: bold; background-color: #f8f9fa;">
+                                <td></td>
                                 <td colspan="2" style="text-align: right;">Jami:</td>
                                 <td><%= items.reduce((sum, item) => sum + item.quantity, 0) %></td>
                                 <td></td>
@@ -143,6 +167,100 @@
                             <button type="submit" class="btn btn-primary"><%= lang.sales.addPayment %></button>
                         </form>
                     </div>
+                <% } %>
+
+                <!-- Debt Information Section -->
+                <% if (debt) { %>
+                    <hr style="margin: 30px 0;">
+                    <h3>Qarz ma'lumotlari</h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <p><strong>Asl qarz:</strong> $<%= parseFloat(debt.original_amount || 0).toFixed(2) %></p>
+                        <p><strong>Joriy qarz (asosiy):</strong> $<%= parseFloat(debtCalculation.baseAmount || 0).toFixed(2) %></p>
+
+                        <% if (debtCalculation.monthsOverdue > 0) { %>
+                            <p style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                                <strong>Imtiyoz muddati tugagan:</strong> <%= debtCalculation.monthsOverdue %> oy oldin<br>
+                                <strong>Ustama (hisoblangan):</strong>
+                                <% if (debt.markup_type === 'fixed') { %>
+                                    $<%= parseFloat(debt.markup_value || 0).toFixed(2) %> × <%= debtCalculation.monthsOverdue %> oy =
+                                <% } else { %>
+                                    <%= parseFloat(debt.markup_value || 0).toFixed(2) %>% × <%= debtCalculation.monthsOverdue %> oy =
+                                <% } %>
+                                <span style="color: orange; font-weight: bold;">$<%= parseFloat(debtCalculation.markupAmount || 0).toFixed(2) %></span><br>
+                                <strong>Jami qarz (ustama bilan):</strong>
+                                <span style="color: red; font-size: 1.2em; font-weight: bold;">$<%= parseFloat(debtCalculation.totalWithMarkup || 0).toFixed(2) %></span>
+                            </p>
+                        <% } %>
+
+                        <p><strong>Holat:</strong>
+                            <% if (debt.status === 'active') { %>
+                                <span class="badge badge-danger">Faol</span>
+                            <% } else if (debt.status === 'paid') { %>
+                                <span class="badge badge-success">To'landi</span>
+                            <% } else { %>
+                                <span class="badge badge-secondary">Bekor qilindi</span>
+                            <% } %>
+                        </p>
+                    </div>
+
+                    <!-- Debt Payment History -->
+                    <% if (debtPaymentHistory.length > 0) { %>
+                        <h4>Qarz bo'yicha to'lovlar tarixi</h4>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sana</th>
+                                        <th>Summa</th>
+                                        <th>To'lov turi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% debtPaymentHistory.forEach(payment => { %>
+                                        <tr>
+                                            <td><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
+                                            <td style="color: green; font-weight: bold;">-$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
+                                            <td><%= payment.payment_method %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+
+                    <!-- Markup History -->
+                    <% if (markupLogs.length > 0) { %>
+                        <h4 style="margin-top: 20px;">Ustama tarixi</h4>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Sana</th>
+                                        <th>Qarz (oldingi)</th>
+                                        <th>Ustama</th>
+                                        <th>Qarz (keyingi)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% markupLogs.forEach(log => { %>
+                                        <tr>
+                                            <td><%= new Date(log.calculation_date).toLocaleDateString('ru-RU') %></td>
+                                            <td>$<%= parseFloat(log.remaining_debt || 0).toFixed(2) %></td>
+                                            <td style="color: orange; font-weight: bold;">
+                                                <% if (debt.markup_type === 'fixed') { %>
+                                                    +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
+                                                <% } else { %>
+                                                    <%= parseFloat(log.markup_percent || 0).toFixed(2) %>% = +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
+                                                <% } %>
+                                            </td>
+                                            <td>$<%= parseFloat(log.total_after_markup || 0).toFixed(2) %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
                 <% } %>
             </div>
         </div>
@@ -287,6 +405,172 @@ async function editPaymentDate(saleId, paymentId, currentDate) {
     } catch (error) {
         console.error('Error:', error);
         Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
+    }
+}
+
+// Change seller function
+async function changeSeller(saleId, currentSellerId) {
+    try {
+        // Fetch list of sellers
+        const response = await fetch('/sellers/api/all');
+        const sellers = await response.json();
+
+        // Create options for the select
+        const options = {};
+        sellers.forEach(seller => {
+            options[seller.id] = seller.full_name;
+        });
+
+        const { value: newSellerId } = await Swal.fire({
+            title: 'Sotuvchini o\'zgartirish',
+            input: 'select',
+            inputOptions: options,
+            inputValue: currentSellerId,
+            showCancelButton: true,
+            confirmButtonText: 'O\'zgartirish',
+            cancelButtonText: 'Bekor qilish',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Sotuvchini tanlang!'
+                }
+            }
+        });
+
+        if (newSellerId && newSellerId !== String(currentSellerId)) {
+            const updateResponse = await fetch(`/sales/${saleId}/seller`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ seller_id: newSellerId })
+            });
+
+            const data = await updateResponse.json();
+
+            if (data.success) {
+                Swal.fire('Yangilandi!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Sotuvchini o\'zgartirishda xatolik yuz berdi', 'error');
+    }
+}
+
+// Toggle all items checkbox
+function toggleAllItems(checkbox) {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+
+// Show return dialog
+async function showReturnDialog(saleId) {
+    const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        Swal.fire('Diqqat!', 'Qaytarish uchun kamida bitta mahsulot tanlang', 'warning');
+        return;
+    }
+
+    // Build list of selected items with quantity inputs
+    let htmlContent = '<div style="text-align: left;">';
+    const itemsData = [];
+
+    selectedCheckboxes.forEach(checkbox => {
+        const itemId = checkbox.dataset.itemId;
+        const productName = checkbox.dataset.productName;
+        const maxQuantity = parseInt(checkbox.dataset.quantity);
+        const unitPrice = parseFloat(checkbox.dataset.unitPrice);
+
+        itemsData.push({
+            sale_item_id: itemId,
+            product_name: productName,
+            max_quantity: maxQuantity,
+            unit_price: unitPrice
+        });
+
+        htmlContent += `
+            <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <strong>${productName}</strong><br>
+                <label style="margin-top: 5px;">Qaytariladigan miqdor (Max: ${maxQuantity}):</label>
+                <input type="number" id="qty-${itemId}" class="swal2-input" min="1" max="${maxQuantity}" value="${maxQuantity}" style="margin: 5px 0;">
+            </div>
+        `;
+    });
+
+    htmlContent += '<div style="margin-top: 15px;">';
+    htmlContent += '<label>Qaytarish sababi (ixtiyoriy):</label>';
+    htmlContent += '<textarea id="return-reason" class="swal2-textarea" placeholder="Sabab kiriting..."></textarea>';
+    htmlContent += '</div></div>';
+
+    const result = await Swal.fire({
+        title: 'Mahsulotlarni qaytarish',
+        html: htmlContent,
+        width: '600px',
+        showCancelButton: true,
+        confirmButtonText: 'Qaytarish',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#f39c12',
+        preConfirm: () => {
+            const items = [];
+            let hasError = false;
+
+            itemsData.forEach(item => {
+                const qtyInput = document.getElementById(`qty-${item.sale_item_id}`);
+                const quantity = parseInt(qtyInput.value);
+
+                if (!quantity || quantity < 1) {
+                    hasError = true;
+                    Swal.showValidationMessage('Barcha mahsulotlar uchun miqdor kiriting');
+                    return;
+                }
+
+                if (quantity > item.max_quantity) {
+                    hasError = true;
+                    Swal.showValidationMessage(`${item.product_name} uchun maksimal miqdor ${item.max_quantity}`);
+                    return;
+                }
+
+                items.push({
+                    sale_item_id: parseInt(item.sale_item_id),
+                    quantity: quantity
+                });
+            });
+
+            if (hasError) return false;
+
+            return {
+                items: items,
+                reason: document.getElementById('return-reason').value
+            };
+        }
+    });
+
+    if (result.isConfirmed && result.value) {
+        try {
+            const response = await fetch(`/sales/${saleId}/return`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(result.value)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire('Qaytarildi!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('Xato!', 'Mahsulotlarni qaytarishda xatolik yuz berdi', 'error');
+        }
     }
 }
 </script>

@@ -138,6 +138,35 @@ class CustomerController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // View customer details with debts and sales
+    static async view(req, res) {
+        try {
+            const customer = await Customer.findById(req.params.id);
+            if (!customer) {
+                return res.status(404).render('error', {
+                    title: 'Not Found',
+                    message: 'Customer not found',
+                    error: {}
+                });
+            }
+
+            const debts = await Customer.getActiveDebts(req.params.id);
+            const sales = await Customer.getPurchaseHistory(req.params.id);
+            const totalDebt = await Customer.getTotalDebt(req.params.id);
+
+            res.render('customers/view', {
+                title: `${customer.full_name} - Details`,
+                customer,
+                debts,
+                sales,
+                totalDebt
+            });
+        } catch (error) {
+            console.error('Customer view error:', error);
+            res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
 }
 
 module.exports = CustomerController;

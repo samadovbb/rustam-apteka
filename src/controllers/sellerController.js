@@ -114,6 +114,46 @@ class SellerController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async view(req, res) {
+        try {
+            const seller = await Seller.findById(req.params.id);
+            if (!seller) {
+                return res.status(404).render('error', {
+                    title: 'Not Found',
+                    message: 'Seller not found',
+                    error: {}
+                });
+            }
+
+            const debtors = await Seller.getDebtors(req.params.id);
+            const sales = await Seller.getSalesHistory(req.params.id);
+            const transfers = await Seller.getTransfers(req.params.id);
+            const stats = await Seller.getSalesStats(req.params.id);
+
+            res.render('sellers/view', {
+                title: `${seller.full_name} - Details`,
+                seller,
+                debtors,
+                sales,
+                transfers,
+                stats
+            });
+        } catch (error) {
+            console.error('Seller view error:', error);
+            res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    // API: Get all sellers
+    static async getAllApi(req, res) {
+        try {
+            const sellers = await Seller.getAll();
+            res.json(sellers);
+        } catch (error) {
+            console.error('Get all sellers API error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = SellerController;
