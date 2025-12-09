@@ -9,5 +9,9 @@ router.get('/', StockIntakeController.index);
 router.get('/create', StockIntakeController.create);
 router.post('/', StockIntakeController.store);
 router.get('/:id', StockIntakeController.view);
+router.delete('/:id', StockIntakeController.delete);
+
+// API routes
+router.get('/api/latest-date', StockIntakeController.getLatestDate);
 
 module.exports = router;

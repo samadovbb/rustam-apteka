@@ -25,10 +25,17 @@
                 <form action="/sales" method="POST" id="salesForm" data-validate-form>
                     <h4><%= lang.sales.customerInfo %></h4>
                     <div class="form-group">
+                        <label for="customer_search" class="form-label"><%= lang.sales.searchExisting %></label>
+                        <select id="customer_search" class="form-control" style="width: 100%;">
+                            <option value=""><%= lang.sales.searchExisting %></option>
+                        </select>
+                        <small><%= lang.sales.searchExisting %></small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="customer_phone" class="form-label required"><%= lang.sales.customerPhone %></label>
                         <input type="tel" id="customer_phone" name="customer_phone" class="form-control" data-validate="required|phone" required placeholder="+998901234567">
                         <span class="form-error"></span>
-                        <small><%= lang.sales.searchExisting %></small>
                     </div>
 
                     <div class="form-group">
@@ -127,6 +134,167 @@
     </main>
 </div>
 
+<%- include('../partials/footer') %>
+
 <script src="/js/sales-form.js"></script>
 
-<%- include('../partials/footer') %>
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for customer search
+    $('#customer_search').select2({
+        ajax: {
+            url: '/customers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(customer) {
+                        return {
+                            id: customer.id,
+                            text: customer.full_name + ' (' + customer.phone + ')',
+                            customer: customer
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.sales.searchExisting %>',
+        minimumInputLength: 2,
+        allowClear: true
+    });
+
+    // When customer is selected from search, populate the form
+    $('#customer_search').on('select2:select', function (e) {
+        var customer = e.params.data.customer;
+        $('#customer_phone').val(customer.phone);
+        $('#customer_name').val(customer.full_name);
+        $('#customer_address').val(customer.address || '');
+    });
+
+    // Initialize Select2 for seller
+    $('#seller_id').select2({
+        ajax: {
+            url: '/sellers/api/search',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term || ''
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.map(function(seller) {
+                        return {
+                            id: seller.id,
+                            text: seller.full_name
+                        };
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: '<%= lang.sales.selectSeller %>',
+        minimumInputLength: 0,
+        allowClear: true
+    });
+
+    // Handle seller selection - load inventory directly
+    $('#seller_id').on('select2:select', async function (e) {
+        const sellerId = e.params.data.id;
+
+        if (!sellerId) {
+            window.sellerInventory = [];
+            if (typeof window.updateProductSelects === 'function') {
+                window.updateProductSelects();
+            }
+            return;
+        }
+
+        try {
+            const response = await fetch(`/sales/api/seller/${sellerId}/inventory`);
+            if (response.ok) {
+                window.sellerInventory = await response.json();
+                if (typeof window.updateProductSelects === 'function') {
+                    window.updateProductSelects();
+                }
+                document.getElementById('addProductBtn').disabled = false;
+            }
+        } catch (error) {
+            alert('Sotuvchining mahsulotlarini yuklashda xatolik');
+        }
+    });
+
+    // Also handle when cleared
+    $('#seller_id').on('select2:clear', function (e) {
+        window.sellerInventory = [];
+        if (typeof window.updateProductSelects === 'function') {
+            window.updateProductSelects();
+        }
+        document.getElementById('addProductBtn').disabled = true;
+    });
+
+    // Note: Product selects are NOT using Select2 on this page
+    // They are managed by sales-form.js based on seller inventory
+
+    // Override form submission to show date picker first
+    $('#salesForm').on('submit', async function(e) {
+        e.preventDefault();
+
+        // Validate that we have items
+        const items = [];
+        document.querySelectorAll('.product-item').forEach(row => {
+            const productId = row.querySelector('.product-select').value;
+            const quantity = row.querySelector('.quantity-input').value;
+            const price = row.querySelector('.price-input').value;
+
+            if (productId && quantity && price) {
+                items.push({
+                    product_id: parseInt(productId),
+                    quantity: parseInt(quantity),
+                    unit_price: parseFloat(price)
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert('Kamida bitta mahsulot qo\'shing');
+            return;
+        }
+
+        try {
+            // Fetch latest sale date
+            const response = await fetch('/sales/api/latest-date');
+            const data = await response.json();
+            const defaultDate = data.date;
+
+            // Show date picker with custom format
+            const selectedDate = await showDatePicker('Savdo sanasini tanlang', defaultDate);
+
+            if (selectedDate) {
+                // Add the date to form
+                const dateInput = document.createElement('input');
+                dateInput.type = 'hidden';
+                dateInput.name = 'sale_date';
+                dateInput.value = selectedDate;
+                this.appendChild(dateInput);
+
+                // Set items data
+                document.getElementById('itemsData').value = JSON.stringify(items);
+
+                // Submit the form
+                this.submit();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Xatolik yuz berdi');
+        }
+    });
+});
+</script>

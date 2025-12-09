@@ -24,7 +24,7 @@ class SellerController {
     static async store(req, res) {
         try {
             const { full_name, phone, commission_percent } = req.body;
-            await Seller.create({ full_name, phone, commission_percent });
+            await Seller.create({ full_name, phone, commission_percent }, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller create error:', error);
@@ -60,7 +60,7 @@ class SellerController {
     static async update(req, res) {
         try {
             const { full_name, phone, commission_percent } = req.body;
-            await Seller.update(req.params.id, { full_name, phone, commission_percent });
+            await Seller.update(req.params.id, { full_name, phone, commission_percent }, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller update error:', error);
@@ -75,7 +75,7 @@ class SellerController {
 
     static async delete(req, res) {
         try {
-            await Seller.delete(req.params.id);
+            await Seller.delete(req.params.id, req.user);
             res.redirect('/sellers');
         } catch (error) {
             console.error('Seller delete error:', error);
@@ -96,6 +96,22 @@ class SellerController {
         } catch (error) {
             console.error('Seller inventory error:', error);
             res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    // API: Search sellers
+    static async search(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q) {
+                return res.json([]);
+            }
+
+            const sellers = await Seller.search(q);
+            res.json(sellers);
+        } catch (error) {
+            console.error('Seller search error:', error);
+            res.status(500).json({ error: error.message });
         }
     }
 }

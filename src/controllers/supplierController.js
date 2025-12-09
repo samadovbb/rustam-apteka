@@ -24,7 +24,7 @@ class SupplierController {
     static async store(req, res) {
         try {
             const { name, phone, email, address } = req.body;
-            await Supplier.create({ name, phone, email, address });
+            await Supplier.create({ name, phone, email, address }, req.user);
             res.redirect('/suppliers');
         } catch (error) {
             console.error('Supplier create error:', error);
@@ -60,7 +60,7 @@ class SupplierController {
     static async update(req, res) {
         try {
             const { name, phone, email, address } = req.body;
-            await Supplier.update(req.params.id, { name, phone, email, address });
+            await Supplier.update(req.params.id, { name, phone, email, address }, req.user);
             res.redirect('/suppliers');
         } catch (error) {
             console.error('Supplier update error:', error);
@@ -75,10 +75,26 @@ class SupplierController {
 
     static async delete(req, res) {
         try {
-            await Supplier.delete(req.params.id);
+            await Supplier.delete(req.params.id, req.user);
             res.redirect('/suppliers');
         } catch (error) {
             console.error('Supplier delete error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // API: Search suppliers
+    static async search(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q) {
+                return res.json([]);
+            }
+
+            const suppliers = await Supplier.search(q);
+            res.json(suppliers);
+        } catch (error) {
+            console.error('Supplier search error:', error);
             res.status(500).json({ error: error.message });
         }
     }

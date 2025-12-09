@@ -38,7 +38,7 @@
                                 <% intakes.forEach(intake => { %>
                                     <tr>
                                         <td>#<%= intake.id %></td>
-                                        <td><%= new Date(intake.intake_date).toLocaleDateString() %></td>
+                                        <td><%= new Date(intake.intake_date).toLocaleDateString('ru-RU') %></td>
                                         <td><%= intake.supplier_name %></td>
                                         <td>$<%= parseFloat(intake.total_amount || 0).toFixed(2) %></td>
                                         <td>

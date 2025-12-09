@@ -35,7 +35,7 @@ class StockTransferController {
 
     static async store(req, res) {
         try {
-            const { seller_id, notes, items } = req.body;
+            const { seller_id, notes, items, transfer_date } = req.body;
 
             const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
 
@@ -43,7 +43,7 @@ class StockTransferController {
                 throw new Error('At least one product is required');
             }
 
-            await StockTransfer.create(seller_id, parsedItems, notes);
+            await StockTransfer.create(seller_id, parsedItems, notes, transfer_date || null, req.user);
             res.redirect('/stock-transfer');
         } catch (error) {
             console.error('Stock transfer store error:', error);
@@ -80,6 +80,27 @@ class StockTransferController {
         } catch (error) {
             console.error('Stock transfer view error:', error);
             res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    static async getLatestDate(req, res) {
+        try {
+            const result = await StockTransfer.getLatestDate();
+            res.json({ date: result || new Date().toISOString().split('T')[0] });
+        } catch (error) {
+            console.error('Get latest transfer date error:', error);
+            res.json({ date: new Date().toISOString().split('T')[0] });
+        }
+    }
+
+    // Delete a stock transfer
+    static async delete(req, res) {
+        try {
+            await StockTransfer.delete(req.params.id, req.user);
+            res.json({ success: true, message: 'O\'tkazma muvaffaqiyatli o\'chirildi' });
+        } catch (error) {
+            console.error('Delete stock transfer error:', error);
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 }
