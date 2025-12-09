@@ -208,22 +208,8 @@ class DebtController {
             worksheet.addRow(['', 'QARZ MIQDORLARI']).font = { bold: true, size: 12 };
             worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
             worksheet.addRow(['', 'Joriy qarz (asosiy):', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-
-            if (debtCalculation.monthsOverdue > 0) {
-                worksheet.addRow([]);
-                const overdueRow = worksheet.addRow(['', 'Imtiyoz muddati tugagan:', `${debtCalculation.monthsOverdue} oy oldin`]);
-                overdueRow.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
-
-                const markupRow = worksheet.addRow(['', 'Ustama (hisoblangan):', `$${parseFloat(debtCalculation.markupAmount).toFixed(2)}`]);
-                markupRow.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
-
-                const totalRow = worksheet.addRow(['', 'JAMI QARZ (ustama bilan):', `$${parseFloat(debtCalculation.totalWithMarkup).toFixed(2)}`]);
-                totalRow.font = { bold: true, size: 12 };
-                totalRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true, size: 12 };
-            } else {
-                const totalRow = worksheet.addRow(['', 'JAMI QARZ:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-                totalRow.font = { bold: true, size: 12 };
-            }
+            const totalRow = worksheet.addRow(['', 'JAMI QARZ:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
+            totalRow.font = { bold: true, size: 12 };
 
             // Grace period info
             worksheet.addRow([]);

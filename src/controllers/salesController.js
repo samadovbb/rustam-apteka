@@ -461,14 +461,6 @@ class SalesController {
                 worksheet.addRow(['', 'QARZ MA\'LUMOTLARI']).font = { bold: true, size: 12 };
                 worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
                 worksheet.addRow(['', 'Joriy qarz:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-
-                if (debtCalculation.monthsOverdue > 0) {
-                    worksheet.addRow(['', 'Imtiyoz muddati tugagan:', `${debtCalculation.monthsOverdue} oy oldin`]);
-                    worksheet.addRow(['', 'Ustama:', `$${parseFloat(debtCalculation.markupAmount).toFixed(2)}`]);
-                    const totalDebtRow = worksheet.addRow(['', 'Jami qarz (ustama bilan):', `$${parseFloat(debtCalculation.totalWithMarkup).toFixed(2)}`]);
-                    totalDebtRow.font = { bold: true };
-                    totalDebtRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
-                }
             }
 
             // Payment history
