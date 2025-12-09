@@ -110,8 +110,11 @@ async function showDatePicker(title, useSession = true) {
 
             // Add input mask for dd.MM.yyyy
             input.addEventListener('input', function(e) {
-                let cursorPosition = e.target.selectionStart;
-                let value = e.target.value.replace(/\D/g, '');
+                const oldValue = e.target.value;
+                const oldCursorPosition = e.target.selectionStart;
+
+                // Remove all non-digits
+                let value = oldValue.replace(/\D/g, '');
 
                 // Format: DD.MM.YYYY
                 let formatted = '';
@@ -130,19 +133,25 @@ async function showDatePicker(title, useSession = true) {
                     formatted = formatted.substring(0, 10);
                 }
 
-                const oldLength = e.target.value.length;
                 e.target.value = formatted;
-                const newLength = formatted.length;
 
-                // Fix cursor position
-                if (newLength > oldLength) {
-                    // Dots were added automatically
-                    if (formatted[cursorPosition] === '.') {
-                        cursorPosition++;
-                    }
+                // Calculate new cursor position
+                let newCursorPosition = oldCursorPosition;
+
+                // Count how many dots are before the old cursor position
+                const dotsBeforeOld = (oldValue.substring(0, oldCursorPosition).match(/\./g) || []).length;
+                // Count how many dots are before the new cursor position
+                const dotsBeforeNew = (formatted.substring(0, oldCursorPosition).match(/\./g) || []).length;
+
+                // Adjust cursor position based on the difference in dots
+                newCursorPosition = oldCursorPosition + (dotsBeforeNew - dotsBeforeOld);
+
+                // Make sure cursor doesn't land on a dot
+                if (formatted[newCursorPosition] === '.') {
+                    newCursorPosition++;
                 }
 
-                e.target.setSelectionRange(cursorPosition, cursorPosition);
+                e.target.setSelectionRange(newCursorPosition, newCursorPosition);
             });
 
             // Allow enter key to confirm
