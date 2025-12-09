@@ -1,4 +1,5 @@
 const { query, transaction } = require('../config/database');
+const AuditLog = require('./AuditLog');
 
 class Debt {
     static async getAll(status = 'active', limit = 100) {
@@ -69,6 +70,48 @@ class Debt {
         return await query(sql, [debtId]);
     }
 
+    // Calculate debt with markup WITHOUT updating database (for display only)
+    static calculateDebtWithMarkup(debt) {
+        const now = new Date();
+        const graceEnd = new Date(debt.grace_end_date);
+        const currentAmount = parseFloat(debt.current_amount);
+
+        // If still in grace period, no markup applies
+        if (now < graceEnd) {
+            return {
+                baseAmount: currentAmount,
+                monthsOverdue: 0,
+                markupAmount: 0,
+                totalWithMarkup: currentAmount
+            };
+        }
+
+        // Calculate months past grace period
+        const monthsOverdue = Math.max(0, Math.floor(
+            (now.getTime() - graceEnd.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+        ));
+
+        let markupAmount = 0;
+
+        if (debt.markup_type === 'fixed') {
+            // Fixed markup per month
+            markupAmount = parseFloat(debt.markup_value) * monthsOverdue;
+        } else {
+            // Percent markup - simple interest (not compound)
+            const markupPercent = parseFloat(debt.markup_value);
+            markupAmount = (currentAmount * markupPercent * monthsOverdue) / 100;
+        }
+
+        return {
+            baseAmount: currentAmount,
+            monthsOverdue,
+            markupAmount,
+            totalWithMarkup: currentAmount + markupAmount
+        };
+    }
+
+    // Legacy method - kept for manual markup application (rarely used)
+    // This is now DEPRECATED - markup should be calculated dynamically
     static async applyMarkup(debtId) {
         return await transaction(async (conn) => {
             // Get debt details
@@ -134,6 +177,66 @@ class Debt {
                 previousAmount: currentAmount,
                 markupValue,
                 newAmount: totalAfterMarkup
+            };
+        });
+    }
+
+    static async changeGracePeriod(debtId, newGracePeriodMonths, user = null) {
+        return await transaction(async (conn) => {
+            // Get current debt details
+            const [debts] = await conn.execute(
+                'SELECT * FROM debts WHERE id = ?',
+                [debtId]
+            );
+
+            if (!debts[0]) {
+                throw new Error('Debt not found');
+            }
+
+            const debt = debts[0];
+            const oldGracePeriod = debt.grace_period_months;
+
+            // Calculate new grace_end_date
+            // grace_end_date = sale_date + grace_period_months
+            const [sales] = await conn.execute(
+                'SELECT sale_date FROM sales WHERE id = ?',
+                [debt.sale_id]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Associated sale not found');
+            }
+
+            const saleDate = new Date(sales[0].sale_date);
+            const newGraceEndDate = new Date(saleDate);
+            newGraceEndDate.setMonth(newGraceEndDate.getMonth() + parseInt(newGracePeriodMonths));
+
+            // Update debt with new grace period
+            await conn.execute(
+                `UPDATE debts SET
+                    grace_period_months = ?,
+                    grace_end_date = ?,
+                    original_grace_period_months = COALESCE(original_grace_period_months, ?),
+                    grace_period_changed_at = NOW()
+                WHERE id = ?`,
+                [newGracePeriodMonths, newGraceEndDate, oldGracePeriod, debtId]
+            );
+
+            // Log the change
+            await AuditLog.log(
+                'debts',
+                debtId,
+                'update',
+                { grace_period_months: oldGracePeriod },
+                { grace_period_months: newGracePeriodMonths },
+                user
+            );
+
+            return {
+                debtId,
+                oldGracePeriod,
+                newGracePeriod: newGracePeriodMonths,
+                newGraceEndDate
             };
         });
     }

@@ -147,18 +147,27 @@ class Sale {
 
             // Record initial payment if > 0
             if (initialPayment > 0) {
+                // Use sale_date for payment_date if provided, otherwise use current timestamp
+                const paymentDate = saleDate || null;
+
                 await conn.execute(
-                    `INSERT INTO payments (sale_id, amount, payment_method)
-                     VALUES (?, ?, ?)`,
-                    [saleId, initialPayment, paymentMethod]
+                    paymentDate
+                        ? `INSERT INTO payments (sale_id, amount, payment_method, payment_date)
+                           VALUES (?, ?, ?, ?)`
+                        : `INSERT INTO payments (sale_id, amount, payment_method)
+                           VALUES (?, ?, ?)`,
+                    paymentDate
+                        ? [saleId, initialPayment, paymentMethod, paymentDate]
+                        : [saleId, initialPayment, paymentMethod]
                 );
             }
 
             // Create debt record if there's remaining amount
             const remainingAmount = totalAmount - initialPayment;
             if (remainingAmount > 0 && debtConfig) {
-                const graceEndDate = new Date();
-                graceEndDate.setMonth(graceEndDate.getMonth() + (debtConfig.grace_period_months || 0));
+                // Calculate grace_end_date based on sale_date, not current date
+                const baseDateForGrace = saleDate ? new Date(saleDate) : new Date();
+                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + (debtConfig.grace_period_months || 0));
 
                 await conn.execute(
                     `INSERT INTO debts
@@ -173,7 +182,7 @@ class Sale {
                         debtConfig.markup_type,
                         debtConfig.markup_value,
                         debtConfig.grace_period_months || 0,
-                        graceEndDate.toISOString().split('T')[0]
+                        baseDateForGrace.toISOString().split('T')[0]
                     ]
                 );
             }
@@ -417,6 +426,185 @@ class Sale {
 
             return true;
         });
+    }
+
+    static async changeSeller(saleId, newSellerId, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get current sale
+            const [sales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Sale not found');
+            }
+
+            const sale = sales[0];
+            const oldSellerId = sale.seller_id;
+
+            // Update sale with new seller
+            await conn.execute(
+                `UPDATE sales
+                 SET seller_id = ?,
+                     original_seller_id = COALESCE(original_seller_id, ?),
+                     seller_changed_at = NOW()
+                 WHERE id = ?`,
+                [newSellerId, oldSellerId, saleId]
+            );
+
+            // Log audit trail
+            const oldData = { seller_id: oldSellerId };
+            const newData = { seller_id: newSellerId, changed_at: new Date() };
+            await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
+
+            return true;
+        });
+    }
+
+    static async returnItems(saleId, returns, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get sale info
+            const [sales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+
+            if (!sales[0]) {
+                throw new Error('Sale not found');
+            }
+
+            const sale = sales[0];
+            let totalRefund = 0;
+
+            // Process each return
+            for (const ret of returns) {
+                const { sale_item_id, quantity, reason } = ret;
+
+                // Get sale item info
+                const [items] = await conn.execute(
+                    'SELECT * FROM sale_items WHERE id = ? AND sale_id = ?',
+                    [sale_item_id, saleId]
+                );
+
+                if (!items[0]) {
+                    throw new Error(`Sale item ${sale_item_id} not found`);
+                }
+
+                const item = items[0];
+
+                if (quantity > item.quantity) {
+                    throw new Error(`Cannot return ${quantity} items, only ${item.quantity} were sold`);
+                }
+
+                const refundAmount = quantity * item.unit_price;
+                totalRefund += refundAmount;
+
+                // Insert return record
+                await conn.execute(
+                    `INSERT INTO sale_returns
+                     (sale_id, sale_item_id, quantity, refund_amount, reason, returned_by)
+                     VALUES (?, ?, ?, ?, ?, ?)`,
+                    [saleId, sale_item_id, quantity, refundAmount, reason || null, user?.login || null]
+                );
+
+                // Update or delete sale item
+                if (quantity === item.quantity) {
+                    // Full return - delete item
+                    await conn.execute(
+                        'DELETE FROM sale_items WHERE id = ?',
+                        [sale_item_id]
+                    );
+                } else {
+                    // Partial return - update quantity (subtotal will be auto-calculated)
+                    const newQuantity = item.quantity - quantity;
+
+                    await conn.execute(
+                        'UPDATE sale_items SET quantity = ? WHERE id = ?',
+                        [newQuantity, sale_item_id]
+                    );
+                }
+
+                // Return inventory to seller
+                await conn.execute(
+                    `UPDATE seller_inventory
+                     SET quantity = quantity + ?
+                     WHERE seller_id = ? AND product_id = ?`,
+                    [quantity, sale.seller_id, item.product_id]
+                );
+            }
+
+            // Update sale totals (remaining_amount will be auto-calculated)
+            const newTotalAmount = sale.total_amount - totalRefund;
+            const newPaidAmount = Math.min(sale.paid_amount, newTotalAmount);
+
+            let newStatus = 'unpaid';
+            if (newPaidAmount >= newTotalAmount) {
+                newStatus = 'paid';
+            } else if (newPaidAmount > 0) {
+                newStatus = 'partial';
+            }
+
+            await conn.execute(
+                `UPDATE sales
+                 SET total_amount = ?,
+                     paid_amount = ?,
+                     status = ?
+                 WHERE id = ?`,
+                [newTotalAmount, newPaidAmount, newStatus, saleId]
+            );
+
+            // Update debt if exists
+            const [debts] = await conn.execute(
+                'SELECT * FROM debts WHERE sale_id = ? AND status = "active"',
+                [saleId]
+            );
+
+            if (debts[0]) {
+                const debt = debts[0];
+                const newDebtAmount = Math.max(0, debt.current_amount - totalRefund);
+                const debtStatus = newDebtAmount === 0 ? 'paid' : 'active';
+
+                await conn.execute(
+                    'UPDATE debts SET current_amount = ?, original_amount = ?, status = ? WHERE id = ?',
+                    [newDebtAmount, newDebtAmount, debtStatus, debt.id]
+                );
+            }
+
+            // Log audit trail
+            const oldData = {
+                total_amount: sale.total_amount,
+                items_returned: returns.length
+            };
+            const newData = {
+                total_amount: newTotalAmount,
+                refund_amount: totalRefund,
+                returns: returns
+            };
+            await AuditLog.log('sales', saleId, 'return', oldData, newData, user);
+
+            return {
+                totalRefund,
+                newTotalAmount,
+                itemsReturned: returns.length
+            };
+        });
+    }
+
+    static async getReturns(saleId) {
+        const sql = `
+            SELECT sr.*, si.product_id, p.name as product_name, p.barcode
+            FROM sale_returns sr
+            LEFT JOIN sale_items si ON sr.sale_item_id = si.id
+            LEFT JOIN products p ON si.product_id = p.id
+            WHERE sr.sale_id = ?
+            ORDER BY sr.returned_at DESC
+        `;
+        return await query(sql, [saleId]);
     }
 }
 
