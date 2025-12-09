@@ -57,13 +57,38 @@ function displayToIso(displayDate) {
 }
 
 /**
+ * Get last input date from session storage
+ * @returns {string|null} - yyyy-mm-dd format or null
+ */
+function getLastInputDate() {
+    return sessionStorage.getItem('lastInputDate');
+}
+
+/**
+ * Set last input date in session storage
+ * @param {string} date - yyyy-mm-dd format
+ */
+function setLastInputDate(date) {
+    sessionStorage.setItem('lastInputDate', date);
+}
+
+/**
  * Show SweetAlert date picker with dd.MM.yyyy format
+ * Uses session storage for last input date
  * @param {string} title
- * @param {string} defaultDate - in yyyy-mm-dd format
+ * @param {boolean} useSession - if true, uses session date instead of API date
  * @returns {Promise<string|null>} - returns yyyy-mm-dd format or null if cancelled
  */
-async function showDatePicker(title, defaultDate) {
-    const displayDate = isoToDisplay(defaultDate || new Date().toISOString().split('T')[0]);
+async function showDatePicker(title, useSession = true) {
+    // Use session date if available and requested, otherwise use today
+    let defaultDate;
+    if (useSession) {
+        defaultDate = getLastInputDate() || new Date().toISOString().split('T')[0];
+    } else {
+        defaultDate = new Date().toISOString().split('T')[0];
+    }
+
+    const displayDate = isoToDisplay(defaultDate);
 
     const result = await Swal.fire({
         title: title,
@@ -80,44 +105,44 @@ async function showDatePicker(title, defaultDate) {
         didOpen: () => {
             const input = document.getElementById('swal-date-input');
             input.focus();
+            // Select all text for easy replacement
+            input.select();
 
             // Add input mask for dd.MM.yyyy
             input.addEventListener('input', function(e) {
-                const cursorPosition = e.target.selectionStart;
-                const oldValue = e.target.value;
-                const oldLength = oldValue.length;
-                
+                let cursorPosition = e.target.selectionStart;
                 let value = e.target.value.replace(/\D/g, '');
-                if (value.length >= 2) {
-                    value = value.substring(0, 2) + '.' + value.substring(2);
+
+                // Format: DD.MM.YYYY
+                let formatted = '';
+                if (value.length > 0) {
+                    formatted = value.substring(0, 2);
+                }
+                if (value.length >= 3) {
+                    formatted += '.' + value.substring(2, 4);
                 }
                 if (value.length >= 5) {
-                    value = value.substring(0, 5) + '.' + value.substring(5);
+                    formatted += '.' + value.substring(4, 8);
                 }
-                if (value.length > 10) {
-                    value = value.substring(0, 10);
+
+                // Limit to 10 characters (DD.MM.YYYY)
+                if (formatted.length > 10) {
+                    formatted = formatted.substring(0, 10);
                 }
-                
-                e.target.value = value;
-                
-                // Restore cursor position
-                const newLength = value.length;
-                let newCursorPosition = cursorPosition;
-                
-                // Adjust cursor position if dots were added or removed
+
+                const oldLength = e.target.value.length;
+                e.target.value = formatted;
+                const newLength = formatted.length;
+
+                // Fix cursor position
                 if (newLength > oldLength) {
-                    // Character was added, check if a dot was auto-inserted before cursor
-                    if (cursorPosition === 3 || cursorPosition === 6) {
-                        newCursorPosition = cursorPosition + 1;
-                    }
-                } else if (newLength < oldLength) {
-                    // Character was deleted
-                    if (oldValue[cursorPosition] === '.' && cursorPosition > 0) {
-                        newCursorPosition = cursorPosition - 1;
+                    // Dots were added automatically
+                    if (formatted[cursorPosition] === '.') {
+                        cursorPosition++;
                     }
                 }
-                
-                e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+
+                e.target.setSelectionRange(cursorPosition, cursorPosition);
             });
 
             // Allow enter key to confirm
@@ -163,7 +188,10 @@ async function showDatePicker(title, defaultDate) {
     });
 
     if (result.isConfirmed && result.value) {
-        return displayToIso(result.value);
+        const isoDate = displayToIso(result.value);
+        // Save to session storage
+        setLastInputDate(isoDate);
+        return isoDate;
     }
     return null;
 }

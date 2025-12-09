@@ -269,13 +269,8 @@ $(document).ready(function() {
         }
 
         try {
-            // Fetch latest sale date
-            const response = await fetch('/sales/api/latest-date');
-            const data = await response.json();
-            const defaultDate = data.date;
-
-            // Show date picker with custom format
-            const selectedDate = await showDatePicker('Savdo sanasini tanlang', defaultDate);
+            // Show date picker with session date (uses last input date)
+            const selectedDate = await showDatePicker('Savdo sanasini tanlang');
 
             if (selectedDate) {
                 // Add the date to form

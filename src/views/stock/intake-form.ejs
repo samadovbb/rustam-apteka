@@ -126,13 +126,8 @@ document.getElementById('intakeForm').addEventListener('submit', async function(
     }
 
     try {
-        // Fetch latest intake date
-        const response = await fetch('/stock-intake/api/latest-date');
-        const data = await response.json();
-        const defaultDate = data.date;
-
-        // Show date picker with custom format
-        const selectedDate = await showDatePicker('Qabul sanasini tanlang', defaultDate);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('Qabul sanasini tanlang');
 
         if (selectedDate) {
             // Add the date to form

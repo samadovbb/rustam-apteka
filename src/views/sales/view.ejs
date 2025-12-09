@@ -269,13 +269,8 @@ document.getElementById('paymentForm').addEventListener('submit', async function
     e.preventDefault();
 
     try {
-        // Fetch latest payment date
-        const response = await fetch('/debts/api/latest-payment-date');
-        const data = await response.json();
-        const defaultDate = data.date;
-
-        // Show date picker with custom format
-        const selectedDate = await showDatePicker('To\'lov sanasini tanlang', defaultDate);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('To\'lov sanasini tanlang');
 
         if (selectedDate) {
             // Add the date to form
@@ -325,9 +320,8 @@ async function deleteSale(id) {
 
 async function editSaleDate(saleId, currentDate) {
     try {
-        // Convert the current date to local YYYY-MM-DD format
-        const localDateStr = toLocalDateString(currentDate);
-        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang', localDateStr);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('Savdo sanasini tahrirlang');
 
         if (selectedDate) {
             const response = await fetch(`/sales/${saleId}/date`, {
@@ -360,9 +354,8 @@ async function editSaleDate(saleId, currentDate) {
 
 async function editPaymentDate(saleId, paymentId, currentDate) {
     try {
-        // Convert the current date to local YYYY-MM-DD format
-        const localDateStr = toLocalDateString(currentDate);
-        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang', localDateStr);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('To\'lov sanasini tahrirlang');
 
         if (selectedDate) {
             const response = await fetch(`/sales/${saleId}/payment/${paymentId}/date`, {

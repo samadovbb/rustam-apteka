@@ -111,13 +111,8 @@ document.getElementById('transferForm').addEventListener('submit', async functio
     }
 
     try {
-        // Fetch latest transfer date
-        const response = await fetch('/stock-transfer/api/latest-date');
-        const data = await response.json();
-        const defaultDate = data.date;
-
-        // Show date picker with custom format
-        const selectedDate = await showDatePicker('O\'tkazma sanasini tanlang', defaultDate);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('O\'tkazma sanasini tanlang');
 
         if (selectedDate) {
             // Add the date to form
