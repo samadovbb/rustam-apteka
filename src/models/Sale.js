@@ -72,7 +72,7 @@ class Sale {
         const AuditLog = require('./AuditLog');
 
         return await transaction(async (conn) => {
-            // Validate seller has enough stock and prices
+            // Validate seller has enough stock
             for (const item of items) {
                 const [sellerInv] = await conn.execute(
                     'SELECT quantity, seller_price FROM seller_inventory WHERE seller_id = ? AND product_id = ?',
@@ -81,11 +81,6 @@ class Sale {
 
                 if (!sellerInv[0] || sellerInv[0].quantity < item.quantity) {
                     throw new Error(`Insufficient stock for product ID ${item.product_id}`);
-                }
-
-                // Validate selling price is not below seller's price
-                if (item.unit_price < sellerInv[0].seller_price) {
-                    throw new Error(`Unit price cannot be below seller's price for product ID ${item.product_id}`);
                 }
             }
 
