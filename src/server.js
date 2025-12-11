@@ -91,8 +91,8 @@ const startServer = async () => {
             console.error('⚠️  Server starting without database connection');
         }
 
-        // Start cron job for debt markup
-        startDebtCron();
+        // Start cron job for debt markup (DISABLED - using manual retroactive calculation instead)
+        // startDebtCron();
 
         app.listen(PORT, () => {
             console.log('='.repeat(50));
