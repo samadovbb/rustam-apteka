@@ -218,6 +218,11 @@ class Sale {
             const sale = sales[0];
             const oldData = { ...sale };
 
+            // Parse numeric values to ensure proper calculations
+            const saleTotal = parseFloat(sale.total_amount);
+            const salePaid = parseFloat(sale.paid_amount);
+            const paymentAmount = parseFloat(amount);
+
             // Check if there's an active debt
             const [debts] = await conn.execute(
                 'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
@@ -225,21 +230,22 @@ class Sale {
             );
 
             // Calculate remaining amount considering debt with markup
-            const remainingAmount = debts[0] ? debts[0].current_amount : (sale.total_amount - sale.paid_amount);
+            const remainingAmount = debts[0] ? parseFloat(debts[0].current_amount) : (saleTotal - salePaid);
 
-            if (amount > remainingAmount) {
+            if (paymentAmount > remainingAmount) {
                 throw new Error('Payment amount exceeds remaining balance');
             }
 
-            const newPaidAmount = sale.paid_amount + amount;
+            const newPaidAmount = salePaid + paymentAmount;
 
             // Determine new status: only mark as 'paid' if no active debt or debt will be fully paid
             let newStatus;
             if (debts[0]) {
-                const newDebtAmount = Math.max(0, debts[0].current_amount - amount);
+                const currentDebtAmount = parseFloat(debts[0].current_amount);
+                const newDebtAmount = Math.max(0, currentDebtAmount - paymentAmount);
                 newStatus = newDebtAmount === 0 ? 'paid' : 'partial';
             } else {
-                newStatus = newPaidAmount >= sale.total_amount ? 'paid' : 'partial';
+                newStatus = newPaidAmount >= saleTotal ? 'paid' : 'partial';
             }
 
             // Update sale
@@ -260,7 +266,8 @@ class Sale {
 
             // Update debt if exists
             if (debts[0]) {
-                const newDebtAmount = Math.max(0, debts[0].current_amount - amount);
+                const currentDebtAmount = parseFloat(debts[0].current_amount);
+                const newDebtAmount = Math.max(0, currentDebtAmount - paymentAmount);
                 const debtStatus = newDebtAmount === 0 ? 'paid' : 'active';
 
                 await conn.execute(
