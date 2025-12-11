@@ -56,9 +56,9 @@ window.updateProductSelects = function updateProductSelects() {
             window.sellerInventory.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.product_id;
-                option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.seller_price).toFixed(2)})`;
+                option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.warehouse_sell_price).toFixed(2)})`;
                 option.dataset.available = item.quantity;
-                option.dataset.price = item.seller_price;
+                option.dataset.price = item.warehouse_sell_price;
                 select.appendChild(option);
             });
             select.disabled = false;

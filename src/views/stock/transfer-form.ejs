@@ -41,7 +41,7 @@
                                 <select class="form-control product-select" style="flex: 2;" required>
                                     <option value=""><%= lang.stockIntake.selectProduct %></option>
                                     <% warehouseStock.forEach(item => { %>
-                                        <option value="<%= item.product_id %>" data-available="<%= item.quantity %>" data-sell="<%= item.sell_price %>">
+                                        <option value="<%= item.product_id %>" data-available="<%= item.quantity %>" data-purchase="<%= item.purchase_price %>">
                                             <%= item.product_name %> (<%= lang.stockIntake.available %>: <%= item.quantity %>)
                                         </option>
                                     <% }) %>
@@ -134,13 +134,13 @@ document.getElementById('transferForm').addEventListener('submit', async functio
     }
 });
 
-// Auto-fill suggested sell price
+// Auto-fill suggested purchase price
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         const option = e.target.selectedOptions[0];
         const row = e.target.closest('.product-item');
-        if (option.dataset.sell) {
-            row.querySelector('.price-input').value = option.dataset.sell;
+        if (option.dataset.purchase) {
+            row.querySelector('.price-input').value = option.dataset.purchase;
         }
     }
 });
@@ -223,8 +223,8 @@ $(document).ready(function() {
         $(element).on('select2:select', function (e) {
             var product = e.params.data.product;
             var row = $(this).closest('.product-item');
-            if (product.sell_price) {
-                row.find('.price-input').val(product.sell_price);
+            if (product.purchase_price) {
+                row.find('.price-input').val(product.purchase_price);
             }
         });
     }

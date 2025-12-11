@@ -73,7 +73,7 @@ class Seller {
 
     static async getInventory(sellerId) {
         const sql = `
-            SELECT si.*, p.name as product_name, p.barcode, p.warranty_months
+            SELECT si.*, p.name as product_name, p.barcode, p.warranty_months, p.sell_price as warehouse_sell_price
             FROM seller_inventory si
             JOIN products p ON si.product_id = p.id
             WHERE si.seller_id = ? AND si.quantity > 0
