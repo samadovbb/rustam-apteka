@@ -103,8 +103,10 @@ class SellerController {
     static async search(req, res) {
         try {
             const { q } = req.query;
-            if (!q) {
-                return res.json([]);
+            // If no query, return all sellers
+            if (!q || q.trim() === '') {
+                const sellers = await Seller.getAll();
+                return res.json(sellers);
             }
 
             const sellers = await Seller.search(q);

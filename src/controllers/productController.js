@@ -130,8 +130,10 @@ class ProductController {
     static async search(req, res) {
         try {
             const { q } = req.query;
-            if (!q) {
-                return res.json([]);
+            // If no query, return all products
+            if (!q || q.trim() === '') {
+                const products = await Product.getAll();
+                return res.json(products);
             }
 
             const products = await Product.search(q);

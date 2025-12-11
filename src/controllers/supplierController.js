@@ -87,8 +87,10 @@ class SupplierController {
     static async search(req, res) {
         try {
             const { q } = req.query;
-            if (!q) {
-                return res.json([]);
+            // If no query, return all suppliers
+            if (!q || q.trim() === '') {
+                const suppliers = await Supplier.getAll();
+                return res.json(suppliers);
             }
 
             const suppliers = await Supplier.search(q);
