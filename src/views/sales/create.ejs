@@ -148,7 +148,7 @@ $(document).ready(function() {
             delay: 250,
             data: function (params) {
                 return {
-                    q: params.term
+                    q: params.term || ''
                 };
             },
             processResults: function (data) {
@@ -165,8 +165,15 @@ $(document).ready(function() {
             cache: true
         },
         placeholder: '<%= lang.sales.searchExisting %>',
-        minimumInputLength: 2,
+        minimumInputLength: 0,
         allowClear: true
+    });
+
+    // Focus search input when Select2 opens
+    $('#customer_search').on('select2:open', function() {
+        setTimeout(function() {
+            document.querySelector('.select2-search__field').focus();
+        }, 100);
     });
 
     // When customer is selected from search, populate the form
