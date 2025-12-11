@@ -153,6 +153,42 @@ class Seller {
         const results = await query(sql, [sellerId]);
         return results[0] || {};
     }
+
+    static async getProfitStats(sellerId) {
+        const sql = `
+            SELECT
+                SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as total_profit
+            FROM sale_items si
+            JOIN sales s ON si.sale_id = s.id
+            WHERE s.seller_id = ?
+        `;
+        const results = await query(sql, [sellerId]);
+        return results[0] || { total_profit: 0 };
+    }
+
+    static async getPenalties(sellerId) {
+        const sql = `
+            SELECT sp.*, s.id as sale_id, c.full_name as customer_name
+            FROM seller_penalties sp
+            JOIN sales s ON sp.sale_id = s.id
+            JOIN customers c ON s.customer_id = c.id
+            WHERE sp.seller_id = ?
+            ORDER BY sp.penalty_date DESC
+        `;
+        return await query(sql, [sellerId]);
+    }
+
+    static async getPenaltyStats(sellerId) {
+        const sql = `
+            SELECT
+                COUNT(*) as total_penalties,
+                SUM(penalty_amount) as total_penalty_amount
+            FROM seller_penalties
+            WHERE seller_id = ?
+        `;
+        const results = await query(sql, [sellerId]);
+        return results[0] || { total_penalties: 0, total_penalty_amount: 0 };
+    }
 }
 
 module.exports = Seller;

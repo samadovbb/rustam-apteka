@@ -17,5 +17,6 @@ router.get('/:id/inventory', SellerController.inventory);
 // API routes
 router.get('/api/all', SellerController.getAllApi);
 router.get('/api/search', SellerController.search);
+router.post('/api/calculate-penalties', SellerController.calculatePenalties);
 
 module.exports = router;
