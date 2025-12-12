@@ -272,39 +272,6 @@
                             </table>
                         </div>
                     <% } %>
-
-                    <!-- Markup History -->
-                    <% if (markupLogs.length > 0) { %>
-                        <h4 style="margin-top: 20px;">Ustama tarixi</h4>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Sana</th>
-                                        <th>Qarz (oldingi)</th>
-                                        <th>Ustama</th>
-                                        <th>Qarz (keyingi)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% markupLogs.forEach(log => { %>
-                                        <tr>
-                                            <td><%= new Date(log.calculation_date).toLocaleDateString('ru-RU') %></td>
-                                            <td>$<%= parseFloat(log.remaining_debt || 0).toFixed(2) %></td>
-                                            <td style="color: orange; font-weight: bold;">
-                                                <% if (debt.markup_type === 'fixed') { %>
-                                                    +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
-                                                <% } else { %>
-                                                    <%= parseFloat(log.markup_percent || 0).toFixed(2) %>% = +$<%= parseFloat(log.markup_value || 0).toFixed(2) %>
-                                                <% } %>
-                                            </td>
-                                            <td>$<%= parseFloat(log.total_after_markup || 0).toFixed(2) %></td>
-                                        </tr>
-                                    <% }) %>
-                                </tbody>
-                            </table>
-                        </div>
-                    <% } %>
                 <% } %>
             </div>
         </div>
