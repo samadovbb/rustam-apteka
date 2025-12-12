@@ -28,13 +28,15 @@
                                 <th><%= lang.products.warranty %></th>
                                 <th><%= lang.products.purchasePrice %></th>
                                 <th><%= lang.products.sellPrice %></th>
+                                <th>Ombor soni</th>
+                                <th>Sotuvchilar soni</th>
                                 <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (products.length === 0) { %>
                                 <tr>
-                                    <td colspan="7" class="text-center"><%= lang.products.noProducts %></td>
+                                    <td colspan="9" class="text-center"><%= lang.products.noProducts %></td>
                                 </tr>
                             <% } else { %>
                                 <% products.forEach(product => { %>
@@ -45,6 +47,8 @@
                                         <td><%= product.warranty_months %></td>
                                         <td>$<%= parseFloat(product.purchase_price || 0).toFixed(2) %></td>
                                         <td>$<%= parseFloat(product.sell_price || 0).toFixed(2) %></td>
+                                        <td><%= parseInt(product.warehouse_count || 0) %></td>
+                                        <td><%= parseInt(product.seller_count || 0) %></td>
                                         <td>
                                             <a href="/products/<%= product.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
                                             <a href="/products/<%= product.id %>/edit" class="btn btn-sm btn-secondary"><%= lang.buttons.edit %></a>

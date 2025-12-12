@@ -7,8 +7,9 @@ const languageMiddleware = (req, res, next) => {
         const keys = key.split('.');
         let value = langUz;
         for (const k of keys) {
+            if (!value || typeof value !== 'object') return key;
             value = value[k];
-            if (!value) return key;
+            if (value === undefined || value === null) return key;
         }
         return value;
     };

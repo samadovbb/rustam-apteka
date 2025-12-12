@@ -126,13 +126,8 @@ document.getElementById('intakeForm').addEventListener('submit', async function(
     }
 
     try {
-        // Fetch latest intake date
-        const response = await fetch('/stock-intake/api/latest-date');
-        const data = await response.json();
-        const defaultDate = data.date;
-
-        // Show date picker with custom format
-        const selectedDate = await showDatePicker('Qabul sanasini tanlang', defaultDate);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('Qabul sanasini tanlang');
 
         if (selectedDate) {
             // Add the date to form
@@ -181,6 +176,13 @@ $(document).ready(function() {
         placeholder: '<%= lang.stockIntake.selectSupplier %>',
         minimumInputLength: 0,
         allowClear: true
+    });
+
+    // Focus search input when Select2 opens
+    $('#supplier_id').on('select2:open', function() {
+        setTimeout(function() {
+            document.querySelector('.select2-search__field').focus();
+        }, 100);
     });
 
     // Product autocomplete functionality

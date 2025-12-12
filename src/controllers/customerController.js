@@ -110,8 +110,10 @@ class CustomerController {
     static async search(req, res) {
         try {
             const { q } = req.query;
-            if (!q) {
-                return res.json([]);
+            // If no query, return all customers (limited to 50)
+            if (!q || q.trim() === '') {
+                const customers = await Customer.getAll();
+                return res.json(customers);
             }
 
             const customers = await Customer.search(q);

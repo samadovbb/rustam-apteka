@@ -68,11 +68,11 @@ class Sale {
         return await query(sql, [saleId]);
     }
 
-    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'cash', debtConfig = null, saleDate = null, user = null) {
+    static async create(customerId, sellerId, items, initialPayment = 0, paymentMethod = 'naqt', debtConfig = null, saleDate = null, user = null) {
         const AuditLog = require('./AuditLog');
 
         return await transaction(async (conn) => {
-            // Validate seller has enough stock and prices
+            // Validate seller has enough stock
             for (const item of items) {
                 const [sellerInv] = await conn.execute(
                     'SELECT quantity, seller_price FROM seller_inventory WHERE seller_id = ? AND product_id = ?',
@@ -81,11 +81,6 @@ class Sale {
 
                 if (!sellerInv[0] || sellerInv[0].quantity < item.quantity) {
                     throw new Error(`Insufficient stock for product ID ${item.product_id}`);
-                }
-
-                // Validate selling price is not below seller's price
-                if (item.unit_price < sellerInv[0].seller_price) {
-                    throw new Error(`Unit price cannot be below seller's price for product ID ${item.product_id}`);
                 }
             }
 
@@ -164,10 +159,11 @@ class Sale {
 
             // Create debt record if there's remaining amount
             const remainingAmount = totalAmount - initialPayment;
-            if (remainingAmount > 0 && debtConfig) {
+            if (remainingAmount > 0) {
                 // Calculate grace_end_date based on sale_date, not current date
                 const baseDateForGrace = saleDate ? new Date(saleDate) : new Date();
-                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + (debtConfig.grace_period_months || 0));
+                const gracePeriodMonths = debtConfig?.grace_period_months || 0;
+                baseDateForGrace.setMonth(baseDateForGrace.getMonth() + gracePeriodMonths);
 
                 await conn.execute(
                     `INSERT INTO debts
@@ -179,9 +175,9 @@ class Sale {
                         customerId,
                         remainingAmount,
                         remainingAmount,
-                        debtConfig.markup_type,
-                        debtConfig.markup_value,
-                        debtConfig.grace_period_months || 0,
+                        debtConfig?.markup_type || null,
+                        debtConfig?.markup_value || null,
+                        gracePeriodMonths,
                         baseDateForGrace.toISOString().split('T')[0]
                     ]
                 );
@@ -205,7 +201,7 @@ class Sale {
         });
     }
 
-    static async addPayment(saleId, amount, paymentMethod = 'cash', paymentDate = null, user = null) {
+    static async addPayment(saleId, amount, paymentMethod = 'naqt', paymentDate = null, user = null) {
         const AuditLog = require('./AuditLog');
 
         return await transaction(async (conn) => {
@@ -221,14 +217,34 @@ class Sale {
 
             const sale = sales[0];
             const oldData = { ...sale };
-            const remainingAmount = sale.total_amount - sale.paid_amount;
 
-            if (amount > remainingAmount) {
-                throw new Error('Payment amount exceeds remaining balance');
+            // Parse numeric values to ensure proper calculations
+            const saleTotal = parseFloat(sale.total_amount);
+            const salePaid = parseFloat(sale.paid_amount);
+            const paymentAmount = parseFloat(amount);
+
+            // Check if there's an active debt
+            const [debts] = await conn.execute(
+                'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
+                [saleId]
+            );
+
+            // Calculate remaining amount considering debt with markup
+            const remainingAmount = debts[0] ? parseFloat(debts[0].current_amount) : (saleTotal - salePaid);
+
+            // Allow overpayments - validation removed
+
+            const newPaidAmount = salePaid + paymentAmount;
+
+            // Determine new status: only mark as 'paid' if no active debt or debt will be fully paid
+            let newStatus;
+            if (debts[0]) {
+                const currentDebtAmount = parseFloat(debts[0].current_amount);
+                const newDebtAmount = Math.max(0, currentDebtAmount - paymentAmount);
+                newStatus = newDebtAmount === 0 ? 'paid' : 'partial';
+            } else {
+                newStatus = newPaidAmount >= saleTotal ? 'paid' : 'partial';
             }
-
-            const newPaidAmount = sale.paid_amount + amount;
-            const newStatus = newPaidAmount >= sale.total_amount ? 'paid' : 'partial';
 
             // Update sale
             await conn.execute(
@@ -247,13 +263,9 @@ class Sale {
             );
 
             // Update debt if exists
-            const [debts] = await conn.execute(
-                'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
-                [saleId]
-            );
-
             if (debts[0]) {
-                const newDebtAmount = Math.max(0, debts[0].current_amount - amount);
+                const currentDebtAmount = parseFloat(debts[0].current_amount);
+                const newDebtAmount = Math.max(0, currentDebtAmount - paymentAmount);
                 const debtStatus = newDebtAmount === 0 ? 'paid' : 'active';
 
                 await conn.execute(

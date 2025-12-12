@@ -41,7 +41,7 @@
                                 <select class="form-control product-select" style="flex: 2;" required>
                                     <option value=""><%= lang.stockIntake.selectProduct %></option>
                                     <% warehouseStock.forEach(item => { %>
-                                        <option value="<%= item.product_id %>" data-available="<%= item.quantity %>" data-sell="<%= item.sell_price %>">
+                                        <option value="<%= item.product_id %>" data-available="<%= item.quantity %>" data-purchase="<%= item.purchase_price %>">
                                             <%= item.product_name %> (<%= lang.stockIntake.available %>: <%= item.quantity %>)
                                         </option>
                                     <% }) %>
@@ -111,13 +111,8 @@ document.getElementById('transferForm').addEventListener('submit', async functio
     }
 
     try {
-        // Fetch latest transfer date
-        const response = await fetch('/stock-transfer/api/latest-date');
-        const data = await response.json();
-        const defaultDate = data.date;
-
-        // Show date picker with custom format
-        const selectedDate = await showDatePicker('O\'tkazma sanasini tanlang', defaultDate);
+        // Show date picker with session date (uses last input date)
+        const selectedDate = await showDatePicker('O\'tkazma sanasini tanlang');
 
         if (selectedDate) {
             // Add the date to form
@@ -139,13 +134,13 @@ document.getElementById('transferForm').addEventListener('submit', async functio
     }
 });
 
-// Auto-fill suggested sell price
+// Auto-fill suggested purchase price
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('product-select')) {
         const option = e.target.selectedOptions[0];
         const row = e.target.closest('.product-item');
-        if (option.dataset.sell) {
-            row.querySelector('.price-input').value = option.dataset.sell;
+        if (option.dataset.purchase) {
+            row.querySelector('.price-input').value = option.dataset.purchase;
         }
     }
 });
@@ -179,6 +174,13 @@ $(document).ready(function() {
         allowClear: true
     });
 
+    // Focus search input when Select2 opens
+    $('#seller_id').on('select2:open', function() {
+        setTimeout(function() {
+            document.querySelector('.select2-search__field').focus();
+        }, 100);
+    });
+
     // Initialize Select2 for product selects (warehouse stock only)
     function initializeProductSelect(element) {
         $(element).select2({
@@ -210,12 +212,19 @@ $(document).ready(function() {
             dropdownParent: $(element).parent()
         });
 
+        // Focus search input when Select2 opens
+        $(element).on('select2:open', function() {
+            setTimeout(function() {
+                document.querySelector('.select2-search__field').focus();
+            }, 100);
+        });
+
         // Auto-fill prices when product is selected
         $(element).on('select2:select', function (e) {
             var product = e.params.data.product;
             var row = $(this).closest('.product-item');
-            if (product.sell_price) {
-                row.find('.price-input').val(product.sell_price);
+            if (product.purchase_price) {
+                row.find('.price-input').val(product.purchase_price);
             }
         });
     }

@@ -2,7 +2,16 @@ const { query } = require('../config/database');
 
 class Product {
     static async getAll() {
-        const sql = 'SELECT * FROM products ORDER BY name ASC';
+        const sql = `
+            SELECT p.*,
+                   COALESCE(wi.quantity, 0) as warehouse_count,
+                   COALESCE(SUM(si.quantity), 0) as seller_count
+            FROM products p
+            LEFT JOIN warehouse_inventory wi ON p.id = wi.product_id
+            LEFT JOIN seller_inventory si ON p.id = si.product_id
+            GROUP BY p.id
+            ORDER BY p.name ASC
+        `;
         return await query(sql);
     }
 

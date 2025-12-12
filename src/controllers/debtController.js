@@ -43,12 +43,38 @@ class DebtController {
             // Calculate current debt with markup dynamically (not from database)
             const debtCalculation = Debt.calculateDebtWithMarkup(debt);
 
+            // Create combined history of payments and markups, sorted by date
+            const combinedHistory = [];
+
+            // Add payments
+            paymentHistory.forEach(payment => {
+                combinedHistory.push({
+                    type: 'payment',
+                    date: payment.payment_date,
+                    amount: payment.amount,
+                    payment_method: payment.payment_method
+                });
+            });
+
+            // Add markup logs
+            markupLogs.forEach(log => {
+                combinedHistory.push({
+                    type: 'markup',
+                    date: log.calculation_date,
+                    amount: log.markup_value
+                });
+            });
+
+            // Sort by date
+            combinedHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
             res.render('debts/view', {
                 title: `Debt #${debt.id}`,
                 debt,
                 debtCalculation,
                 paymentHistory,
-                markupLogs
+                markupLogs,
+                combinedHistory
             });
         } catch (error) {
             console.error('Debt view error:', error);
@@ -153,7 +179,7 @@ class DebtController {
             const translatePaymentMethod = (method) => {
                 if (!method) return method;
                 const translations = {
-                    'cash': 'naqt',
+                    'naqt': 'naqt',
                     'card': 'karta',
                     'transfer': 'o\'tkazma',
                     'other': 'boshqa'
@@ -184,13 +210,14 @@ class DebtController {
             // Set column widths
             worksheet.columns = [
                 { width: 5 },
-                { width: 30 },
+                { width: 20 },
+                { width: 25 },
                 { width: 20 },
                 { width: 20 }
             ];
 
             // Title
-            worksheet.mergeCells('A1:D1');
+            worksheet.mergeCells('A1:E1');
             worksheet.getCell('A1').value = 'QARZ HISOBOTI';
             worksheet.getCell('A1').font = { size: 18, bold: true };
             worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -208,22 +235,8 @@ class DebtController {
             worksheet.addRow(['', 'QARZ MIQDORLARI']).font = { bold: true, size: 12 };
             worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
             worksheet.addRow(['', 'Joriy qarz (asosiy):', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-
-            if (debtCalculation.monthsOverdue > 0) {
-                worksheet.addRow([]);
-                const overdueRow = worksheet.addRow(['', 'Imtiyoz muddati tugagan:', `${debtCalculation.monthsOverdue} oy oldin`]);
-                overdueRow.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
-
-                const markupRow = worksheet.addRow(['', 'Ustama (hisoblangan):', `$${parseFloat(debtCalculation.markupAmount).toFixed(2)}`]);
-                markupRow.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
-
-                const totalRow = worksheet.addRow(['', 'JAMI QARZ (ustama bilan):', `$${parseFloat(debtCalculation.totalWithMarkup).toFixed(2)}`]);
-                totalRow.font = { bold: true, size: 12 };
-                totalRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true, size: 12 };
-            } else {
-                const totalRow = worksheet.addRow(['', 'JAMI QARZ:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-                totalRow.font = { bold: true, size: 12 };
-            }
+            const totalRow = worksheet.addRow(['', 'JAMI QARZ:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
+            totalRow.font = { bold: true, size: 12 };
 
             // Grace period info
             worksheet.addRow([]);
@@ -232,19 +245,44 @@ class DebtController {
             worksheet.addRow(['', 'Ustama turi:', debt.markup_type === 'fixed' ? 'Qat\'iy' : 'Foiz']);
             worksheet.addRow(['', 'Ustama stavkasi:', debt.markup_type === 'fixed' ? `$${parseFloat(debt.markup_value).toFixed(2)} har oy` : `${parseFloat(debt.markup_value).toFixed(2)}% har oy`]);
 
-            // Payment history
-            if (paymentHistory.length > 0) {
-                worksheet.addRow([]);
-                worksheet.addRow(['', 'TO\'LOVLAR TARIXI (qarzni kamaytiradi)']).font = { bold: true, size: 12 };
+            // Combined payment and markup history
+            const combinedHistory = [];
 
-                const paymentHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Usul']);
-                paymentHeaderRow.font = { bold: true };
-                paymentHeaderRow.eachCell((cell, colNumber) => {
+            // Add payments
+            paymentHistory.forEach(payment => {
+                combinedHistory.push({
+                    type: 'payment',
+                    date: payment.payment_date,
+                    amount: payment.amount,
+                    payment_method: payment.payment_method
+                });
+            });
+
+            // Add markups
+            markupLogs.forEach(log => {
+                combinedHistory.push({
+                    type: 'markup',
+                    date: log.calculation_date,
+                    amount: log.markup_value
+                });
+            });
+
+            // Sort by date
+            combinedHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Combined history table
+            if (combinedHistory.length > 0) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'QARZ TARIXI (to\'lovlar va ustamalar)']).font = { bold: true, size: 12 };
+
+                const headerRow = worksheet.addRow(['', 'Sana', 'Turi', 'Summa', 'Qarz balansi']);
+                headerRow.font = { bold: true };
+                headerRow.eachCell((cell, colNumber) => {
                     if (colNumber > 1) {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFE0FFE0' }
+                            fgColor: { argb: 'FFE0E0E0' }
                         };
                         cell.border = {
                             top: { style: 'thin' },
@@ -255,14 +293,52 @@ class DebtController {
                     }
                 });
 
-                paymentHistory.forEach(payment => {
+                // Initial debt row
+                let runningBalance = parseFloat(debt.original_amount);
+                const initialRow = worksheet.addRow([
+                    '',
+                    new Date(debt.sale_date).toLocaleDateString('ru-RU'),
+                    'Boshlang\'ich qarz',
+                    '-',
+                    `$${runningBalance.toFixed(2)}`
+                ]);
+                initialRow.font = { bold: true };
+                initialRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                // Process each history item
+                combinedHistory.forEach(item => {
+                    let displayType, displayAmount, amountColor;
+
+                    if (item.type === 'payment') {
+                        displayType = `To\'lov (${translatePaymentMethod(item.payment_method)})`;
+                        displayAmount = `-$${parseFloat(item.amount).toFixed(2)}`;
+                        amountColor = 'FF00AA00'; // green
+                        runningBalance -= parseFloat(item.amount);
+                    } else {
+                        displayType = 'Ustama';
+                        displayAmount = `+$${parseFloat(item.amount).toFixed(2)}`;
+                        amountColor = 'FFFF8800'; // orange
+                        runningBalance += parseFloat(item.amount);
+                    }
+
                     const row = worksheet.addRow([
                         '',
-                        new Date(payment.payment_date).toLocaleDateString('ru-RU'),
-                        `-$${parseFloat(payment.amount).toFixed(2)}`,
-                        translatePaymentMethod(payment.payment_method)
+                        new Date(item.date).toLocaleDateString('ru-RU'),
+                        displayType,
+                        displayAmount,
+                        `$${runningBalance.toFixed(2)}`
                     ]);
-                    row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
+                    row.getCell(4).font = { color: { argb: amountColor }, bold: true };
+                    row.getCell(5).font = { bold: true };
                     row.eachCell((cell, colNumber) => {
                         if (colNumber > 1) {
                             cell.border = {
@@ -274,21 +350,23 @@ class DebtController {
                         }
                     });
                 });
-            }
 
-            // Markup history
-            if (markupLogs.length > 0) {
-                worksheet.addRow([]);
-                worksheet.addRow(['', 'USTAMA TARIXI (qarzni oshiradi)']).font = { bold: true, size: 12 };
-
-                const markupHeaderRow = worksheet.addRow(['', 'Sana', 'Qarz (oldingi)', 'Ustama']);
-                markupHeaderRow.font = { bold: true };
-                markupHeaderRow.eachCell((cell, colNumber) => {
+                // Total row
+                const totalRow = worksheet.addRow([
+                    '',
+                    '',
+                    '',
+                    'JAMI QARZ:',
+                    `$${runningBalance.toFixed(2)}`
+                ]);
+                totalRow.font = { bold: true, size: 12 };
+                totalRow.getCell(5).font = { color: { argb: 'FFFF0000' }, bold: true, size: 12 };
+                totalRow.eachCell((cell, colNumber) => {
                     if (colNumber > 1) {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFFFE0E0' }
+                            fgColor: { argb: 'FFFFF3CD' }
                         };
                         cell.border = {
                             top: { style: 'thin' },
@@ -297,30 +375,6 @@ class DebtController {
                             right: { style: 'thin' }
                         };
                     }
-                });
-
-                markupLogs.forEach(log => {
-                    const markupValue = debt.markup_type === 'fixed'
-                        ? `+$${parseFloat(log.markup_value || 0).toFixed(2)}`
-                        : `${parseFloat(log.markup_percent || 0).toFixed(2)}% = +$${parseFloat(log.markup_value || 0).toFixed(2)}`;
-
-                    const row = worksheet.addRow([
-                        '',
-                        new Date(log.calculation_date).toLocaleDateString('ru-RU'),
-                        `$${parseFloat(log.remaining_debt || 0).toFixed(2)}`,
-                        markupValue
-                    ]);
-                    row.getCell(4).font = { color: { argb: 'FFFF9900' }, bold: true };
-                    row.eachCell((cell, colNumber) => {
-                        if (colNumber > 1) {
-                            cell.border = {
-                                top: { style: 'thin' },
-                                left: { style: 'thin' },
-                                bottom: { style: 'thin' },
-                                right: { style: 'thin' }
-                            };
-                        }
-                    });
                 });
             }
 

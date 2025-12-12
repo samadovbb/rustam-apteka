@@ -103,8 +103,10 @@ class SellerController {
     static async search(req, res) {
         try {
             const { q } = req.query;
-            if (!q) {
-                return res.json([]);
+            // If no query, return all sellers
+            if (!q || q.trim() === '') {
+                const sellers = await Seller.getAll();
+                return res.json(sellers);
             }
 
             const sellers = await Seller.search(q);
@@ -129,6 +131,9 @@ class SellerController {
             const sales = await Seller.getSalesHistory(req.params.id);
             const transfers = await Seller.getTransfers(req.params.id);
             const stats = await Seller.getSalesStats(req.params.id);
+            const profitStats = await Seller.getProfitStats(req.params.id);
+            const penaltyStats = await Seller.getPenaltyStats(req.params.id);
+            const penalties = await Seller.getPenalties(req.params.id);
 
             res.render('sellers/view', {
                 title: `${seller.full_name} - Details`,
@@ -136,11 +141,40 @@ class SellerController {
                 debtors,
                 sales,
                 transfers,
-                stats
+                stats,
+                profitStats,
+                penaltyStats,
+                penalties
             });
         } catch (error) {
             console.error('Seller view error:', error);
             res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    static async calculatePenalties(req, res) {
+        try {
+            const { execSync } = require('child_process');
+            const path = require('path');
+
+            const scriptPath = path.join(__dirname, '../../scripts/calculate-seller-penalties.js');
+            const output = execSync(`node "${scriptPath}"`, {
+                encoding: 'utf-8',
+                maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+            });
+
+            res.json({
+                success: true,
+                message: 'Shtraflar muvaffaqiyatli hisoblandi',
+                output: output
+            });
+        } catch (error) {
+            console.error('Calculate penalties error:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                output: error.stdout || error.stderr || ''
+            });
         }
     }
 

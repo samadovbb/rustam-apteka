@@ -66,6 +66,79 @@
                 </div>
             </div>
 
+            <!-- Profit & Penalty Statistics -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Foyda va Shtraflar</h3>
+                    <button onclick="calculatePenalties()" class="btn btn-primary" id="calculateBtn">
+                        Shtraflarni Hisoblash
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                        <div>
+                            <strong>Umumiy Foyda:</strong><br>
+                            <span style="color: green; font-size: 1.2em; font-weight: bold;">
+                                <%= parseFloat(profitStats.total_profit || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Umumiy Shtraflar:</strong><br>
+                            <span style="color: red; font-size: 1.2em; font-weight: bold;">
+                                <%= parseFloat(penaltyStats.total_penalty_amount || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Sof Foyda:</strong><br>
+                            <span style="color: blue; font-size: 1.2em; font-weight: bold;">
+                                <%= (parseFloat(profitStats.total_profit || 0) - parseFloat(penaltyStats.total_penalty_amount || 0)).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Shtraflar Soni:</strong><br>
+                            <%= penaltyStats.total_penalties || 0 %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penalties List -->
+            <% if (penalties && penalties.length > 0) { %>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Shtraflar Tarixi</h3>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sana</th>
+                                <th>Savdo ID</th>
+                                <th>Xaridor</th>
+                                <th>Qolgan Qarz</th>
+                                <th>Shtraf (1%)</th>
+                                <th>Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% penalties.forEach(penalty => { %>
+                                <tr>
+                                    <td><%= new Date(penalty.penalty_date).toLocaleDateString() %></td>
+                                    <td><a href="/sales/<%= penalty.sale_id %>">#<%= penalty.sale_id %></a></td>
+                                    <td><%= penalty.customer_name %></td>
+                                    <td><%= parseFloat(penalty.remaining_debt).toFixed(2) %></td>
+                                    <td style="color: red; font-weight: bold;">
+                                        <%= parseFloat(penalty.penalty_amount).toFixed(2) %>
+                                    </td>
+                                    <td><%= penalty.notes || '-' %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <% } %>
+
             <!-- Debtors -->
             <div class="card">
                 <div class="card-header">
@@ -199,3 +272,42 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+async function calculatePenalties() {
+    const btn = document.getElementById('calculateBtn');
+    const originalText = btn.textContent;
+
+    if (!confirm('Barcha savdolar uchun shtraflarni hisoblashni xohlaysizmi? Bu bir necha daqiqa vaqt olishi mumkin.')) {
+        return;
+    }
+
+    try {
+        btn.disabled = true;
+        btn.textContent = 'Hisoblanmoqda...';
+
+        const response = await fetch('/sellers/api/calculate-penalties', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('Shtraflar muvaffaqiyatli hisoblandi! Sahifa yangilanmoqda...');
+            window.location.reload();
+        } else {
+            alert('Xatolik: ' + result.error);
+            console.error('Output:', result.output);
+        }
+    } catch (error) {
+        alert('Xatolik yuz berdi: ' + error.message);
+        console.error('Error:', error);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+</script>

@@ -56,10 +56,9 @@ window.updateProductSelects = function updateProductSelects() {
             window.sellerInventory.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.product_id;
-                option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.seller_price).toFixed(2)})`;
+                option.textContent = `${item.product_name} (Available: ${item.quantity}, Price: $${parseFloat(item.warehouse_sell_price).toFixed(2)})`;
                 option.dataset.available = item.quantity;
-                option.dataset.price = item.seller_price;
-                option.dataset.minPrice = item.seller_price;
+                option.dataset.price = item.warehouse_sell_price;
                 select.appendChild(option);
             });
             select.disabled = false;
@@ -105,13 +104,11 @@ function attachProductRowListeners(row) {
     const quantityInput = row.querySelector('.quantity-input');
     const priceInput = row.querySelector('.price-input');
     const subtotalSpan = row.querySelector('span');
-    let priceTimeout;
 
     productSelect.addEventListener('change', function() {
         const option = this.selectedOptions[0];
         if (option.dataset.price) {
             priceInput.value = option.dataset.price;
-            priceInput.min = option.dataset.minPrice;
             updateSubtotal(row);
         }
     });
@@ -127,22 +124,8 @@ function attachProductRowListeners(row) {
     });
 
     priceInput.addEventListener('input', function() {
-        const inputValue = this.value;
-
         // Update subtotal immediately while typing
         updateSubtotal(row);
-
-        // Validate price after user stops typing (500ms delay)
-        clearTimeout(priceTimeout);
-        priceTimeout = setTimeout(() => {
-            const option = productSelect.selectedOptions[0];
-            const minPrice = parseFloat(option.dataset.minPrice || 0);
-            if (parseFloat(inputValue) < minPrice) {
-                alert(`Narx $${minPrice.toFixed(2)} dan past bo'lishi mumkin emas`);
-                priceInput.value = minPrice;
-                updateSubtotal(row);
-            }
-        }, 500);
     });
 }
 
