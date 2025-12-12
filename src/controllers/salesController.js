@@ -463,28 +463,173 @@ class SalesController {
                 worksheet.addRow(['', 'Joriy qarz:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
             }
 
-            // Payment history
-            if (payments.length > 0) {
+            // Combined Payment and Markup History
+            if (payments.length > 0 || markupLogs.length > 0) {
                 worksheet.addRow([]);
-                worksheet.addRow(['', 'TO\'LOVLAR TARIXI']).font = { bold: true, size: 12 };
-                const paymentHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Usul', '']);
-                paymentHeaderRow.font = { bold: true };
+                worksheet.addRow(['', 'TO\'LOV VA USTAMA TARIXI']).font = { bold: true, size: 12 };
 
+                // Combine payments and markup logs
+                let combinedHistory = [];
+
+                // Add payments
                 payments.forEach(payment => {
-                    worksheet.addRow([
-                        '',
-                        new Date(payment.payment_date).toLocaleDateString('ru-RU'),
-                        `$${parseFloat(payment.amount).toFixed(2)}`,
-                        translatePaymentMethod(payment.payment_method),
-                        ''
-                    ]);
+                    combinedHistory.push({
+                        type: 'payment',
+                        date: new Date(payment.payment_date),
+                        payment: payment
+                    });
+                });
+
+                // Add markup logs
+                if (markupLogs && markupLogs.length > 0) {
+                    markupLogs.forEach(markup => {
+                        combinedHistory.push({
+                            type: 'markup',
+                            date: new Date(markup.calculation_date),
+                            markup: markup
+                        });
+                    });
+                }
+
+                // Sort by date
+                combinedHistory.sort((a, b) => a.date - b.date);
+
+                // Header row
+                const historyHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Turi', 'Qoldiq']);
+                historyHeaderRow.font = { bold: true };
+                historyHeaderRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFE0E0E0' }
+                        };
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                // Initial balance row
+                let runningBalance = parseFloat(sale.total_amount);
+                const initialRow = worksheet.addRow([
+                    '',
+                    new Date(sale.sale_date).toLocaleDateString('ru-RU'),
+                    'Umumiy summa',
+                    '-',
+                    `$${runningBalance.toFixed(2)}`
+                ]);
+                initialRow.font = { bold: true };
+                initialRow.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFF8F9FA' }
+                };
+                initialRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                // Add combined history entries
+                combinedHistory.forEach(item => {
+                    if (item.type === 'payment') {
+                        runningBalance -= parseFloat(item.payment.amount);
+                        const row = worksheet.addRow([
+                            '',
+                            item.date.toLocaleDateString('ru-RU'),
+                            `-$${parseFloat(item.payment.amount).toFixed(2)}`,
+                            translatePaymentMethod(item.payment.payment_method),
+                            `$${runningBalance.toFixed(2)}`
+                        ]);
+                        row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
+                        row.eachCell((cell, colNumber) => {
+                            if (colNumber > 1) {
+                                cell.border = {
+                                    top: { style: 'thin' },
+                                    left: { style: 'thin' },
+                                    bottom: { style: 'thin' },
+                                    right: { style: 'thin' }
+                                };
+                            }
+                        });
+                    } else if (item.type === 'markup') {
+                        const markupValue = parseFloat(item.markup.markup_value || 0);
+                        runningBalance += markupValue;
+
+                        const markupDisplay = debt && debt.markup_type === 'fixed'
+                            ? `+$${markupValue.toFixed(2)}`
+                            : `${parseFloat(item.markup.markup_percent || 0).toFixed(2)}% = +$${markupValue.toFixed(2)}`;
+
+                        const row = worksheet.addRow([
+                            '',
+                            item.date.toLocaleDateString('ru-RU'),
+                            markupDisplay,
+                            'Ustama',
+                            `$${runningBalance.toFixed(2)}`
+                        ]);
+                        row.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
+                        row.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFFFF8E1' }
+                        };
+                        row.eachCell((cell, colNumber) => {
+                            if (colNumber > 1) {
+                                cell.border = {
+                                    top: { style: 'thin' },
+                                    left: { style: 'thin' },
+                                    bottom: { style: 'thin' },
+                                    right: { style: 'thin' }
+                                };
+                            }
+                        });
+                    }
+                });
+
+                // Final balance row
+                const finalRow = worksheet.addRow([
+                    '',
+                    '',
+                    '',
+                    'QOLDIQ:',
+                    `$${runningBalance.toFixed(2)}`
+                ]);
+                finalRow.font = { bold: true, size: 12 };
+                finalRow.getCell(5).font = {
+                    color: { argb: runningBalance > 0 ? 'FFFF0000' : 'FF00AA00' },
+                    bold: true,
+                    size: 12
+                };
+                finalRow.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFFFF3CD' }
+                };
+                finalRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
                 });
             }
 
             // Debt payment history (separate from sale payments)
             if (debtPaymentHistory.length > 0) {
                 worksheet.addRow([]);
-                worksheet.addRow(['', 'QARZ BO\'YICHA TO\'LOVLAR TARIXI (qarzni kamaytiradi)']).font = { bold: true, size: 12 };
+                worksheet.addRow(['', 'QARZ BO\'YICHA TO\'LOVLAR TARIXI']).font = { bold: true, size: 12 };
 
                 const debtPaymentHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Usul', '']);
                 debtPaymentHeaderRow.font = { bold: true };
@@ -515,55 +660,6 @@ class SalesController {
                     row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
                     row.eachCell((cell, colNumber) => {
                         if (colNumber > 1 && colNumber <= 4) {
-                            cell.border = {
-                                top: { style: 'thin' },
-                                left: { style: 'thin' },
-                                bottom: { style: 'thin' },
-                                right: { style: 'thin' }
-                            };
-                        }
-                    });
-                });
-            }
-
-            // Markup history
-            if (markupLogs.length > 0) {
-                worksheet.addRow([]);
-                worksheet.addRow(['', 'USTAMA TARIXI (qarzni oshiradi)']).font = { bold: true, size: 12 };
-
-                const markupHeaderRow = worksheet.addRow(['', 'Sana', 'Qarz (oldingi)', 'Ustama', 'Qarz (keyingi)']);
-                markupHeaderRow.font = { bold: true };
-                markupHeaderRow.eachCell((cell, colNumber) => {
-                    if (colNumber > 1) {
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: 'FFFFE0E0' }
-                        };
-                        cell.border = {
-                            top: { style: 'thin' },
-                            left: { style: 'thin' },
-                            bottom: { style: 'thin' },
-                            right: { style: 'thin' }
-                        };
-                    }
-                });
-
-                markupLogs.forEach(log => {
-                    const markupValue = debt.markup_type === 'fixed'
-                        ? `+$${parseFloat(log.markup_value || 0).toFixed(2)}`
-                        : `${parseFloat(log.markup_percent || 0).toFixed(2)}% = +$${parseFloat(log.markup_value || 0).toFixed(2)}`;
-
-                    const row = worksheet.addRow([
-                        '',
-                        new Date(log.calculation_date).toLocaleDateString('ru-RU'),
-                        `$${parseFloat(log.remaining_debt || 0).toFixed(2)}`,
-                        markupValue,
-                        `$${parseFloat(log.total_after_markup || 0).toFixed(2)}`
-                    ]);
-                    row.getCell(4).font = { color: { argb: 'FFFF9900' }, bold: true };
-                    row.eachCell((cell, colNumber) => {
-                        if (colNumber > 1) {
                             cell.border = {
                                 top: { style: 'thin' },
                                 left: { style: 'thin' },
