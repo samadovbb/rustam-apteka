@@ -1,26 +1,13 @@
 #!/usr/bin/env node
 /**
- * Retroactive Fixed Markup Calculator
+ * Retroactive Fixed Markup Calculator (Monthly)
  *
- * This script calculates and applies fixed markups to debts based on actual payment history.
- * It looks at when payments were made and applies markup for the months the payment was late.
+ * This script calculates and applies fixed markups to debts MONTH BY MONTH.
+ * Each month after grace period gets a separate markup until debt is paid.
  */
 
 const { query, transaction } = require('../src/config/database');
 require('dotenv').config();
-
-/**
- * Calculate months between two dates
- */
-function monthsDifference(date1, date2) {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-
-    const months = (d2.getFullYear() - d1.getFullYear()) * 12 +
-                   (d2.getMonth() - d1.getMonth());
-
-    return Math.max(0, months);
-}
 
 /**
  * Main function to calculate retroactive markups
@@ -28,7 +15,7 @@ function monthsDifference(date1, date2) {
 async function calculateRetroactiveMarkups() {
     try {
         console.log('='.repeat(70));
-        console.log('🔄 RETROACTIVE FIXED MARKUP CALCULATION');
+        console.log('🔄 RETROACTIVE FIXED MARKUP CALCULATION (MONTHLY)');
         console.log('='.repeat(70));
         console.log('');
 
@@ -60,84 +47,78 @@ async function calculateRetroactiveMarkups() {
             console.log(`  Customer ID: ${debt.customer_id}`);
             console.log(`  Original Amount: $${parseFloat(debt.original_amount).toFixed(2)}`);
             console.log(`  Current Amount: $${parseFloat(debt.current_amount).toFixed(2)}`);
+            console.log(`  Status: ${debt.status}`);
             console.log(`  Fixed Markup: $${parseFloat(debt.markup_value).toFixed(2)}/month`);
             console.log(`  Grace End Date: ${debt.grace_end_date}`);
 
-            // Get all payments for this debt
-            const payments = await query(`
-                SELECT dp.*, pay.payment_date
-                FROM debt_payments dp
-                JOIN payments pay ON dp.payment_id = pay.id
-                WHERE dp.debt_id = ?
-                ORDER BY pay.payment_date ASC
-            `, [debt.id]);
+            const graceEndDate = new Date(debt.grace_end_date);
+            const currentDate = new Date();
 
-            if (payments.length === 0) {
-                console.log(`  ⚠️  No payments found for this debt`);
-                continue;
+            // Determine when debt was paid (if it was)
+            let debtPaidDate = null;
+            if (debt.status === 'paid') {
+                // Get the last payment date for this debt
+                const lastPayment = await query(`
+                    SELECT MAX(pay.payment_date) as last_payment_date
+                    FROM debt_payments dp
+                    JOIN payments pay ON dp.payment_id = pay.id
+                    WHERE dp.debt_id = ?
+                `, [debt.id]);
+
+                if (lastPayment[0] && lastPayment[0].last_payment_date) {
+                    debtPaidDate = new Date(lastPayment[0].last_payment_date);
+                    console.log(`  ✓ Debt was paid on: ${debtPaidDate.toISOString().split('T')[0]}`);
+                }
             }
 
-            console.log(`\n  📋 Found ${payments.length} payment(s):`);
+            // Calculate until debt is paid or current date
+            const endDate = debtPaidDate || currentDate;
+
+            // Start from the first month after grace period
+            let checkDate = new Date(graceEndDate.getFullYear(), graceEndDate.getMonth() + 1, 0); // End of first month after grace
 
             let debtMarkupTotal = 0;
+            let monthCount = 0;
 
-            for (const payment of payments) {
-                const paymentDate = new Date(payment.payment_date);
-                const graceEndDate = new Date(debt.grace_end_date);
+            console.log(`\n  📅 Calculating markup month by month:`);
 
-                console.log(`\n  Payment Date: ${payment.payment_date}`);
-                console.log(`  Payment Amount: $${parseFloat(payment.amount).toFixed(2)}`);
+            while (checkDate <= endDate) {
+                const checkDateStr = checkDate.toISOString().split('T')[0];
+                monthCount++;
 
-                // Check if payment was made after grace period
-                if (paymentDate <= graceEndDate) {
-                    console.log(`  ✓ Payment made during grace period - no markup`);
-                    continue;
+                // Check if markup already logged for this month
+                const existing = await query(`
+                    SELECT id FROM debt_fixed_markup_logs
+                    WHERE debt_id = ? AND DATE(calculation_date) = ?
+                `, [debt.id, checkDateStr]);
+
+                if (existing.length > 0) {
+                    console.log(`  ${checkDateStr} - Already logged, skipping`);
+                } else {
+                    const markupAmount = parseFloat(debt.markup_value);
+
+                    // Insert markup log for this month
+                    await transaction(async (conn) => {
+                        const currentDebt = parseFloat(debt.current_amount);
+                        await conn.execute(`
+                            INSERT INTO debt_fixed_markup_logs
+                            (debt_id, calculation_date, remaining_debt, markup_value, total_after_markup)
+                            VALUES (?, ?, ?, ?, ?)
+                        `, [
+                            debt.id,
+                            checkDateStr,
+                            currentDebt,
+                            markupAmount,
+                            currentDebt + markupAmount
+                        ]);
+                    });
+
+                    debtMarkupTotal += markupAmount;
+                    console.log(`  ${checkDateStr} - Added $${markupAmount.toFixed(2)} markup`);
                 }
 
-                // Calculate months late
-                const monthsLate = monthsDifference(graceEndDate, paymentDate);
-
-                if (monthsLate === 0) {
-                    console.log(`  ✓ Payment made in the first month after grace - no markup`);
-                    continue;
-                }
-
-                // Calculate markup
-                const markupAmount = monthsLate * parseFloat(debt.markup_value);
-                debtMarkupTotal += markupAmount;
-
-                console.log(`  ⚠️  Payment was ${monthsLate} month(s) late`);
-                console.log(`  💰 Markup to add: $${markupAmount.toFixed(2)} (${monthsLate} × $${parseFloat(debt.markup_value).toFixed(2)})`);
-
-                // Add markup log
-                await transaction(async (conn) => {
-                    // Check if markup already logged for this payment
-                    const [existing] = await conn.execute(`
-                        SELECT id FROM debt_fixed_markup_logs
-                        WHERE debt_id = ? AND calculation_date = ?
-                    `, [debt.id, payment.payment_date]);
-
-                    if (existing.length > 0) {
-                        console.log(`  ℹ️  Markup already logged for this payment date`);
-                        return;
-                    }
-
-                    // Insert markup log
-                    const currentDebt = parseFloat(debt.current_amount);
-                    await conn.execute(`
-                        INSERT INTO debt_fixed_markup_logs
-                        (debt_id, calculation_date, remaining_debt, markup_value, total_after_markup)
-                        VALUES (?, ?, ?, ?, ?)
-                    `, [
-                        debt.id,
-                        payment.payment_date,
-                        currentDebt,
-                        markupAmount,
-                        currentDebt + markupAmount
-                    ]);
-
-                    console.log(`  ✅ Markup log created`);
-                });
+                // Move to the end of next month
+                checkDate = new Date(checkDate.getFullYear(), checkDate.getMonth() + 2, 0);
             }
 
             if (debtMarkupTotal > 0) {
@@ -150,13 +131,14 @@ async function calculateRetroactiveMarkups() {
                     WHERE id = ?
                 `, [newCurrentAmount, debt.id]);
 
-                console.log(`\n  📈 Total Markup for this debt: $${debtMarkupTotal.toFixed(2)}`);
+                console.log(`\n  📈 Total months: ${monthCount}`);
+                console.log(`  📈 Total Markup for this debt: $${debtMarkupTotal.toFixed(2)}`);
                 console.log(`  💵 Updated Current Amount: $${parseFloat(debt.current_amount).toFixed(2)} → $${newCurrentAmount.toFixed(2)}`);
 
                 processedCount++;
                 totalMarkupAdded += debtMarkupTotal;
             } else {
-                console.log(`\n  ℹ️  No markup needed for this debt`);
+                console.log(`\n  ℹ️  No new markup needed for this debt`);
             }
         }
 
