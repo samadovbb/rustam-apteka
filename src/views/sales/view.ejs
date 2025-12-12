@@ -110,15 +110,15 @@
                     </p>
                 </div>
 
-                <% if (payments.length > 0) { %>
-                    <h4>To'lov tarixi</h4>
+                <% if (payments.length > 0 || (markupLogs && markupLogs.length > 0)) { %>
+                    <h4>To'lov va Ustama tarixi</h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
                                     <th>Sana</th>
                                     <th>Summa</th>
-                                    <th>Usul</th>
+                                    <th>Turi</th>
                                     <th>Qoldiq</th>
                                     <th>Harakat</th>
                                 </tr>
@@ -126,7 +126,34 @@
                             <tbody>
                                 <%
                                 let runningBalance = parseFloat(sale.total_amount);
+
+                                // Combine payments and markup logs
+                                let combinedHistory = [];
+
+                                // Add payments
+                                payments.forEach(payment => {
+                                    combinedHistory.push({
+                                        type: 'payment',
+                                        date: new Date(payment.payment_date),
+                                        payment: payment
+                                    });
+                                });
+
+                                // Add markup logs if they exist
+                                if (markupLogs && markupLogs.length > 0) {
+                                    markupLogs.forEach(markup => {
+                                        combinedHistory.push({
+                                            type: 'markup',
+                                            date: new Date(markup.calculation_date),
+                                            markup: markup
+                                        });
+                                    });
+                                }
+
+                                // Sort by date
+                                combinedHistory.sort((a, b) => a.date - b.date);
                                 %>
+
                                 <tr style="background: #f8f9fa;">
                                     <td><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></td>
                                     <td><strong>Umumiy summa</strong></td>
@@ -134,21 +161,42 @@
                                     <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
                                     <td>-</td>
                                 </tr>
-                                <% payments.forEach(payment => {
-                                    runningBalance -= parseFloat(payment.amount);
+
+                                <% combinedHistory.forEach(item => {
+                                    if (item.type === 'payment') {
+                                        runningBalance -= parseFloat(item.payment.amount);
                                 %>
                                     <tr>
-                                        <td id="payment-date-<%= payment.id %>"><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
-                                        <td style="color: green; font-weight: bold;">-$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
-                                        <td><%= payment.payment_method %></td>
+                                        <td id="payment-date-<%= item.payment.id %>"><%= item.date.toLocaleDateString('ru-RU') %></td>
+                                        <td style="color: green; font-weight: bold;">-$<%= parseFloat(item.payment.amount || 0).toFixed(2) %></td>
+                                        <td><%= item.payment.payment_method %></td>
                                         <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
                                         <td>
-                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
+                                            <button onclick="editPaymentDate(<%= sale.id %>, <%= item.payment.id %>, '<%= item.payment.payment_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
                                                 ✏️
                                             </button>
                                         </td>
                                     </tr>
-                                <% }) %>
+                                <% } else if (item.type === 'markup') {
+                                        const markupValue = parseFloat(item.markup.markup_value || 0);
+                                        runningBalance += markupValue;
+                                %>
+                                    <tr style="background: #fff8e1;">
+                                        <td><%= item.date.toLocaleDateString('ru-RU') %></td>
+                                        <td style="color: orange; font-weight: bold;">
+                                            <% if (debt && debt.markup_type === 'fixed') { %>
+                                                +$<%= markupValue.toFixed(2) %>
+                                            <% } else { %>
+                                                <%= parseFloat(item.markup.markup_percent || 0).toFixed(2) %>% = +$<%= markupValue.toFixed(2) %>
+                                            <% } %>
+                                        </td>
+                                        <td>Ustama</td>
+                                        <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
+                                        <td>-</td>
+                                    </tr>
+                                <% }
+                                }) %>
+
                                 <tr style="background: #fff3cd; font-size: 1.1em;">
                                     <td colspan="3"><strong>QOLDIQ:</strong></td>
                                     <td style="color: <%= runningBalance > 0 ? 'red' : 'green' %>; font-weight: bold; font-size: 1.2em;">$<%= runningBalance.toFixed(2) %></td>
