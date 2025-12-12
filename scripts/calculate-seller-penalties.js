@@ -16,7 +16,7 @@ async function calculateSellerPenalties() {
     try {
         console.log('Starting seller penalty calculation...\n');
 
-        // Get all sales that have debts (paid_amount < total_amount)
+        // Get all sales (including fully paid ones, to calculate penalties for historical debts)
         const salesWithDebts = await query(`
             SELECT s.id, s.seller_id, s.sale_date, s.total_amount, s.paid_amount,
                    sel.full_name as seller_name,
@@ -24,11 +24,10 @@ async function calculateSellerPenalties() {
             FROM sales s
             JOIN sellers sel ON s.seller_id = sel.id
             JOIN customers c ON s.customer_id = c.id
-            WHERE s.paid_amount < s.total_amount
             ORDER BY s.sale_date ASC
         `);
 
-        console.log(`Found ${salesWithDebts.length} sales with outstanding debts.\n`);
+        console.log(`Found ${salesWithDebts.length} sales to process (including fully paid).\n`);
 
         let totalPenalties = 0;
         let penaltyCount = 0;
@@ -42,7 +41,7 @@ async function calculateSellerPenalties() {
             // Get all payments for this sale, ordered by date
             const payments = await query(`
                 SELECT payment_date, amount
-                FROM sale_payments
+                FROM payments
                 WHERE sale_id = ?
                 ORDER BY payment_date ASC
             `, [sale.id]);
