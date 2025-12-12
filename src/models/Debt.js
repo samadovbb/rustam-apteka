@@ -144,6 +144,12 @@ class Debt {
             }
 
             const currentAmount = parseFloat(debt.current_amount);
+
+            // If debt is already paid (0 or less), don't apply markup
+            if (currentAmount <= 0) {
+                return null;
+            }
+
             let markupValue;
             let totalAfterMarkup;
 
