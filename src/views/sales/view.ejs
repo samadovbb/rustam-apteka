@@ -111,23 +111,37 @@
                 </div>
 
                 <% if (payments.length > 0) { %>
-                    <h4><%= lang.sales.paymentHistory %></h4>
+                    <h4>To'lov tarixi</h4>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
-                                    <th><%= lang.common.date %></th>
-                                    <th><%= lang.sales.amount %></th>
-                                    <th><%= lang.sales.method %></th>
+                                    <th>Sana</th>
+                                    <th>Summa</th>
+                                    <th>Usul</th>
+                                    <th>Qoldiq</th>
                                     <th>Harakat</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <% payments.forEach(payment => { %>
+                                <%
+                                let runningBalance = parseFloat(sale.total_amount);
+                                %>
+                                <tr style="background: #f8f9fa;">
+                                    <td><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></td>
+                                    <td><strong>Umumiy summa</strong></td>
+                                    <td>-</td>
+                                    <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
+                                    <td>-</td>
+                                </tr>
+                                <% payments.forEach(payment => {
+                                    runningBalance -= parseFloat(payment.amount);
+                                %>
                                     <tr>
                                         <td id="payment-date-<%= payment.id %>"><%= new Date(payment.payment_date).toLocaleDateString('ru-RU') %></td>
-                                        <td>$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
+                                        <td style="color: green; font-weight: bold;">-$<%= parseFloat(payment.amount || 0).toFixed(2) %></td>
                                         <td><%= payment.payment_method %></td>
+                                        <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
                                         <td>
                                             <button onclick="editPaymentDate(<%= sale.id %>, <%= payment.id %>, '<%= payment.payment_date %>')" class="btn btn-sm btn-link" title="Sanani tahrirlash" style="padding: 0; font-size: 0.9em;">
                                                 ✏️
@@ -135,14 +149,12 @@
                                         </td>
                                     </tr>
                                 <% }) %>
-                            </tbody>
-                            <tfoot>
-                                <tr style="font-weight: bold; background-color: #f8f9fa;">
-                                    <td style="text-align: right;">Jami to'lovlar:</td>
-                                    <td>$<%= parseFloat(payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0)).toFixed(2) %></td>
-                                    <td colspan="2"></td>
+                                <tr style="background: #fff3cd; font-size: 1.1em;">
+                                    <td colspan="3"><strong>QOLDIQ:</strong></td>
+                                    <td style="color: <%= runningBalance > 0 ? 'red' : 'green' %>; font-weight: bold; font-size: 1.2em;">$<%= runningBalance.toFixed(2) %></td>
+                                    <td>-</td>
                                 </tr>
-                            </tfoot>
+                            </tbody>
                         </table>
                     </div>
                 <% } %>
