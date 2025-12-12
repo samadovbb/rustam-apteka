@@ -264,6 +264,7 @@ class Debt {
             AND markup_type IS NOT NULL
             AND markup_value IS NOT NULL
             AND grace_end_date < CURDATE()
+            AND current_amount > 0
             AND (last_markup_date IS NULL OR last_markup_date < DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
         `;
         const debtsToProcess = await query(sql);
