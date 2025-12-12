@@ -46,13 +46,14 @@ async function calculateSellerPenalties() {
                 ORDER BY payment_date ASC
             `, [sale.id]);
 
-            // Calculate penalties month by month (based on sale date)
+            // Calculate penalties month by month (based on sale date + 1 day)
             const saleDate = new Date(sale.sale_date);
             const currentDate = new Date();
 
-            // Start from one month after sale date (same day of month)
+            // Start from one month after sale date (same day of month) + 1 day
             let checkDate = new Date(saleDate);
             checkDate.setMonth(checkDate.getMonth() + 1);
+            checkDate.setDate(checkDate.getDate() + 1); // Add 1 day
 
             let runningBalance = parseFloat(sale.total_amount);
             let paymentIndex = 0;

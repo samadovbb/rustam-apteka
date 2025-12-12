@@ -74,14 +74,16 @@ async function calculateRetroactiveMarkups() {
             // Calculate until debt is paid or current date
             const endDate = debtPaidDate || currentDate;
 
-            // Start from one month after grace end date (same day of month)
+            // Start from one month after grace end date (same day of month) + 1 day
             let checkDate = new Date(graceEndDate);
             checkDate.setMonth(checkDate.getMonth() + 1);
+            checkDate.setDate(checkDate.getDate() + 1); // Add 1 day
 
             let debtMarkupTotal = 0;
             let monthCount = 0;
+            let runningDebt = parseFloat(debt.current_amount); // Track debt with accumulated markups
 
-            console.log(`\n  📅 Calculating markup month by month (based on sale date):`);
+            console.log(`\n  📅 Calculating markup month by month (based on sale date + 1 day):`);
 
             while (checkDate <= endDate) {
                 const checkDateStr = checkDate.toISOString().split('T')[0];
@@ -95,12 +97,16 @@ async function calculateRetroactiveMarkups() {
 
                 if (existing.length > 0) {
                     console.log(`  ${checkDateStr} - Already logged, skipping`);
+                    // Still need to add to running debt for accurate tracking
+                    const markupAmount = parseFloat(debt.markup_value);
+                    runningDebt += markupAmount;
                 } else {
                     const markupAmount = parseFloat(debt.markup_value);
+                    const debtBeforeMarkup = runningDebt;
+                    const debtAfterMarkup = runningDebt + markupAmount;
 
                     // Insert markup log for this month
                     await transaction(async (conn) => {
-                        const currentDebt = parseFloat(debt.current_amount);
                         await conn.execute(`
                             INSERT INTO debt_fixed_markup_logs
                             (debt_id, calculation_date, remaining_debt, markup_value, total_after_markup)
@@ -108,14 +114,15 @@ async function calculateRetroactiveMarkups() {
                         `, [
                             debt.id,
                             checkDateStr,
-                            currentDebt,
+                            debtBeforeMarkup.toFixed(2),
                             markupAmount,
-                            currentDebt + markupAmount
+                            debtAfterMarkup.toFixed(2)
                         ]);
                     });
 
+                    runningDebt = debtAfterMarkup;
                     debtMarkupTotal += markupAmount;
-                    console.log(`  ${checkDateStr} - Added $${markupAmount.toFixed(2)} markup`);
+                    console.log(`  ${checkDateStr} - Added $${markupAmount.toFixed(2)} markup (Debt: $${debtBeforeMarkup.toFixed(2)} → $${debtAfterMarkup.toFixed(2)})`);
                 }
 
                 // Move to same day next month
