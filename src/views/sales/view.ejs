@@ -102,11 +102,47 @@
                     </table>
                 </div>
 
+                <%
+                // Calculate actual remaining balance from payment history and markups
+                let actualRemaining = parseFloat(sale.total_amount);
+
+                // Combine payments and markups to calculate actual balance
+                let allTransactions = [];
+
+                payments.forEach(payment => {
+                    allTransactions.push({
+                        type: 'payment',
+                        date: new Date(payment.payment_date),
+                        amount: parseFloat(payment.amount)
+                    });
+                });
+
+                if (markupLogs && markupLogs.length > 0) {
+                    markupLogs.forEach(markup => {
+                        allTransactions.push({
+                            type: 'markup',
+                            date: new Date(markup.calculation_date),
+                            amount: parseFloat(markup.markup_value || 0)
+                        });
+                    });
+                }
+
+                // Sort by date and calculate balance
+                allTransactions.sort((a, b) => a.date - b.date);
+                allTransactions.forEach(transaction => {
+                    if (transaction.type === 'payment') {
+                        actualRemaining -= transaction.amount;
+                    } else {
+                        actualRemaining += transaction.amount;
+                    }
+                });
+                %>
+
                 <div style="text-align: right; margin: 20px 0;">
                     <h4>Umumiy summa: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
                     <p><strong>Boshlang'ich to'lov:</strong> $<%= initialPayment ? parseFloat(initialPayment.amount || 0).toFixed(2) : '0.00' %></p>
-                    <p style="color: <%= sale.remaining_amount > 0 ? 'red' : 'green' %>;">
-                        <strong>Qoldiq qarz:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
+                    <p style="color: <%= actualRemaining > 0 ? 'red' : 'green' %>;">
+                        <strong>Qoldiq qarz:</strong> $<%= actualRemaining.toFixed(2) %>
                     </p>
                 </div>
 
