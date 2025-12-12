@@ -232,9 +232,7 @@ class Sale {
             // Calculate remaining amount considering debt with markup
             const remainingAmount = debts[0] ? parseFloat(debts[0].current_amount) : (saleTotal - salePaid);
 
-            if (paymentAmount > remainingAmount) {
-                throw new Error('Payment amount exceeds remaining balance');
-            }
+            // Allow overpayments - validation removed
 
             const newPaidAmount = salePaid + paymentAmount;
 
