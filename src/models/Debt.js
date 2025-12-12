@@ -120,13 +120,15 @@ class Debt {
         };
     }
 
-    // Legacy method - kept for manual markup application (rarely used)
-    // This is now DEPRECATED - markup should be calculated dynamically
+    // Apply markup for a debt (monthly calculation)
     static async applyMarkup(debtId) {
         return await transaction(async (conn) => {
             // Get debt details
             const [debts] = await conn.execute(
-                `SELECT * FROM debts WHERE id = ? AND status = 'active'`,
+                `SELECT d.*, s.sale_date
+                 FROM debts d
+                 LEFT JOIN sales s ON d.sale_id = s.id
+                 WHERE d.id = ?`,
                 [debtId]
             );
 
@@ -135,11 +137,11 @@ class Debt {
             }
 
             const debt = debts[0];
-            const now = new Date();
-            const graceEnd = new Date(debt.grace_end_date);
+            const graceEndDate = new Date(debt.grace_end_date);
+            const currentDate = new Date();
 
             // Check if grace period has ended
-            if (now < graceEnd) {
+            if (currentDate < graceEndDate) {
                 return null; // Still in grace period
             }
 
@@ -150,50 +152,129 @@ class Debt {
                 return null;
             }
 
-            let markupValue;
-            let totalAfterMarkup;
+            // Get all payments to track when debt was paid
+            const [payments] = await conn.execute(`
+                SELECT p.payment_date, p.amount
+                FROM payments p
+                WHERE p.sale_id = (SELECT sale_id FROM debts WHERE id = ?)
+                ORDER BY p.payment_date ASC
+            `, [debtId]);
 
-            if (debt.markup_type === 'fixed') {
-                // Fixed markup
-                markupValue = parseFloat(debt.markup_value);
-                totalAfterMarkup = currentAmount + markupValue;
+            // Calculate running balance to find when debt became 0
+            let runningBalance = parseFloat((await conn.execute(
+                `SELECT total_amount FROM sales WHERE id = (SELECT sale_id FROM debts WHERE id = ?)`,
+                [debtId]
+            ))[0][0].total_amount);
 
-                // Insert log
-                await conn.execute(
-                    `INSERT INTO debt_fixed_markup_logs
-                     (debt_id, remaining_debt, markup_value, total_after_markup)
-                     VALUES (?, ?, ?, ?)`,
-                    [debtId, currentAmount, markupValue, totalAfterMarkup]
-                );
-            } else {
-                // Percent markup
-                const markupPercent = parseFloat(debt.markup_value);
-                markupValue = (currentAmount * markupPercent) / 100;
-                totalAfterMarkup = currentAmount + markupValue;
-
-                // Insert log
-                await conn.execute(
-                    `INSERT INTO debt_percent_markup_logs
-                     (debt_id, remaining_debt, markup_percent, markup_value, total_after_markup)
-                     VALUES (?, ?, ?, ?, ?)`,
-                    [debtId, currentAmount, markupPercent, markupValue, totalAfterMarkup]
-                );
+            let debtPaidDate = null;
+            for (const payment of payments) {
+                runningBalance -= parseFloat(payment.amount);
+                if (runningBalance <= 0) {
+                    debtPaidDate = new Date(payment.payment_date);
+                    break;
+                }
             }
 
-            // Update debt
-            await conn.execute(
-                `UPDATE debts
-                 SET current_amount = ?, last_markup_date = CURDATE()
-                 WHERE id = ?`,
-                [totalAfterMarkup, debtId]
-            );
+            // Calculate until debt is paid or current date
+            const endDate = debtPaidDate || currentDate;
 
-            return {
-                debtId,
-                previousAmount: currentAmount,
-                markupValue,
-                newAmount: totalAfterMarkup
-            };
+            // Start from grace end date + 1 day
+            let checkDate = new Date(graceEndDate);
+            checkDate.setDate(checkDate.getDate() + 1);
+
+            let totalMarkupAdded = 0;
+            let monthCount = 0;
+            const markupsAdded = [];
+
+            while (checkDate <= endDate) {
+                const checkDateStr = checkDate.toISOString().split('T')[0];
+                monthCount++;
+
+                // Check if markup already logged for this date
+                const [existing] = await conn.execute(
+                    debt.markup_type === 'fixed'
+                        ? `SELECT id FROM debt_fixed_markup_logs WHERE debt_id = ? AND DATE(calculation_date) = ?`
+                        : `SELECT id FROM debt_percent_markup_logs WHERE debt_id = ? AND DATE(calculation_date) = ?`,
+                    [debtId, checkDateStr]
+                );
+
+                if (existing.length === 0) {
+                    // Calculate markup
+                    let markupValue;
+                    const debtBeforeMarkup = currentAmount + totalMarkupAdded;
+
+                    if (debt.markup_type === 'fixed') {
+                        markupValue = parseFloat(debt.markup_value);
+                        const debtAfterMarkup = debtBeforeMarkup + markupValue;
+
+                        await conn.execute(
+                            `INSERT INTO debt_fixed_markup_logs
+                             (debt_id, calculation_date, remaining_debt, markup_value, total_after_markup)
+                             VALUES (?, ?, ?, ?, ?)`,
+                            [debtId, checkDateStr, debtBeforeMarkup, markupValue, debtAfterMarkup]
+                        );
+                    } else {
+                        const markupPercent = parseFloat(debt.markup_value);
+                        markupValue = (debtBeforeMarkup * markupPercent) / 100;
+                        const debtAfterMarkup = debtBeforeMarkup + markupValue;
+
+                        await conn.execute(
+                            `INSERT INTO debt_percent_markup_logs
+                             (debt_id, calculation_date, remaining_debt, markup_percent, markup_value, total_after_markup)
+                             VALUES (?, ?, ?, ?, ?, ?)`,
+                            [debtId, checkDateStr, debtBeforeMarkup, markupPercent, markupValue, debtAfterMarkup]
+                        );
+                    }
+
+                    totalMarkupAdded += markupValue;
+                    markupsAdded.push({ date: checkDateStr, amount: markupValue });
+                }
+
+                // Move to same day next month
+                checkDate.setMonth(checkDate.getMonth() + 1);
+            }
+
+            if (totalMarkupAdded > 0) {
+                // Update debt current_amount and last_markup_date
+                const newAmount = currentAmount + totalMarkupAdded;
+                await conn.execute(
+                    `UPDATE debts
+                     SET current_amount = ?, last_markup_date = CURDATE()
+                     WHERE id = ?`,
+                    [newAmount, debtId]
+                );
+
+                // Cleanup: Remove markups added after debt was paid (if any)
+                if (debtPaidDate) {
+                    const cleanupDate = debtPaidDate.toISOString().split('T')[0];
+                    const deletedFixed = await conn.execute(
+                        `DELETE FROM debt_fixed_markup_logs
+                         WHERE debt_id = ? AND DATE(calculation_date) > ?`,
+                        [debtId, cleanupDate]
+                    );
+                    const deletedPercent = await conn.execute(
+                        `DELETE FROM debt_percent_markup_logs
+                         WHERE debt_id = ? AND DATE(calculation_date) > ?`,
+                        [debtId, cleanupDate]
+                    );
+
+                    const deletedCount = deletedFixed[0].affectedRows + deletedPercent[0].affectedRows;
+                    if (deletedCount > 0) {
+                        console.log(`Cleaned up ${deletedCount} markup(s) added after debt was paid`);
+                    }
+                }
+
+                return {
+                    debtId,
+                    previousAmount: currentAmount,
+                    markupValue: totalMarkupAdded,
+                    newAmount,
+                    monthsAdded: monthCount,
+                    markupsAdded
+                };
+            }
+
+            return null;
         });
     }
 
