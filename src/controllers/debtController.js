@@ -43,12 +43,38 @@ class DebtController {
             // Calculate current debt with markup dynamically (not from database)
             const debtCalculation = Debt.calculateDebtWithMarkup(debt);
 
+            // Create combined history of payments and markups, sorted by date
+            const combinedHistory = [];
+
+            // Add payments
+            paymentHistory.forEach(payment => {
+                combinedHistory.push({
+                    type: 'payment',
+                    date: payment.payment_date,
+                    amount: payment.amount,
+                    payment_method: payment.payment_method
+                });
+            });
+
+            // Add markup logs
+            markupLogs.forEach(log => {
+                combinedHistory.push({
+                    type: 'markup',
+                    date: log.calculation_date,
+                    amount: log.markup_value
+                });
+            });
+
+            // Sort by date
+            combinedHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
             res.render('debts/view', {
                 title: `Debt #${debt.id}`,
                 debt,
                 debtCalculation,
                 paymentHistory,
-                markupLogs
+                markupLogs,
+                combinedHistory
             });
         } catch (error) {
             console.error('Debt view error:', error);
