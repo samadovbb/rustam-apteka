@@ -46,16 +46,13 @@ async function calculateSellerPenalties() {
                 ORDER BY payment_date ASC
             `, [sale.id]);
 
-            // Calculate penalties month by month
+            // Calculate penalties month by month (based on sale date)
             const saleDate = new Date(sale.sale_date);
             const currentDate = new Date();
 
-            // Start from the end of the first month after sale
-            let checkDate = new Date(saleDate.getFullYear(), saleDate.getMonth() + 1, 0); // Last day of sale month
-            if (checkDate <= saleDate) {
-                // If sale was on last day of month, move to next month
-                checkDate = new Date(saleDate.getFullYear(), saleDate.getMonth() + 2, 0);
-            }
+            // Start from one month after sale date (same day of month)
+            let checkDate = new Date(saleDate);
+            checkDate.setMonth(checkDate.getMonth() + 1);
 
             let runningBalance = parseFloat(sale.total_amount);
             let paymentIndex = 0;
@@ -112,8 +109,8 @@ async function calculateSellerPenalties() {
                     break; // Debt is paid off, no more penalties needed
                 }
 
-                // Move to end of next month
-                checkDate = new Date(checkDate.getFullYear(), checkDate.getMonth() + 2, 0);
+                // Move to same day next month
+                checkDate.setMonth(checkDate.getMonth() + 1);
             }
 
             console.log('');

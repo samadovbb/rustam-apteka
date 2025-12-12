@@ -74,13 +74,14 @@ async function calculateRetroactiveMarkups() {
             // Calculate until debt is paid or current date
             const endDate = debtPaidDate || currentDate;
 
-            // Start from the first month after grace period
-            let checkDate = new Date(graceEndDate.getFullYear(), graceEndDate.getMonth() + 1, 0); // End of first month after grace
+            // Start from one month after grace end date (same day of month)
+            let checkDate = new Date(graceEndDate);
+            checkDate.setMonth(checkDate.getMonth() + 1);
 
             let debtMarkupTotal = 0;
             let monthCount = 0;
 
-            console.log(`\n  📅 Calculating markup month by month:`);
+            console.log(`\n  📅 Calculating markup month by month (based on sale date):`);
 
             while (checkDate <= endDate) {
                 const checkDateStr = checkDate.toISOString().split('T')[0];
@@ -117,8 +118,8 @@ async function calculateRetroactiveMarkups() {
                     console.log(`  ${checkDateStr} - Added $${markupAmount.toFixed(2)} markup`);
                 }
 
-                // Move to the end of next month
-                checkDate = new Date(checkDate.getFullYear(), checkDate.getMonth() + 2, 0);
+                // Move to same day next month
+                checkDate.setMonth(checkDate.getMonth() + 1);
             }
 
             if (debtMarkupTotal > 0) {
