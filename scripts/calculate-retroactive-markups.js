@@ -76,7 +76,7 @@ async function calculateRetroactiveMarkups() {
 
             // Start from one month after grace end date (same day of month) + 1 day
             let checkDate = new Date(graceEndDate);
-            checkDate.setMonth(checkDate.getMonth() + 1);
+            checkDate.setMonth(checkDate.getMonth());
             checkDate.setDate(checkDate.getDate() + 1); // Add 1 day
 
             let debtMarkupTotal = 0;

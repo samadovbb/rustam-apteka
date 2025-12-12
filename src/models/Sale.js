@@ -225,7 +225,7 @@ class Sale {
 
             // Check if there's an active debt
             const [debts] = await conn.execute(
-                'SELECT id, current_amount FROM debts WHERE sale_id = ? AND status = "active"',
+                'SELECT id, current_amount FROM debts WHERE sale_id = ? -- AND status = "active"',
                 [saleId]
             );
 
