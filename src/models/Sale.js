@@ -26,7 +26,7 @@ class Sale {
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
-            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
+            LEFT JOIN debts d ON s.id = d.sale_id -- AND d.status = 'active'
             WHERE s.id = ?
             LIMIT 1
         `;
