@@ -114,7 +114,7 @@ async function calculateRetroactiveMarkups() {
                     // Check if markup already logged for this payment
                     const [existing] = await conn.execute(`
                         SELECT id FROM debt_fixed_markup_logs
-                        WHERE debt_id = ? AND applied_date = ?
+                        WHERE debt_id = ? AND calculation_date = ?
                     `, [debt.id, payment.payment_date]);
 
                     if (existing.length > 0) {
@@ -123,11 +123,18 @@ async function calculateRetroactiveMarkups() {
                     }
 
                     // Insert markup log
+                    const currentDebt = parseFloat(debt.current_amount);
                     await conn.execute(`
                         INSERT INTO debt_fixed_markup_logs
-                        (debt_id, markup_amount, months_count, applied_date)
-                        VALUES (?, ?, ?, ?)
-                    `, [debt.id, markupAmount, monthsLate, payment.payment_date]);
+                        (debt_id, calculation_date, remaining_debt, markup_value, total_after_markup)
+                        VALUES (?, ?, ?, ?, ?)
+                    `, [
+                        debt.id,
+                        payment.payment_date,
+                        currentDebt,
+                        markupAmount,
+                        currentDebt + markupAmount
+                    ]);
 
                     console.log(`  ✅ Markup log created`);
                 });
