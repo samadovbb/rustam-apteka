@@ -16,6 +16,11 @@
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
                     <div>
+                        <% if (debt && debt.status === 'active') { %>
+                            <button onclick="calculateMarkup(<%= sale.id %>, <%= debt.id %>)" class="btn" style="margin-right: 10px; background-color: #ff9800; color: white;">
+                                📈 Ustamani hisoblash
+                            </button>
+                        <% } %>
                         <a href="/sales/<%= sale.id %>/export" class="btn btn-success" style="margin-right: 10px; background-color: #28a745;">
                             📊 Excel ga eksport qilish
                         </a>
@@ -350,6 +355,41 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         alert('Xatolik yuz berdi');
     }
 });
+
+async function calculateMarkup(saleId, debtId) {
+    const result = await Swal.fire({
+        title: 'Ustamani hisoblash',
+        text: 'Bu savdo uchun ustama hisoblashni xohlaysizmi?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ha, hisoblash',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#ff9800',
+        cancelButtonColor: '#6c757d'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch(`/sales/${saleId}/calculate-markup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire('Muvaffaqiyat!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('Xato!', 'Ustamani hisoblashda xatolik yuz berdi', 'error');
+        }
+    }
+}
 
 async function deleteSale(id) {
     const result = await Swal.fire({

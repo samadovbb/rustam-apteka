@@ -182,6 +182,42 @@ class SalesController {
         }
     }
 
+    // Calculate markup for this sale's debt
+    static async calculateMarkup(req, res) {
+        try {
+            const Debt = require('../models/Debt');
+
+            // Get sale to find debt_id
+            const sale = await Sale.findById(req.params.id);
+            if (!sale) {
+                return res.status(404).json({ success: false, error: 'Savdo topilmadi' });
+            }
+
+            if (!sale.debt_id) {
+                return res.status(400).json({ success: false, error: 'Bu savdo uchun qarz mavjud emas' });
+            }
+
+            // Apply markup
+            const result = await Debt.applyMarkup(sale.debt_id);
+
+            if (!result) {
+                return res.json({
+                    success: false,
+                    error: 'Ustama hisoblash mumkin emas. Qarz to\'langan yoki grace period hali tugamagan bo\'lishi mumkin.'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: `Ustama muvaffaqiyatli hisoblandi: +$${result.markupValue.toFixed(2)}`,
+                result
+            });
+        } catch (error) {
+            console.error('Calculate markup error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // API: Get seller inventory
     static async getSellerInventory(req, res) {
         try {
