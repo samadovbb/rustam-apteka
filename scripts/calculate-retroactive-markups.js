@@ -65,7 +65,7 @@ async function calculateRetroactiveMarkups() {
 
             // Get all payments for this debt
             const payments = await query(`
-                SELECT p.*, pay.payment_date
+                SELECT dp.*, pay.payment_date
                 FROM debt_payments dp
                 JOIN payments pay ON dp.payment_id = pay.id
                 WHERE dp.debt_id = ?
