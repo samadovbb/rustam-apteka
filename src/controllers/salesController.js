@@ -114,6 +114,13 @@ class SalesController {
                 });
             }
 
+            // Get initial payment (first payment by date)
+            const initialPayment = payments.length > 0
+                ? payments.reduce((earliest, payment) => {
+                    return new Date(payment.payment_date) < new Date(earliest.payment_date) ? payment : earliest;
+                  })
+                : null;
+
             // Fetch debt information if exists
             const Debt = require('../models/Debt');
             let debt = null;
@@ -148,7 +155,8 @@ class SalesController {
                 debt,
                 debtCalculation,
                 debtPaymentHistory,
-                markupLogs
+                markupLogs,
+                initialPayment
             });
         } catch (error) {
             console.error('Sale view error:', error);

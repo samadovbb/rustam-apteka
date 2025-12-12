@@ -104,7 +104,7 @@
 
                 <div style="text-align: right; margin: 20px 0;">
                     <h4>Umumiy summa: $<%= parseFloat(sale.total_amount || 0).toFixed(2) %></h4>
-                    <p><strong>Boshlang'ich to'lov:</strong> $<%= parseFloat(sale.paid_amount || 0).toFixed(2) %></p>
+                    <p><strong>Boshlang'ich to'lov:</strong> $<%= initialPayment ? parseFloat(initialPayment.amount || 0).toFixed(2) : '0.00' %></p>
                     <p style="color: <%= sale.remaining_amount > 0 ? 'red' : 'green' %>;">
                         <strong>Qoldiq qarz:</strong> $<%= parseFloat(sale.remaining_amount || 0).toFixed(2) %>
                     </p>
