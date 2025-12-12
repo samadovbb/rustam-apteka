@@ -147,27 +147,26 @@
                     </div>
                 <% } %>
 
-                <% if (sale.remaining_amount > 0) { %>
-                    <div class="card" style="margin-top: 20px; background: #fff3cd;">
-                        <h4><%= lang.sales.addPayment %></h4>
-                        <form id="paymentForm" action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
-                            <div class="form-group" style="flex: 1; margin: 0;">
-                                <label for="amount" class="form-label"><%= lang.sales.amount %></label>
-                                <input type="number" step="0.01" id="amount" name="amount" class="form-control" max="<%= sale.remaining_amount %>" required>
-                            </div>
-                            <div class="form-group" style="flex: 1; margin: 0;">
-                                <label for="payment_method" class="form-label"><%= lang.sales.method %></label>
-                                <select id="payment_method" name="payment_method" class="form-control">
-                                    <option value="naqt"><%= lang.sales.cash %></option>
-                                    <option value="card"><%= lang.sales.card %></option>
-                                    <option value="transfer"><%= lang.sales.transfer %></option>
-                                    <option value="other"><%= lang.sales.other %></option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary"><%= lang.sales.addPayment %></button>
-                        </form>
-                    </div>
-                <% } %>
+                <!-- Payment form (always visible, allows overpayments) -->
+                <div class="card" style="margin-top: 20px; background: #fff3cd;">
+                    <h4><%= lang.sales.addPayment %></h4>
+                    <form id="paymentForm" action="/sales/<%= sale.id %>/payment" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label for="amount" class="form-label"><%= lang.sales.amount %></label>
+                            <input type="number" step="0.01" id="amount" name="amount" class="form-control" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label for="payment_method" class="form-label"><%= lang.sales.method %></label>
+                            <select id="payment_method" name="payment_method" class="form-control">
+                                <option value="naqt"><%= lang.sales.cash %></option>
+                                <option value="card"><%= lang.sales.card %></option>
+                                <option value="transfer"><%= lang.sales.transfer %></option>
+                                <option value="other"><%= lang.sales.other %></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><%= lang.sales.addPayment %></button>
+                    </form>
+                </div>
 
                 <!-- Debt Information Section -->
                 <% if (debt) { %>
@@ -264,7 +263,7 @@ function toLocalDateString(date) {
     return `${year}-${month}-${day}`;
 }
 
-<% if (sale.remaining_amount > 0) { %>
+// Payment form handler (always active, allows overpayments)
 document.getElementById('paymentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -288,7 +287,6 @@ document.getElementById('paymentForm').addEventListener('submit', async function
         alert('Xatolik yuz berdi');
     }
 });
-<% } %>
 
 async function deleteSale(id) {
     const result = await Swal.fire({
