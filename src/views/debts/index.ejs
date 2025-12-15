@@ -38,6 +38,10 @@
                     </div>
                 </div>
 
+                <div style="padding: 15px;">
+                    <input type="text" id="debtsSearch" placeholder="Qidirish..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -75,9 +79,14 @@
                                         </td>
                                         <td><%= debt.grace_end_date ? new Date(debt.grace_end_date).toLocaleDateString('ru-RU') : '-' %></td>
                                         <td>
-                                            <% if (debt.status === 'active') { %>
+                                            <%
+                                            const debtStatus = debt.calculated_status ||
+                                                (debt.status === 'cancelled' ? 'cancelled' :
+                                                 (debt.current_amount <= 0 ? 'paid' : 'active'));
+                                            %>
+                                            <% if (debtStatus === 'active') { %>
                                                 <span class="badge badge-danger"><%= lang.status.active %></span>
-                                            <% } else if (debt.status === 'paid') { %>
+                                            <% } else if (debtStatus === 'paid') { %>
                                                 <span class="badge badge-success"><%= lang.status.paid %></span>
                                             <% } else { %>
                                                 <span class="badge badge-secondary"><%= lang.status.cancelled %></span>
@@ -96,5 +105,17 @@
         </div>
     </main>
 </div>
+
+<script>
+document.getElementById('debtsSearch').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const tableRows = document.querySelectorAll('.table-responsive tbody tr');
+
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchValue) ? '' : 'none';
+    });
+});
+</script>
 
 <%- include('../partials/footer') %>

@@ -16,7 +16,7 @@
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sales.saleDetails %></h3>
                     <div>
-                        <% if (debt && debt.status === 'active') { %>
+                        <% if (debt) { %>
                             <button onclick="calculateMarkup(<%= sale.id %>, <%= debt.id %>)" class="btn" style="margin-right: 10px; background-color: #ff9800; color: white;">
                                 📈 Ustamani hisoblash
                             </button>

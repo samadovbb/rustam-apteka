@@ -5,11 +5,16 @@ class Debt {
     static async getAll(status = 'active', limit = 100) {
         const sql = `
             SELECT d.*, c.full_name as customer_name, c.phone as customer_phone,
-                   s.id as sale_id, s.sale_date, s.total_amount as sale_total
+                   s.id as sale_id, s.sale_date, s.total_amount as sale_total,
+                   CASE
+                       WHEN d.status = 'cancelled' THEN 'cancelled'
+                       WHEN d.current_amount <= 0 THEN 'paid'
+                       ELSE 'active'
+                   END as calculated_status
             FROM debts d
             JOIN customers c ON d.customer_id = c.id
             JOIN sales s ON d.sale_id = s.id
-            WHERE d.status = '${status}'
+            HAVING calculated_status = '${status}'
             ORDER BY d.created_at DESC
             LIMIT ${parseInt(limit)}
         `;
@@ -19,7 +24,12 @@ class Debt {
     static async findById(id) {
         const sql = `
             SELECT d.*, c.full_name as customer_name, c.phone as customer_phone,
-                   s.id as sale_id, s.sale_date, s.total_amount as sale_total
+                   s.id as sale_id, s.sale_date, s.total_amount as sale_total,
+                   CASE
+                       WHEN d.status = 'cancelled' THEN 'cancelled'
+                       WHEN d.current_amount <= 0 THEN 'paid'
+                       ELSE 'active'
+                   END as calculated_status
             FROM debts d
             JOIN customers c ON d.customer_id = c.id
             JOIN sales s ON d.sale_id = s.id
@@ -137,6 +147,12 @@ class Debt {
             }
 
             const debt = debts[0];
+
+            // Only allow fixed markup type
+            if (debt.markup_type !== 'fixed') {
+                return null;
+            }
+
             const graceEndDate = new Date(debt.grace_end_date);
             const currentDate = new Date();
 

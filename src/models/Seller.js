@@ -178,6 +178,16 @@ class Seller {
         return await query(sql, [sellerId]);
     }
 
+    static async getPenaltiesBySale(saleId) {
+        const sql = `
+            SELECT sp.*
+            FROM seller_penalties sp
+            WHERE sp.sale_id = ?
+            ORDER BY sp.penalty_date DESC
+        `;
+        return await query(sql, [saleId]);
+    }
+
     static async getPenaltyStats(sellerId) {
         const sql = `
             SELECT

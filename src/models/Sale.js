@@ -5,11 +5,16 @@ class Sale {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
                    sel.full_name as seller_name,
-                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
+                   CASE
+                       WHEN COALESCE(d.current_amount, s.total_amount - s.paid_amount) <= 0 THEN 'paid'
+                       WHEN s.paid_amount > 0 THEN 'partial'
+                       ELSE 'unpaid'
+                   END as status
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
-            LEFT JOIN debts d ON s.id = d.sale_id AND d.status = 'active'
+            LEFT JOIN debts d ON s.id = d.sale_id
             ORDER BY s.sale_date DESC
             LIMIT ${parseInt(limit)}
         `;
@@ -21,12 +26,17 @@ class Sale {
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
                    sel.full_name as seller_name,
                    COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
+                   CASE
+                       WHEN COALESCE(d.current_amount, s.total_amount - s.paid_amount) <= 0 THEN 'paid'
+                       WHEN s.paid_amount > 0 THEN 'partial'
+                       ELSE 'unpaid'
+                   END as status,
                    d.id as debt_id, d.current_amount as debt_current_amount,
                    d.original_amount as debt_original_amount, d.markup_type, d.markup_value
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
-            LEFT JOIN debts d ON s.id = d.sale_id -- AND d.status = 'active'
+            LEFT JOIN debts d ON s.id = d.sale_id
             WHERE s.id = ?
             LIMIT 1
         `;
@@ -316,11 +326,18 @@ class Sale {
 
     static async getSalesByStatus(status, limit = 100) {
         const sql = `
-            SELECT s.*, c.full_name as customer_name, sel.full_name as seller_name
+            SELECT s.*, c.full_name as customer_name, sel.full_name as seller_name,
+                   COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
+                   CASE
+                       WHEN COALESCE(d.current_amount, s.total_amount - s.paid_amount) <= 0 THEN 'paid'
+                       WHEN s.paid_amount > 0 THEN 'partial'
+                       ELSE 'unpaid'
+                   END as status
             FROM sales s
             JOIN customers c ON s.customer_id = c.id
             JOIN sellers sel ON s.seller_id = sel.id
-            WHERE s.status = ?
+            LEFT JOIN debts d ON s.id = d.sale_id
+            HAVING status = ?
             ORDER BY s.sale_date DESC
             LIMIT ${parseInt(limit)}
         `;

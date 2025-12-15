@@ -44,16 +44,26 @@
                         <strong><%= lang.sales.gracePeriod %>:</strong>
                         <span id="grace-period-display"><%= debt.grace_period_months %> <%= lang.debts.monthly %></span>
                         (<%= lang.debts.graceEnd %> <span id="grace-end-display"><%= new Date(debt.grace_end_date).toLocaleDateString('ru-RU') %></span>)
-                        <% if (debt.status === 'active') { %>
+                        <%
+                        const debtStatusForButtons = debt.calculated_status ||
+                            (debt.status === 'cancelled' ? 'cancelled' :
+                             (debt.current_amount <= 0 ? 'paid' : 'active'));
+                        %>
+                        <% if (debtStatusForButtons === 'active') { %>
                             <button onclick="changeGracePeriod(<%= debt.id %>, <%= debt.grace_period_months %>)" class="btn btn-sm btn-link" title="Imtiyoz davrini o'zgartirish" style="padding: 0 5px; font-size: 0.9em;">
                                 ✏️
                             </button>
                         <% } %>
                     </p>
                     <p><strong><%= lang.common.status %>:</strong>
-                        <% if (debt.status === 'active') { %>
+                        <%
+                        const debtStatus = debt.calculated_status ||
+                            (debt.status === 'cancelled' ? 'cancelled' :
+                             (debt.current_amount <= 0 ? 'paid' : 'active'));
+                        %>
+                        <% if (debtStatus === 'active') { %>
                             <span class="badge badge-danger"><%= lang.status.active %></span>
-                        <% } else if (debt.status === 'paid') { %>
+                        <% } else if (debtStatus === 'paid') { %>
                             <span class="badge badge-success"><%= lang.status.paid %></span>
                         <% } else { %>
                             <span class="badge badge-secondary"><%= lang.status.cancelled %></span>
@@ -118,7 +128,12 @@
                     </div>
                 <% } %>
 
-                <% if (debt.status === 'active') { %>
+                <%
+                const finalDebtStatus = debt.calculated_status ||
+                    (debt.status === 'cancelled' ? 'cancelled' :
+                     (debt.current_amount <= 0 ? 'paid' : 'active'));
+                %>
+                <% if (finalDebtStatus === 'active') { %>
                     <div style="margin-top: 20px;">
                         <form action="/debts/<%= debt.id %>/apply-markup" method="POST" style="display: inline;">
                             <button type="submit" class="btn btn-warning" onclick="return confirm('<%= lang.debts.confirmApplyMarkup %>')">

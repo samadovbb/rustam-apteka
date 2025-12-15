@@ -197,6 +197,14 @@ class SalesController {
                 return res.status(400).json({ success: false, error: 'Bu savdo uchun qarz mavjud emas' });
             }
 
+            // Check if markup type is fixed
+            if (sale.markup_type !== 'fixed') {
+                return res.json({
+                    success: false,
+                    error: 'Ustama faqat fixed turi uchun hisoblanadi. Bu qarzda percent ustama mavjud.'
+                });
+            }
+
             // Apply markup
             const result = await Debt.applyMarkup(sale.debt_id);
 
@@ -371,6 +379,7 @@ class SalesController {
             const ExcelJS = require('exceljs');
             const Sale = require('../models/Sale');
             const Debt = require('../models/Debt');
+            const Seller = require('../models/Seller');
 
             // Payment method translation helper
             const translatePaymentMethod = (method) => {
@@ -415,6 +424,9 @@ class SalesController {
                 }
             }
 
+            // Fetch seller penalties for this sale
+            const sellerPenalties = await Seller.getPenaltiesBySale(req.params.id);
+
             // Create workbook
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Hisob');
@@ -423,13 +435,15 @@ class SalesController {
             worksheet.columns = [
                 { width: 5 },
                 { width: 30 },
+                { width: 12 },
+                { width: 15 },
                 { width: 15 },
                 { width: 15 },
                 { width: 15 }
             ];
 
             // Title
-            worksheet.mergeCells('A1:E1');
+            worksheet.mergeCells('A1:G1');
             worksheet.getCell('A1').value = 'HISOB-FAKTURA';
             worksheet.getCell('A1').font = { size: 18, bold: true };
             worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -444,7 +458,7 @@ class SalesController {
             worksheet.addRow([]);
 
             // Items table header
-            const headerRow = worksheet.addRow(['', 'Mahsulot', 'Miqdor', 'Narx', 'Jami']);
+            const headerRow = worksheet.addRow(['', 'Mahsulot', 'Miqdor', 'Kirim narxi', 'Sotuv narxi', 'Jami', 'Foyda']);
             headerRow.font = { bold: true };
             headerRow.eachCell((cell) => {
                 cell.fill = {
@@ -461,13 +475,23 @@ class SalesController {
             });
 
             // Items
+            let totalProfit = 0;
             items.forEach(item => {
+                const purchasePrice = parseFloat(item.purchase_price_at_sale || 0);
+                const unitPrice = parseFloat(item.unit_price);
+                const quantity = parseFloat(item.quantity);
+                const subtotal = parseFloat(item.subtotal);
+                const itemProfit = (unitPrice - purchasePrice) * quantity;
+                totalProfit += itemProfit;
+
                 const row = worksheet.addRow([
                     '',
                     item.product_name,
-                    item.quantity,
-                    `$${parseFloat(item.unit_price).toFixed(2)}`,
-                    `$${parseFloat(item.subtotal).toFixed(2)}`
+                    quantity,
+                    `$${purchasePrice.toFixed(2)}`,
+                    `$${unitPrice.toFixed(2)}`,
+                    `$${subtotal.toFixed(2)}`,
+                    `$${itemProfit.toFixed(2)}`
                 ]);
                 row.eachCell((cell, colNumber) => {
                     if (colNumber > 1) {
@@ -483,12 +507,21 @@ class SalesController {
 
             // Total
             worksheet.addRow([]);
-            const totalRow = worksheet.addRow(['', '', '', 'Jami:', `$${parseFloat(sale.total_amount).toFixed(2)}`]);
+            const totalRow = worksheet.addRow(['', '', '', '', '', 'Jami:', `$${parseFloat(sale.total_amount).toFixed(2)}`]);
             totalRow.font = { bold: true, size: 12 };
-            totalRow.getCell(5).fill = {
+            totalRow.getCell(7).fill = {
                 type: 'pattern',
                 pattern: 'solid',
                 fgColor: { argb: 'FFFFFF00' }
+            };
+
+            // Profit row
+            const profitRow = worksheet.addRow(['', '', '', '', '', 'Foyda:', `$${totalProfit.toFixed(2)}`]);
+            profitRow.font = { bold: true, size: 12, color: { argb: 'FF00AA00' } };
+            profitRow.getCell(7).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD4EDDA' }
             };
 
             // Payment info
@@ -712,6 +745,83 @@ class SalesController {
                             };
                         }
                     });
+                });
+            }
+
+            // Seller Penalties
+            if (sellerPenalties && sellerPenalties.length > 0) {
+                worksheet.addRow([]);
+                worksheet.addRow(['', 'SOTUVCHI JAZOLARI']).font = { bold: true, size: 12 };
+
+                const penaltyHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Sabab', '']);
+                penaltyHeaderRow.font = { bold: true };
+                penaltyHeaderRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1 && colNumber <= 4) {
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFFFE0E0' }
+                        };
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
+                });
+
+                let totalPenalties = 0;
+                sellerPenalties.forEach(penalty => {
+                    totalPenalties += parseFloat(penalty.penalty_amount);
+                    const row = worksheet.addRow([
+                        '',
+                        new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
+                        `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
+                        penalty.reason || 'Sababsiz',
+                        ''
+                    ]);
+                    row.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
+                    row.eachCell((cell, colNumber) => {
+                        if (colNumber > 1 && colNumber <= 4) {
+                            cell.border = {
+                                top: { style: 'thin' },
+                                left: { style: 'thin' },
+                                bottom: { style: 'thin' },
+                                right: { style: 'thin' }
+                            };
+                        }
+                    });
+                });
+
+                // Total penalties row
+                const totalPenaltyRow = worksheet.addRow([
+                    '',
+                    '',
+                    '',
+                    'JAMI JAZOLAR:',
+                    `-$${totalPenalties.toFixed(2)}`
+                ]);
+                totalPenaltyRow.font = { bold: true, size: 11 };
+                totalPenaltyRow.getCell(5).font = {
+                    color: { argb: 'FFFF0000' },
+                    bold: true,
+                    size: 11
+                };
+                totalPenaltyRow.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFFFE0E0' }
+                };
+                totalPenaltyRow.eachCell((cell, colNumber) => {
+                    if (colNumber > 1) {
+                        cell.border = {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        };
+                    }
                 });
             }
 
