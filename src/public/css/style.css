@@ -453,3 +453,24 @@ table tbody tr:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Select2 Customization */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    font-weight: bold !important;
+    font-size: 16px !important;
+    color: var(--dark) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    font-weight: bold !important;
+    font-size: 15px !important;
+}
+
+.select2-container--default .select2-selection--single {
+    height: 42px !important;
+    padding-top: 4px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 40px !important;
+}
