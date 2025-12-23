@@ -146,6 +146,9 @@ class SalesController {
                 }
             }
 
+            // Fetch seller penalties for this sale
+            const sellerPenalties = await Seller.getPenaltiesBySale(req.params.id);
+
             res.render('sales/view', {
                 title: `Sale #${sale.id}`,
                 sale,
@@ -156,7 +159,8 @@ class SalesController {
                 debtCalculation,
                 debtPaymentHistory,
                 markupLogs,
-                initialPayment
+                initialPayment,
+                sellerPenalties
             });
         } catch (error) {
             console.error('Sale view error:', error);
