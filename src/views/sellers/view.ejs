@@ -102,35 +102,48 @@
                 </div>
             </div>
 
-            <!-- Penalties List -->
+            <!-- Penalties List (Grouped by Sale) -->
             <% if (penalties && penalties.length > 0) { %>
+            <%
+            // Group penalties by sale_id
+            const penaltiesBySale = {};
+            penalties.forEach(penalty => {
+                if (!penaltiesBySale[penalty.sale_id]) {
+                    penaltiesBySale[penalty.sale_id] = {
+                        sale_id: penalty.sale_id,
+                        customer_name: penalty.customer_name,
+                        total: 0,
+                        count: 0
+                    };
+                }
+                penaltiesBySale[penalty.sale_id].total += parseFloat(penalty.penalty_amount);
+                penaltiesBySale[penalty.sale_id].count += 1;
+            });
+            const groupedPenalties = Object.values(penaltiesBySale);
+            %>
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Shtraflar Tarixi</h3>
+                    <h3 class="card-title">Shtraflar (Savdo bo'yicha)</h3>
                 </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th>Sana</th>
                                 <th>Savdo ID</th>
                                 <th>Xaridor</th>
-                                <th>Qolgan Qarz</th>
-                                <th>Shtraf (1%)</th>
-                                <th>Izoh</th>
+                                <th>Shtraflar soni</th>
+                                <th>Jami shtraf</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <% penalties.forEach(penalty => { %>
+                            <% groupedPenalties.forEach(group => { %>
                                 <tr>
-                                    <td><%= new Date(penalty.penalty_date).toLocaleDateString() %></td>
-                                    <td><a href="/sales/<%= penalty.sale_id %>">#<%= penalty.sale_id %></a></td>
-                                    <td><%= penalty.customer_name %></td>
-                                    <td><%= parseFloat(penalty.remaining_debt).toFixed(2) %></td>
-                                    <td style="color: red; font-weight: bold;">
-                                        <%= parseFloat(penalty.penalty_amount).toFixed(2) %>
+                                    <td><a href="/sales/<%= group.sale_id %>" style="color: #2563eb; font-weight: bold;">#<%= group.sale_id %></a></td>
+                                    <td><%= group.customer_name %></td>
+                                    <td><%= group.count %></td>
+                                    <td style="color: red; font-weight: bold; font-size: 1.1em;">
+                                        -$<%= group.total.toFixed(2) %>
                                     </td>
-                                    <td><%= penalty.notes || '-' %></td>
                                 </tr>
                             <% }) %>
                         </tbody>
