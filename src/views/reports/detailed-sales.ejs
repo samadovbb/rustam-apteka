@@ -71,20 +71,37 @@
                                 </tr>
                             <% } else { %>
                                 <%
+                                // Group by seller if all sellers selected
+                                const groupedBySeller = {};
+                                const showBySellerGroup = filters.seller_id === 'all';
+
+                                if (showBySellerGroup) {
+                                    salesData.forEach(sale => {
+                                        if (!groupedBySeller[sale.seller_name]) {
+                                            groupedBySeller[sale.seller_name] = [];
+                                        }
+                                        groupedBySeller[sale.seller_name].push(sale);
+                                    });
+                                }
+
                                 let totalProfit = 0;
                                 let totalPenalties = 0;
                                 let totalNet = 0;
-                                salesData.forEach((sale, index) => {
-                                    const saleProfit = parseFloat(sale.sale_profit || 0);
-                                    const penalties = parseFloat(sale.total_penalties || 0);
-                                    const netProfit = saleProfit - penalties;
+                                let rowNumber = 1;
 
-                                    totalProfit += saleProfit;
-                                    totalPenalties += penalties;
-                                    totalNet += netProfit;
+                                // Function to render sales rows
+                                const renderSales = (sales) => {
+                                    sales.forEach(sale => {
+                                        const saleProfit = parseFloat(sale.sale_profit || 0);
+                                        const penalties = parseFloat(sale.total_penalties || 0);
+                                        const netProfit = saleProfit - penalties;
+
+                                        totalProfit += saleProfit;
+                                        totalPenalties += penalties;
+                                        totalNet += netProfit;
                                 %>
                                     <tr>
-                                        <td><%= index + 1 %></td>
+                                        <td><%= rowNumber++ %></td>
                                         <td><a href="/sales/<%= sale.sale_id %>" style="color: #2563eb; font-weight: bold;">#<%= sale.sale_id %></a></td>
                                         <td><%= new Date(sale.sale_date).toLocaleDateString('ru-RU') %></td>
                                         <td><%= sale.seller_name %></td>
@@ -95,12 +112,59 @@
                                         </td>
                                         <td class="no-print">
                                             <a href="/sales/<%= sale.sale_id %>" target="_blank" class="btn btn-sm btn-info">Ko'rish</a>
-                                            <button onclick="printSale(<%= sale.sale_id %>)" class="btn btn-sm btn-success">Chop</button>
+                                            <button onclick="printSale(<%= sale.sale_id %>)" class="btn btn-sm btn-success">🖨️</button>
                                         </td>
                                     </tr>
-                                <% }) %>
+                                <%
+                                    });
+                                };
+
+                                if (showBySellerGroup) {
+                                    Object.keys(groupedBySeller).forEach(sellerName => {
+                                        const sellerSales = groupedBySeller[sellerName];
+
+                                        // Calculate seller subtotals
+                                        let sellerProfit = 0;
+                                        let sellerPenalties = 0;
+                                        let sellerNet = 0;
+
+                                        sellerSales.forEach(sale => {
+                                            sellerProfit += parseFloat(sale.sale_profit || 0);
+                                            sellerPenalties += parseFloat(sale.total_penalties || 0);
+                                        });
+                                        sellerNet = sellerProfit - sellerPenalties;
+                                %>
+                                        <!-- Seller Header -->
+                                        <tr style="background: #e0f2fe; font-weight: bold;">
+                                            <td colspan="8" style="padding: 10px; font-size: 1.05em;">
+                                                👤 <%= sellerName %> (<%= sellerSales.length %> ta savdo)
+                                            </td>
+                                        </tr>
+
+                                        <!-- Seller's Sales -->
+                                        <% renderSales(sellerSales); %>
+
+                                        <!-- Seller Subtotal -->
+                                        <tr style="background: #bfdbfe; font-weight: bold;">
+                                            <td colspan="4" style="text-align: right; padding-right: 10px;">
+                                                <strong><%= sellerName %> bo'yicha jami:</strong>
+                                            </td>
+                                            <td style="color: green;">$<%= sellerProfit.toFixed(2) %></td>
+                                            <td style="color: red;">-$<%= sellerPenalties.toFixed(2) %></td>
+                                            <td style="color: blue; font-size: 1.1em;">$<%= sellerNet.toFixed(2) %></td>
+                                            <td class="no-print"></td>
+                                        </tr>
+                                        <tr style="height: 10px;"><td colspan="8"></td></tr>
+                                <%
+                                    });
+                                } else {
+                                    renderSales(salesData);
+                                }
+                                %>
+
+                                <!-- Grand Total -->
                                 <tr style="background: #f0f9ff; font-weight: bold; font-size: 1.1em;">
-                                    <td colspan="4" class="text-right"><strong>JAMI:</strong></td>
+                                    <td colspan="4" class="text-right"><strong>UMUMIY JAMI:</strong></td>
                                     <td style="color: green;">$<%= totalProfit.toFixed(2) %></td>
                                     <td style="color: red;">-$<%= totalPenalties.toFixed(2) %></td>
                                     <td style="color: blue; font-size: 1.2em;">$<%= totalNet.toFixed(2) %></td>
@@ -131,7 +195,15 @@
 
 <script>
 function printSale(saleId) {
-    window.open(`/sales/${saleId}`, '_blank');
+    // Open sale in new window and trigger print
+    const printWindow = window.open(`/sales/${saleId}`, '_blank');
+    if (printWindow) {
+        printWindow.onload = function() {
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        };
+    }
 }
 </script>
 
