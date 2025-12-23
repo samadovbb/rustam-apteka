@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Batafsil ma'lumotlar har bir mahsulot kesimida</span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Filters -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Filtrlar</h3>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="/reports/detailed-products" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="seller_id" class="form-label">Sotuvchi</label>
+                            <select id="seller_id" name="seller_id" class="form-control">
+                                <option value="all" <%= filters.seller_id === 'all' ? 'selected' : '' %>>Barcha sotuvchilar</option>
+                                <% sellers.forEach(seller => { %>
+                                    <option value="<%= seller.id %>" <%= filters.seller_id == seller.id ? 'selected' : '' %>>
+                                        <%= seller.full_name %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="start_date" class="form-label">Boshlanish sanasi</label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" value="<%= filters.start_date %>">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="end_date" class="form-label">Tugash sanasi</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control" value="<%= filters.end_date %>">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Filtrlash</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Mahsulotlar bo'yicha hisobot</h3>
+                    <button onclick="window.print()" class="btn btn-success">🖨️ Chop etish</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="reportTable">
+                        <thead>
+                            <tr>
+                                <th>T/r</th>
+                                <th>Savdo ID</th>
+                                <th>Sotuvchi</th>
+                                <th>Mahsulot</th>
+                                <th>Kirim narxi</th>
+                                <th>Sotuv narxi</th>
+                                <th>Soni</th>
+                                <th>Foyda</th>
+                                <th>Fixed ustama</th>
+                                <th>Ustama oylari</th>
+                                <th>Jami foyda</th>
+                                <th class="no-print">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (productSales.length === 0) { %>
+                                <tr>
+                                    <td colspan="12" class="text-center">Ma'lumot topilmadi</td>
+                                </tr>
+                            <% } else { %>
+                                <%
+                                let totalProfit = 0;
+                                let totalMarkup = 0;
+                                let totalFinal = 0;
+                                productSales.forEach((item, index) => {
+                                    totalProfit += parseFloat(item.product_profit || 0);
+                                    totalMarkup += parseFloat(item.fixed_markup_total || 0);
+                                    totalFinal += parseFloat(item.total_profit || 0);
+                                %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><a href="/sales/<%= item.sale_id %>" style="color: #2563eb; font-weight: bold;">#<%= item.sale_id %></a></td>
+                                        <td><%= item.seller_name %></td>
+                                        <td><%= item.product_name %></td>
+                                        <td>$<%= parseFloat(item.purchase_price_at_sale || 0).toFixed(2) %></td>
+                                        <td>$<%= parseFloat(item.sell_price || 0).toFixed(2) %></td>
+                                        <td><%= item.quantity %></td>
+                                        <td style="color: green; font-weight: bold;">$<%= parseFloat(item.product_profit || 0).toFixed(2) %></td>
+                                        <td style="color: orange; font-weight: bold;">$<%= parseFloat(item.fixed_markup_total || 0).toFixed(2) %></td>
+                                        <td><%= item.markup_months %> oy</td>
+                                        <td style="color: blue; font-weight: bold; font-size: 1.1em;">$<%= parseFloat(item.total_profit || 0).toFixed(2) %></td>
+                                        <td class="no-print">
+                                            <a href="/sales/<%= item.sale_id %>" target="_blank" class="btn btn-sm btn-info">Ko'rish</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                                <tr style="background: #f0f9ff; font-weight: bold; font-size: 1.1em;">
+                                    <td colspan="7" class="text-right"><strong>JAMI:</strong></td>
+                                    <td style="color: green;">$<%= totalProfit.toFixed(2) %></td>
+                                    <td style="color: orange;">$<%= totalMarkup.toFixed(2) %></td>
+                                    <td></td>
+                                    <td style="color: blue; font-size: 1.2em;">$<%= totalFinal.toFixed(2) %></td>
+                                    <td class="no-print"></td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+@media print {
+    .sidebar, .topbar, .no-print, .card-header button {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+    }
+    table {
+        font-size: 12px;
+    }
+}
+</style>
+
+<%- include('../partials/footer') %>

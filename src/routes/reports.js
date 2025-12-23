@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
+const ReportsController = require('../controllers/reportsController');
 
 router.use(authMiddleware);
 
@@ -82,5 +83,9 @@ router.get('/', async (req, res) => {
         res.status(500).render('error', { title: 'Error', message: error.message, error });
     }
 });
+
+// New detailed reports
+router.get('/detailed-products', ReportsController.detailedProductsReport);
+router.get('/detailed-sales', ReportsController.detailedSalesReport);
 
 module.exports = router;
