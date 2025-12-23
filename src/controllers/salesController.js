@@ -757,10 +757,10 @@ class SalesController {
                 worksheet.addRow([]);
                 worksheet.addRow(['', 'SOTUVCHI JAZOLARI']).font = { bold: true, size: 12 };
 
-                const penaltyHeaderRow = worksheet.addRow(['', 'Sana', 'Summa', 'Sabab', '']);
+                const penaltyHeaderRow = worksheet.addRow(['', 'Sana', 'Qarz miqdori', 'Shtraf', 'Sabab']);
                 penaltyHeaderRow.font = { bold: true };
                 penaltyHeaderRow.eachCell((cell, colNumber) => {
-                    if (colNumber > 1 && colNumber <= 4) {
+                    if (colNumber > 1 && colNumber <= 5) {
                         cell.fill = {
                             type: 'pattern',
                             pattern: 'solid',
@@ -781,13 +781,13 @@ class SalesController {
                     const row = worksheet.addRow([
                         '',
                         new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
+                        `$${parseFloat(penalty.remaining_debt || 0).toFixed(2)}`,
                         `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
-                        penalty.reason || 'Sababsiz',
-                        ''
+                        penalty.reason || 'Sababsiz'
                     ]);
-                    row.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
+                    row.getCell(4).font = { color: { argb: 'FFFF0000' }, bold: true };
                     row.eachCell((cell, colNumber) => {
-                        if (colNumber > 1 && colNumber <= 4) {
+                        if (colNumber > 1 && colNumber <= 5) {
                             cell.border = {
                                 top: { style: 'thin' },
                                 left: { style: 'thin' },
