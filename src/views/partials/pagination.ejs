@@ -1,35 +1,69 @@
 <% if (typeof currentPage !== 'undefined' && typeof pageSize !== 'undefined') { %>
-<div class="pagination-container" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-    <div class="pagination-info">
-        Sahifa: <strong><%= currentPage %></strong> |
-        Har sahifada: <strong><%= pageSize %></strong> ta
-    </div>
+<div class="pagination-container" style="margin-top: 20px; display: flex; justify-content: center; align-items: center;">
+    <nav aria-label="Page navigation">
+        <ul class="pagination" style="margin: 0;">
+            <!-- First page -->
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="#" onclick="goToPage(1); return false;">«</a>
+            </li>
 
-    <div class="pagination-controls">
-        <a href="#" onclick="goToPage(1); return false;" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
-            « Birinchi
-        </a>
+            <!-- Previous page -->
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="#" onclick="goToPage(<%= Math.max(1, currentPage - 1) %>); return false;">‹</a>
+            </li>
 
-        <a href="#" onclick="goToPage(<%= Math.max(1, currentPage - 1) %>); return false;" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
-            ‹ Oldingi
-        </a>
+            <%
+            // Generate page numbers around current page
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = startPage + maxPagesToShow - 1;
 
-        <span style="margin: 0 10px; padding: 5px 10px; background-color: #007bff; color: white; border-radius: 3px;">
-            <%= currentPage %>
-        </span>
+            // Show first page if not in range
+            if (startPage > 1) {
+            %>
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="goToPage(1); return false;">1</a>
+                </li>
+                <% if (startPage > 2) { %>
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                <% } %>
+            <% } %>
 
-        <a href="#" onclick="goToPage(<%= currentPage + 1 %>); return false;" class="btn btn-sm btn-secondary" style="margin-left: 5px;">
-            Keyingi ›
-        </a>
+            <!-- Page numbers -->
+            <% for (let i = startPage; i <= endPage; i++) { %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="#" onclick="goToPage(<%= i %>); return false;"><%= i %></a>
+                </li>
+            <% } %>
 
-        <!-- Page size selector -->
-        <select id="pageSizeSelector" class="form-control" style="width: auto; display: inline-block; margin-left: 15px;" onchange="changePageSize(this.value)">
-            <option value="10" <%= pageSize === 10 ? 'selected' : '' %>>10 ta</option>
-            <option value="25" <%= pageSize === 25 ? 'selected' : '' %>>25 ta</option>
-            <option value="50" <%= pageSize === 50 ? 'selected' : '' %>>50 ta</option>
-            <option value="100" <%= pageSize === 100 ? 'selected' : '' %>>100 ta</option>
-        </select>
-    </div>
+            <!-- Show ellipsis and last pages -->
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+
+            <!-- Next page -->
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(<%= currentPage + 1 %>); return false;">›</a>
+            </li>
+
+            <!-- Last page indicator -->
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(<%= currentPage + 5 %>); return false;">»</a>
+            </li>
+
+            <!-- Page size selector -->
+            <li style="margin-left: 15px; list-style: none;">
+                <select id="pageSizeSelector" class="form-control form-control-sm" onchange="changePageSize(this.value)">
+                    <option value="10" <%= pageSize === 10 ? 'selected' : '' %>>10</option>
+                    <option value="25" <%= pageSize === 25 ? 'selected' : '' %>>25</option>
+                    <option value="50" <%= pageSize === 50 ? 'selected' : '' %>>50</option>
+                    <option value="100" <%= pageSize === 100 ? 'selected' : '' %>>100</option>
+                </select>
+            </li>
+        </ul>
+    </nav>
 </div>
 
 <script>
@@ -42,7 +76,7 @@ function goToPage(page) {
 function changePageSize(newSize) {
     const url = new URL(window.location);
     url.searchParams.set('pageSize', newSize);
-    url.searchParams.set('page', '1'); // Reset to first page
+    url.searchParams.set('page', '1');
     window.location.href = url.toString();
 }
 </script>
@@ -50,19 +84,64 @@ function changePageSize(newSize) {
 <style>
 .pagination-container {
     padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
+    background-color: #fff;
+}
+
+.pagination {
+    display: flex;
+    padding-left: 0;
+    list-style: none;
+    border-radius: 0.25rem;
+}
+
+.page-item:not(:first-child) .page-link {
+    margin-left: -1px;
+}
+
+.page-link {
+    position: relative;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    margin-left: 0;
+    line-height: 1.25;
+    color: #007bff;
+    background-color: #fff;
     border: 1px solid #dee2e6;
-}
-
-.pagination-controls a.btn {
     text-decoration: none;
+    cursor: pointer;
 }
 
-.pagination-controls a[disabled] {
-    opacity: 0.5;
+.page-link:hover {
+    z-index: 2;
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
     pointer-events: none;
-    cursor: not-allowed;
+    cursor: auto;
+    background-color: #fff;
+    border-color: #dee2e6;
+    opacity: 0.6;
+}
+
+.page-item:first-child .page-link {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.page-item:last-child .page-link {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
 }
 </style>
 <% } %>
