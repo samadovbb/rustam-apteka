@@ -1,14 +1,18 @@
 const { query, transaction } = require('../config/database');
 
 class StockTransfer {
-    static async getAll(limit = 100) {
-        const sql = `
+    static async getAll(limit = null) {
+        let sql = `
             SELECT st.*, s.full_name as seller_name
             FROM stock_transfers st
             JOIN sellers s ON st.seller_id = s.id
             ORDER BY st.transfer_date DESC
-            LIMIT ${parseInt(limit)}
         `;
+
+        if (limit) {
+            sql += ` LIMIT ${parseInt(limit)}`;
+        }
+
         return await query(sql);
     }
 

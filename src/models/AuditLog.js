@@ -56,7 +56,7 @@ class AuditLog {
      * @param {object} filters - Filter options
      * @param {number} limit
      */
-    static async getAll(filters = {}, limit = 100) {
+    static async getAll(filters = {}, limit = null) {
         let sql = 'SELECT * FROM audit_logs WHERE 1=1';
         const params = [];
 
@@ -85,7 +85,11 @@ class AuditLog {
             params.push(filters.dateTo);
         }
 
-        sql += ` ORDER BY created_at DESC LIMIT ${parseInt(limit)}`;
+        sql += ' ORDER BY created_at DESC';
+
+        if (limit) {
+            sql += ` LIMIT ${parseInt(limit)}`;
+        }
 
         return await query(sql, params);
     }

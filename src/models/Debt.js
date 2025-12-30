@@ -2,8 +2,8 @@ const { query, transaction } = require('../config/database');
 const AuditLog = require('./AuditLog');
 
 class Debt {
-    static async getAll(status = 'active', limit = 100) {
-        const sql = `
+    static async getAll(status = 'active', limit = null) {
+        let sql = `
             SELECT d.*, c.full_name as customer_name, c.phone as customer_phone,
                    s.id as sale_id, s.sale_date, s.total_amount as sale_total,
                    CASE
@@ -16,8 +16,12 @@ class Debt {
             JOIN sales s ON d.sale_id = s.id
             HAVING calculated_status = '${status}'
             ORDER BY d.created_at DESC
-            LIMIT ${parseInt(limit)}
         `;
+
+        if (limit) {
+            sql += ` LIMIT ${parseInt(limit)}`;
+        }
+
         return await query(sql, []);
     }
 
