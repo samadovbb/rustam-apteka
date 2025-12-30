@@ -88,4 +88,8 @@ router.get('/', async (req, res) => {
 router.get('/detailed-products', ReportsController.detailedProductsReport);
 router.get('/detailed-sales', ReportsController.detailedSalesReport);
 
+// Excel exports for detailed reports
+router.get('/detailed-products/export', ReportsController.exportProductsReportToExcel);
+router.get('/detailed-sales/export', ReportsController.exportSalesReportToExcel);
+
 module.exports = router;

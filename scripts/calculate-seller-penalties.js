@@ -20,10 +20,12 @@ async function calculateSellerPenalties() {
         const salesWithDebts = await query(`
             SELECT s.id, s.seller_id, s.sale_date, s.total_amount, s.paid_amount,
                    sel.full_name as seller_name,
-                   c.full_name as customer_name
+                   c.full_name as customer_name,
+                   d.markup_type
             FROM sales s
             JOIN sellers sel ON s.seller_id = sel.id
             JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN debts d ON s.id = d.sale_id
             ORDER BY s.sale_date ASC
         `);
 
@@ -37,6 +39,12 @@ async function calculateSellerPenalties() {
             console.log(`Processing Sale #${sale.id} - ${sale.customer_name} (Seller: ${sale.seller_name})`);
             console.log(`  Sale Date: ${sale.sale_date.toISOString().split('T')[0]}`);
             console.log(`  Total: $${sale.total_amount}, Paid: $${sale.paid_amount}`);
+
+            // Skip if debt has fixed markup
+            if (sale.markup_type === 'fixed') {
+                console.log(`  ⊗ Skipping: Debt has fixed markup (no seller penalties)\n`);
+                continue;
+            }
 
             // Get all payments for this sale, ordered by date
             const payments = await query(`

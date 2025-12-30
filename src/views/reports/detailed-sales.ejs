@@ -47,7 +47,12 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Savdolar bo'yicha hisobot</h3>
-                    <button onclick="window.print()" class="btn btn-success">🖨️ Chop etish</button>
+                    <div>
+                        <a href="/reports/detailed-sales/export?seller_id=<%= filters.seller_id %>&start_date=<%= filters.start_date %>&end_date=<%= filters.end_date %>" class="btn btn-success" style="margin-right: 10px;">
+                            📊 Excel yuklab olish
+                        </a>
+                        <button onclick="window.print()" class="btn" style="background-color: #6366f1; color: white;">🖨️ Chop etish</button>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
