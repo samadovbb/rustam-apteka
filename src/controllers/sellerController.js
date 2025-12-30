@@ -189,6 +189,29 @@ class SellerController {
         }
     }
 
+    // Helper function to convert Cyrillic to Latin
+    static cyrillicToLatin(text) {
+        const cyrillicToLatinMap = {
+            'А': 'A', 'а': 'a', 'Б': 'B', 'б': 'b', 'В': 'V', 'в': 'v',
+            'Г': 'G', 'г': 'g', 'Д': 'D', 'д': 'd', 'Е': 'E', 'е': 'e',
+            'Ё': 'Yo', 'ё': 'yo', 'Ж': 'J', 'ж': 'j', 'З': 'Z', 'з': 'z',
+            'И': 'I', 'и': 'i', 'Й': 'Y', 'й': 'y', 'К': 'K', 'к': 'k',
+            'Л': 'L', 'л': 'l', 'М': 'M', 'м': 'm', 'Н': 'N', 'н': 'n',
+            'О': 'O', 'о': 'o', 'П': 'P', 'п': 'p', 'Р': 'R', 'р': 'r',
+            'С': 'S', 'с': 's', 'Т': 'T', 'т': 't', 'У': 'U', 'у': 'u',
+            'Ф': 'F', 'ф': 'f', 'Х': 'X', 'х': 'x', 'Ц': 'Ts', 'ц': 'ts',
+            'Ч': 'Ch', 'ч': 'ch', 'Ш': 'Sh', 'ш': 'sh', 'Щ': 'Sh', 'щ': 'sh',
+            'Ъ': '', 'ъ': '', 'Ы': 'I', 'ы': 'i', 'Ь': '', 'ь': '',
+            'Э': 'E', 'э': 'e', 'Ю': 'Yu', 'ю': 'yu', 'Я': 'Ya', 'я': 'ya',
+            'Ў': 'O', 'ў': 'o', 'Қ': 'Q', 'қ': 'q', 'Ғ': 'G', 'ғ': 'g',
+            'Ҳ': 'H', 'ҳ': 'h'
+        };
+
+        return text.split('').map(char => {
+            return cyrillicToLatinMap[char] || char;
+        }).join('').replace(/[^a-zA-Z0-9]/g, '_');
+    }
+
     // Export Annual Sales to Excel
     static async exportAnnualSales(req, res) {
         try {
@@ -519,7 +542,7 @@ class SellerController {
             ];
 
             // Send file
-            const fileName = `${seller.full_name.replace(/[^a-zA-Z0-9]/g, '_')}_${currentYear}_Yillik_Hisobot.xlsx`;
+            const fileName = `${SellerController.cyrillicToLatin(seller.full_name)}_${currentYear}_Yillik_Hisobot.xlsx`;
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
             await workbook.xlsx.write(res);
