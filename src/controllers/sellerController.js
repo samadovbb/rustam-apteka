@@ -295,38 +295,47 @@ class SellerController {
                 { width: 15 }, { width: 15 }, { width: 15 }
             ];
 
-            // Now create detailed sheets for each sale
+            // Create a single detailed sheet for all sales
+            const detailSheet = workbook.addWorksheet('Batafsil ma\'lumotlar');
+            let currentRow = 1;
+
+            // Process each sale
             for (const sale of sales) {
-                const sheetName = `Savdo #${sale.id}`.substring(0, 31); // Excel sheet name max 31 chars
-                const saleSheet = workbook.addWorksheet(sheetName);
-
                 // Sale header
-                saleSheet.mergeCells('A1:F1');
-                saleSheet.getCell('A1').value = `SAVDO #${sale.id} - BATAFSIL MA'LUMOT`;
-                saleSheet.getCell('A1').font = { size: 14, bold: true };
-                saleSheet.getCell('A1').alignment = { horizontal: 'center' };
+                detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
+                const headerCell = detailSheet.getCell(`A${currentRow}`);
+                headerCell.value = `SAVDO #${sale.id} - BATAFSIL MA'LUMOT`;
+                headerCell.font = { size: 14, bold: true };
+                headerCell.alignment = { horizontal: 'center' };
+                headerCell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFD0E7FF' }
+                };
+                currentRow++;
 
-                saleSheet.addRow([]);
-                saleSheet.addRow(['Savdo ID:', `#${sale.id}`]);
-                saleSheet.addRow(['Sana:', new Date(sale.sale_date).toLocaleDateString('ru-RU')]);
-                saleSheet.addRow(['Xaridor:', sale.customer_name]);
-                saleSheet.addRow(['Telefon:', sale.customer_phone]);
-                saleSheet.addRow(['Jami summa:', `$${parseFloat(sale.total_amount).toFixed(2)}`]);
-                saleSheet.addRow(['To\'langan:', `$${parseFloat(sale.paid_amount).toFixed(2)}`]);
-                saleSheet.addRow(['Qarz:', `$${parseFloat(sale.remaining_amount).toFixed(2)}`]);
-                saleSheet.addRow([]);
+                currentRow++; // Empty row
+                detailSheet.getRow(currentRow).values = ['Savdo ID:', `#${sale.id}`]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Sana:', new Date(sale.sale_date).toLocaleDateString('ru-RU')]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Xaridor:', sale.customer_name]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Telefon:', sale.customer_phone]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Jami summa:', `$${parseFloat(sale.total_amount).toFixed(2)}`]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['To\'langan:', `$${parseFloat(sale.paid_amount).toFixed(2)}`]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Qarz:', `$${parseFloat(sale.remaining_amount).toFixed(2)}`]; currentRow++;
+                currentRow++; // Empty row
 
                 // 1. PRODUCTS SECTION
-                saleSheet.mergeCells('A' + (saleSheet.rowCount + 1) + ':F' + (saleSheet.rowCount + 1));
-                const productsTitle = saleSheet.getRow(saleSheet.rowCount + 1);
-                productsTitle.getCell(1).value = '📦 SOTILGAN MAHSULOTLAR';
-                productsTitle.getCell(1).font = { bold: true, size: 12 };
-                productsTitle.getCell(1).fill = {
+                detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
+                const productsTitle = detailSheet.getCell(`A${currentRow}`);
+                productsTitle.value = '📦 SOTILGAN MAHSULOTLAR';
+                productsTitle.font = { bold: true, size: 12 };
+                productsTitle.fill = {
                     type: 'pattern',
                     pattern: 'solid',
                     fgColor: { argb: 'FFD1FAE5' }
                 };
-                saleSheet.addRow([]);
+                currentRow++;
+                currentRow++; // Empty row
 
                 // Get products
                 const products = await query(`
@@ -336,38 +345,40 @@ class SellerController {
                     WHERE si.sale_id = ?
                 `, [sale.id]);
 
-                const productsHeader = saleSheet.addRow([
-                    'Mahsulot', 'Soni', 'Kirim narxi', 'Sotuv narxi', 'Foyda', 'Jami'
-                ]);
-                productsHeader.font = { bold: true };
-                productsHeader.eachCell(cell => {
+                const productsHeaderRow = detailSheet.getRow(currentRow);
+                productsHeaderRow.values = ['Mahsulot', 'Soni', 'Kirim narxi', 'Sotuv narxi', 'Foyda', 'Jami'];
+                productsHeaderRow.font = { bold: true };
+                productsHeaderRow.eachCell(cell => {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                 });
+                currentRow++;
 
                 products.forEach(item => {
                     const profit = (parseFloat(item.unit_price) - parseFloat(item.purchase_price_at_sale)) * parseFloat(item.quantity);
-                    saleSheet.addRow([
+                    detailSheet.getRow(currentRow).values = [
                         item.product_name,
                         item.quantity,
                         `$${parseFloat(item.purchase_price_at_sale).toFixed(2)}`,
                         `$${parseFloat(item.unit_price).toFixed(2)}`,
                         `$${profit.toFixed(2)}`,
                         `$${(parseFloat(item.unit_price) * parseFloat(item.quantity)).toFixed(2)}`
-                    ]);
+                    ];
+                    currentRow++;
                 });
-                saleSheet.addRow([]);
+                currentRow++; // Empty row
 
                 // 2. PAYMENTS SECTION
-                saleSheet.mergeCells('A' + (saleSheet.rowCount + 1) + ':F' + (saleSheet.rowCount + 1));
-                const paymentsTitle = saleSheet.getRow(saleSheet.rowCount + 1);
-                paymentsTitle.getCell(1).value = '💰 TO\'LOVLAR TARIXI';
-                paymentsTitle.getCell(1).font = { bold: true, size: 12 };
-                paymentsTitle.getCell(1).fill = {
+                detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
+                const paymentsTitle = detailSheet.getCell(`A${currentRow}`);
+                paymentsTitle.value = '💰 TO\'LOVLAR TARIXI';
+                paymentsTitle.font = { bold: true, size: 12 };
+                paymentsTitle.fill = {
                     type: 'pattern',
                     pattern: 'solid',
                     fgColor: { argb: 'FFFEF3C7' }
                 };
-                saleSheet.addRow([]);
+                currentRow++;
+                currentRow++; // Empty row
 
                 // Get payments
                 const payments = await query(`
@@ -378,39 +389,42 @@ class SellerController {
                 `, [sale.id]);
 
                 if (payments.length > 0) {
-                    const paymentsHeader = saleSheet.addRow([
-                        'Sana', 'Summa', 'To\'lov turi', 'Izoh'
-                    ]);
-                    paymentsHeader.font = { bold: true };
-                    paymentsHeader.eachCell(cell => {
+                    const paymentsHeaderRow = detailSheet.getRow(currentRow);
+                    paymentsHeaderRow.values = ['Sana', 'Summa', 'To\'lov turi', 'Izoh'];
+                    paymentsHeaderRow.font = { bold: true };
+                    paymentsHeaderRow.eachCell(cell => {
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                     });
+                    currentRow++;
 
                     payments.forEach(payment => {
-                        saleSheet.addRow([
+                        detailSheet.getRow(currentRow).values = [
                             new Date(payment.payment_date).toLocaleDateString('ru-RU'),
                             `$${parseFloat(payment.amount).toFixed(2)}`,
                             payment.payment_method || '-',
                             payment.notes || '-'
-                        ]);
+                        ];
+                        currentRow++;
                     });
                 } else {
-                    saleSheet.addRow(['To\'lovlar mavjud emas']);
+                    detailSheet.getRow(currentRow).values = ['To\'lovlar mavjud emas'];
+                    currentRow++;
                 }
-                saleSheet.addRow([]);
+                currentRow++; // Empty row
 
                 // 3. MARKUP HISTORY SECTION (if exists)
                 if (sale.debt_id && sale.markup_type === 'fixed') {
-                    saleSheet.mergeCells('A' + (saleSheet.rowCount + 1) + ':F' + (saleSheet.rowCount + 1));
-                    const markupTitle = saleSheet.getRow(saleSheet.rowCount + 1);
-                    markupTitle.getCell(1).value = '📈 USTAMALAR TARIXI';
-                    markupTitle.getCell(1).font = { bold: true, size: 12 };
-                    markupTitle.getCell(1).fill = {
+                    detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
+                    const markupTitle = detailSheet.getCell(`A${currentRow}`);
+                    markupTitle.value = '📈 USTAMALAR TARIXI';
+                    markupTitle.font = { bold: true, size: 12 };
+                    markupTitle.fill = {
                         type: 'pattern',
                         pattern: 'solid',
                         fgColor: { argb: 'FFFDE2E4' }
                     };
-                    saleSheet.addRow([]);
+                    currentRow++;
+                    currentRow++; // Empty row
 
                     // Get markup history
                     const markupHistory = await query(`
@@ -421,40 +435,43 @@ class SellerController {
                     `, [sale.debt_id]);
 
                     if (markupHistory.length > 0) {
-                        const markupHeader = saleSheet.addRow([
-                            'Sana', 'Ustama summasi', 'Qarz (oldin)', 'Qarz (keyin)', 'Izoh'
-                        ]);
-                        markupHeader.font = { bold: true };
-                        markupHeader.eachCell(cell => {
+                        const markupHeaderRow = detailSheet.getRow(currentRow);
+                        markupHeaderRow.values = ['Sana', 'Ustama summasi', 'Qarz (oldin)', 'Qarz (keyin)', 'Izoh'];
+                        markupHeaderRow.font = { bold: true };
+                        markupHeaderRow.eachCell(cell => {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                         });
+                        currentRow++;
 
                         markupHistory.forEach(markup => {
-                            saleSheet.addRow([
+                            detailSheet.getRow(currentRow).values = [
                                 new Date(markup.applied_date).toLocaleDateString('ru-RU'),
                                 `$${parseFloat(markup.markup_value).toFixed(2)}`,
                                 `$${parseFloat(markup.debt_before).toFixed(2)}`,
                                 `$${parseFloat(markup.debt_after).toFixed(2)}`,
                                 markup.notes || '-'
-                            ]);
+                            ];
+                            currentRow++;
                         });
                     } else {
-                        saleSheet.addRow(['Ustamalar mavjud emas']);
+                        detailSheet.getRow(currentRow).values = ['Ustamalar mavjud emas'];
+                        currentRow++;
                     }
-                    saleSheet.addRow([]);
+                    currentRow++; // Empty row
                 }
 
                 // 4. PENALTIES SECTION
-                saleSheet.mergeCells('A' + (saleSheet.rowCount + 1) + ':F' + (saleSheet.rowCount + 1));
-                const penaltiesTitle = saleSheet.getRow(saleSheet.rowCount + 1);
-                penaltiesTitle.getCell(1).value = '⚠️ SHTRAFLAR TARIXI';
-                penaltiesTitle.getCell(1).font = { bold: true, size: 12 };
-                penaltiesTitle.getCell(1).fill = {
+                detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
+                const penaltiesTitle = detailSheet.getCell(`A${currentRow}`);
+                penaltiesTitle.value = '⚠️ SHTRAFLAR TARIXI';
+                penaltiesTitle.font = { bold: true, size: 12 };
+                penaltiesTitle.fill = {
                     type: 'pattern',
                     pattern: 'solid',
                     fgColor: { argb: 'FFFECACA' }
                 };
-                saleSheet.addRow([]);
+                currentRow++;
+                currentRow++; // Empty row
 
                 // Get penalties
                 const penalties = await query(`
@@ -466,32 +483,40 @@ class SellerController {
                 `, [sale.id]);
 
                 if (penalties.length > 0) {
-                    const penaltiesHeader = saleSheet.addRow([
-                        'Sana', 'Shtraf summasi', 'Qarz miqdori', 'Sabab'
-                    ]);
-                    penaltiesHeader.font = { bold: true };
-                    penaltiesHeader.eachCell(cell => {
+                    const penaltiesHeaderRow = detailSheet.getRow(currentRow);
+                    penaltiesHeaderRow.values = ['Sana', 'Shtraf summasi', 'Qarz miqdori', 'Sabab'];
+                    penaltiesHeaderRow.font = { bold: true };
+                    penaltiesHeaderRow.eachCell(cell => {
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
                     });
+                    currentRow++;
 
                     penalties.forEach(penalty => {
-                        saleSheet.addRow([
+                        detailSheet.getRow(currentRow).values = [
                             new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
                             `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
                             `$${parseFloat(penalty.debt_amount || 0).toFixed(2)}`,
                             penalty.reason || '-'
-                        ]);
+                        ];
+                        currentRow++;
                     });
                 } else {
-                    saleSheet.addRow(['Shtraflar mavjud emas']);
+                    detailSheet.getRow(currentRow).values = ['Shtraflar mavjud emas'];
+                    currentRow++;
                 }
+                currentRow++; // Empty row
 
-                // Set column widths
-                saleSheet.columns = [
-                    { width: 20 }, { width: 12 }, { width: 15 },
-                    { width: 15 }, { width: 15 }, { width: 20 }
-                ];
+                // Add visual separator between sales (3 empty rows with border)
+                currentRow++; // Empty row
+                currentRow++; // Empty row
+                currentRow++; // Empty row
             }
+
+            // Set column widths for detail sheet
+            detailSheet.columns = [
+                { width: 20 }, { width: 12 }, { width: 15 },
+                { width: 15 }, { width: 15 }, { width: 20 }
+            ];
 
             // Send file
             const fileName = `${seller.full_name.replace(/[^a-zA-Z0-9]/g, '_')}_${currentYear}_Yillik_Hisobot.xlsx`;
