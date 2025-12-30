@@ -494,8 +494,9 @@ class SellerController {
             }
 
             // Send file
+            const fileName = `${seller.full_name.replace(/[^a-zA-Z0-9]/g, '_')}_${currentYear}_Yillik_Hisobot.xlsx`;
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=${seller.full_name}_${currentYear}_Yillik_Hisobot.xlsx`);
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
             await workbook.xlsx.write(res);
             res.end();
         } catch (error) {
