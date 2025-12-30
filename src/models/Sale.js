@@ -1,8 +1,10 @@
 const { query, transaction } = require('../config/database');
 
 class Sale {
-    static async getAll(limit = null) {
-        let sql = `
+    static async getAll(page = 1, pageSize = 50) {
+        const offset = (page - 1) * pageSize;
+
+        const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,
                    sel.full_name as seller_name,
                    COALESCE(d.current_amount, s.total_amount - s.paid_amount) as remaining_amount,
@@ -16,11 +18,8 @@ class Sale {
             JOIN sellers sel ON s.seller_id = sel.id
             LEFT JOIN debts d ON s.id = d.sale_id
             ORDER BY s.sale_date DESC
+            LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}
         `;
-
-        if (limit) {
-            sql += ` LIMIT ${parseInt(limit)}`;
-        }
 
         return await query(sql);
     }
