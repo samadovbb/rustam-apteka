@@ -24,6 +24,12 @@ class Sale {
         return await query(sql);
     }
 
+    static async getCount() {
+        const sql = `SELECT COUNT(*) as total FROM sales`;
+        const result = await query(sql);
+        return result[0].total;
+    }
+
     static async findById(id) {
         const sql = `
             SELECT s.*, c.full_name as customer_name, c.phone as customer_phone,

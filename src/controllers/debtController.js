@@ -7,8 +7,15 @@ class DebtController {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const debts = await Debt.getAll(status, page, pageSize);
-            const stats = await Debt.getDebtStatistics();
+            const [debts, stats, totalRecords] = await Promise.all([
+                Debt.getAll(status, page, pageSize),
+                Debt.getDebtStatistics(),
+                Debt.getCount(status)
+            ]);
+
+            const totalPages = Math.ceil(totalRecords / pageSize);
+            const startRecord = (page - 1) * pageSize + 1;
+            const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('debts/index', {
                 title: 'Debts - MegaDent POS',
@@ -16,7 +23,11 @@ class DebtController {
                 stats,
                 currentStatus: status,
                 currentPage: page,
-                pageSize: pageSize
+                pageSize: pageSize,
+                totalRecords: totalRecords,
+                totalPages: totalPages,
+                startRecord: startRecord,
+                endRecord: endRecord
             });
         } catch (error) {
             console.error('Debts index error:', error);

@@ -8,13 +8,24 @@ class SalesController {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const sales = await Sale.getAll(page, pageSize);
+            const [sales, totalRecords] = await Promise.all([
+                Sale.getAll(page, pageSize),
+                Sale.getCount()
+            ]);
+
+            const totalPages = Math.ceil(totalRecords / pageSize);
+            const startRecord = (page - 1) * pageSize + 1;
+            const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('sales/index', {
                 title: 'Sales - MegaDent POS',
                 sales,
                 currentPage: page,
-                pageSize: pageSize
+                pageSize: pageSize,
+                totalRecords: totalRecords,
+                totalPages: totalPages,
+                startRecord: startRecord,
+                endRecord: endRecord
             });
         } catch (error) {
             console.error('Sales index error:', error);

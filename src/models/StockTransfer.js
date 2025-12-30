@@ -15,6 +15,12 @@ class StockTransfer {
         return await query(sql);
     }
 
+    static async getCount() {
+        const sql = `SELECT COUNT(*) as total FROM stock_transfers`;
+        const result = await query(sql);
+        return result[0].total;
+    }
+
     static async findById(id) {
         const sql = `
             SELECT st.*, s.full_name as seller_name

@@ -8,13 +8,24 @@ class StockTransferController {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const transfers = await StockTransfer.getAll(page, pageSize);
+            const [transfers, totalRecords] = await Promise.all([
+                StockTransfer.getAll(page, pageSize),
+                StockTransfer.getCount()
+            ]);
+
+            const totalPages = Math.ceil(totalRecords / pageSize);
+            const startRecord = (page - 1) * pageSize + 1;
+            const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('stock/transfer-list', {
                 title: 'Stock Transfers - MegaDent POS',
                 transfers,
                 currentPage: page,
-                pageSize: pageSize
+                pageSize: pageSize,
+                totalRecords: totalRecords,
+                totalPages: totalPages,
+                startRecord: startRecord,
+                endRecord: endRecord
             });
         } catch (error) {
             console.error('Stock transfers index error:', error);

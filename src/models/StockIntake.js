@@ -15,6 +15,12 @@ class StockIntake {
         return await query(sql);
     }
 
+    static async getCount() {
+        const sql = `SELECT COUNT(*) as total FROM stock_intakes`;
+        const result = await query(sql);
+        return result[0].total;
+    }
+
     static async findById(id) {
         const sql = `
             SELECT si.*, s.name as supplier_name

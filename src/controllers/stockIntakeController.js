@@ -8,13 +8,24 @@ class StockIntakeController {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const intakes = await StockIntake.getAll(page, pageSize);
+            const [intakes, totalRecords] = await Promise.all([
+                StockIntake.getAll(page, pageSize),
+                StockIntake.getCount()
+            ]);
+
+            const totalPages = Math.ceil(totalRecords / pageSize);
+            const startRecord = (page - 1) * pageSize + 1;
+            const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('stock/intake-list', {
                 title: 'Stock Intakes - MegaDent POS',
                 intakes,
                 currentPage: page,
-                pageSize: pageSize
+                pageSize: pageSize,
+                totalRecords: totalRecords,
+                totalPages: totalPages,
+                startRecord: startRecord,
+                endRecord: endRecord
             });
         } catch (error) {
             console.error('Stock intakes index error:', error);

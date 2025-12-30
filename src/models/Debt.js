@@ -24,6 +24,20 @@ class Debt {
         return await query(sql, []);
     }
 
+    static async getCount(status = 'active') {
+        const sql = `
+            SELECT COUNT(*) as total
+            FROM debts d
+            WHERE CASE
+                WHEN d.status = 'cancelled' THEN 'cancelled'
+                WHEN d.current_amount <= 0 THEN 'paid'
+                ELSE 'active'
+            END = ?
+        `;
+        const result = await query(sql, [status]);
+        return result[0].total;
+    }
+
     static async findById(id) {
         const sql = `
             SELECT d.*, c.full_name as customer_name, c.phone as customer_phone,
