@@ -104,7 +104,7 @@ async function calculateSellerPenalties() {
                             checkDateStr,
                             runningBalance.toFixed(2),
                             penaltyAmount.toFixed(2),
-                            `Monthly penalty: 1% of remaining debt`
+                            `Qarz qoldig'i uchun 2% jarima - ${checkDateStr}`
                         ]);
 
                         console.log(`  ✓ Penalty added for ${checkDateStr}: $${penaltyAmount.toFixed(2)} (Debt: $${runningBalance.toFixed(2)})`);
