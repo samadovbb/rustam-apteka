@@ -70,13 +70,14 @@
                                 <th>Fixed ustama</th>
                                 <th>Ustama oylari</th>
                                 <th>Jami foyda</th>
+                                <th>Qarz holati</th>
                                 <th class="no-print">Amallar</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (productSales.length === 0) { %>
                                 <tr>
-                                    <td colspan="12" class="text-center">Ma'lumot topilmadi</td>
+                                    <td colspan="13" class="text-center">Ma'lumot topilmadi</td>
                                 </tr>
                             <% } else { %>
                                 <%
@@ -100,6 +101,13 @@
                                         <td style="color: orange; font-weight: bold;">$<%= parseFloat(item.fixed_markup_total || 0).toFixed(2) %></td>
                                         <td><%= item.markup_months %> oy</td>
                                         <td style="color: blue; font-weight: bold; font-size: 1.1em;">$<%= parseFloat(item.total_profit || 0).toFixed(2) %></td>
+                                        <td>
+                                            <% if (item.debt_status === 'yopilgan') { %>
+                                                <span style="color: green; font-weight: bold;">✓ Yopilgan</span>
+                                            <% } else { %>
+                                                <span style="color: red; font-weight: bold;">✗ Yopilmagan</span>
+                                            <% } %>
+                                        </td>
                                         <td class="no-print">
                                             <a href="/sales/<%= item.sale_id %>" target="_blank" class="btn btn-sm btn-info">Ko'rish</a>
                                         </td>
@@ -111,6 +119,7 @@
                                     <td style="color: orange;">$<%= totalMarkup.toFixed(2) %></td>
                                     <td></td>
                                     <td style="color: blue; font-size: 1.2em;">$<%= totalFinal.toFixed(2) %></td>
+                                    <td></td>
                                     <td class="no-print"></td>
                                 </tr>
                             <% } %>

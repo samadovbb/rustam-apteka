@@ -66,13 +66,14 @@
                                 <th>Savdo foydasi</th>
                                 <th>Shtraflar</th>
                                 <th>Sof foyda</th>
+                                <th>Qarz holati</th>
                                 <th class="no-print">Amallar</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (salesData.length === 0) { %>
                                 <tr>
-                                    <td colspan="8" class="text-center">Ma'lumot topilmadi</td>
+                                    <td colspan="9" class="text-center">Ma'lumot topilmadi</td>
                                 </tr>
                             <% } else { %>
                                 <%
@@ -115,6 +116,13 @@
                                         <td style="color: <%= netProfit >= 0 ? 'blue' : 'red' %>; font-weight: bold; font-size: 1.1em;">
                                             $<%= netProfit.toFixed(2) %>
                                         </td>
+                                        <td>
+                                            <% if (sale.debt_status === 'yopilgan') { %>
+                                                <span style="color: green; font-weight: bold;">✓ Yopilgan</span>
+                                            <% } else { %>
+                                                <span style="color: red; font-weight: bold;">✗ Yopilmagan</span>
+                                            <% } %>
+                                        </td>
                                         <td class="no-print">
                                             <a href="/sales/<%= sale.sale_id %>" target="_blank" class="btn btn-sm btn-info">Ko'rish</a>
                                             <button onclick="printSale(<%= sale.sale_id %>)" class="btn btn-sm btn-success">🖨️</button>
@@ -141,7 +149,7 @@
                                 %>
                                         <!-- Seller Header -->
                                         <tr style="background: #e0f2fe; font-weight: bold;">
-                                            <td colspan="8" style="padding: 10px; font-size: 1.05em;">
+                                            <td colspan="9" style="padding: 10px; font-size: 1.05em;">
                                                 👤 <%= sellerName %> (<%= sellerSales.length %> ta savdo)
                                             </td>
                                         </tr>
@@ -157,9 +165,10 @@
                                             <td style="color: green;">$<%= sellerProfit.toFixed(2) %></td>
                                             <td style="color: red;">-$<%= sellerPenalties.toFixed(2) %></td>
                                             <td style="color: blue; font-size: 1.1em;">$<%= sellerNet.toFixed(2) %></td>
+                                            <td></td>
                                             <td class="no-print"></td>
                                         </tr>
-                                        <tr style="height: 10px;"><td colspan="8"></td></tr>
+                                        <tr style="height: 10px;"><td colspan="9"></td></tr>
                                 <%
                                     });
                                 } else {
@@ -173,6 +182,7 @@
                                     <td style="color: green;">$<%= totalProfit.toFixed(2) %></td>
                                     <td style="color: red;">-$<%= totalPenalties.toFixed(2) %></td>
                                     <td style="color: blue; font-size: 1.2em;">$<%= totalNet.toFixed(2) %></td>
+                                    <td></td>
                                     <td class="no-print"></td>
                                 </tr>
                             <% } %>
