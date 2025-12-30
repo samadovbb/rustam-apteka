@@ -376,18 +376,46 @@ class SellerController {
                 });
                 currentRow++;
 
+                let totalQuantity = 0;
+                let totalProfit = 0;
+                let totalAmount = 0;
+
                 products.forEach(item => {
                     const profit = (parseFloat(item.unit_price) - parseFloat(item.purchase_price_at_sale)) * parseFloat(item.quantity);
+                    const itemTotal = parseFloat(item.unit_price) * parseFloat(item.quantity);
+
+                    totalQuantity += parseFloat(item.quantity);
+                    totalProfit += profit;
+                    totalAmount += itemTotal;
+
                     detailSheet.getRow(currentRow).values = [
                         item.product_name,
                         item.quantity,
                         `$${parseFloat(item.purchase_price_at_sale).toFixed(2)}`,
                         `$${parseFloat(item.unit_price).toFixed(2)}`,
                         `$${profit.toFixed(2)}`,
-                        `$${(parseFloat(item.unit_price) * parseFloat(item.quantity)).toFixed(2)}`
+                        `$${itemTotal.toFixed(2)}`
                     ];
                     currentRow++;
                 });
+
+                // Add total row for products
+                const productsTotalRow = detailSheet.getRow(currentRow);
+                productsTotalRow.values = [
+                    'JAMI:',
+                    totalQuantity,
+                    '',
+                    '',
+                    `$${totalProfit.toFixed(2)}`,
+                    `$${totalAmount.toFixed(2)}`
+                ];
+                productsTotalRow.font = { bold: true };
+                productsTotalRow.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFF0F9FF' }
+                };
+                currentRow++;
                 currentRow++; // Empty row
 
                 // 2. PAYMENTS SECTION
@@ -420,7 +448,9 @@ class SellerController {
                     });
                     currentRow++;
 
+                    let totalPayments = 0;
                     payments.forEach(payment => {
+                        totalPayments += parseFloat(payment.amount);
                         detailSheet.getRow(currentRow).values = [
                             new Date(payment.payment_date).toLocaleDateString('ru-RU'),
                             `$${parseFloat(payment.amount).toFixed(2)}`,
@@ -429,6 +459,22 @@ class SellerController {
                         ];
                         currentRow++;
                     });
+
+                    // Add total row for payments
+                    const paymentsTotalRow = detailSheet.getRow(currentRow);
+                    paymentsTotalRow.values = [
+                        'JAMI:',
+                        `$${totalPayments.toFixed(2)}`,
+                        '',
+                        ''
+                    ];
+                    paymentsTotalRow.font = { bold: true };
+                    paymentsTotalRow.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFF0F9FF' }
+                    };
+                    currentRow++;
                 } else {
                     detailSheet.getRow(currentRow).values = ['To\'lovlar mavjud emas'];
                     currentRow++;
@@ -466,7 +512,9 @@ class SellerController {
                         });
                         currentRow++;
 
+                        let totalMarkup = 0;
                         markupHistory.forEach(markup => {
+                            totalMarkup += parseFloat(markup.markup_value);
                             detailSheet.getRow(currentRow).values = [
                                 new Date(markup.applied_date).toLocaleDateString('ru-RU'),
                                 `$${parseFloat(markup.markup_value).toFixed(2)}`,
@@ -476,6 +524,23 @@ class SellerController {
                             ];
                             currentRow++;
                         });
+
+                        // Add total row for markup
+                        const markupTotalRow = detailSheet.getRow(currentRow);
+                        markupTotalRow.values = [
+                            'JAMI:',
+                            `$${totalMarkup.toFixed(2)}`,
+                            '',
+                            '',
+                            ''
+                        ];
+                        markupTotalRow.font = { bold: true };
+                        markupTotalRow.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFF0F9FF' }
+                        };
+                        currentRow++;
                     } else {
                         detailSheet.getRow(currentRow).values = ['Ustamalar mavjud emas'];
                         currentRow++;
@@ -514,7 +579,9 @@ class SellerController {
                     });
                     currentRow++;
 
+                    let totalPenalties = 0;
                     penalties.forEach(penalty => {
+                        totalPenalties += parseFloat(penalty.penalty_amount);
                         detailSheet.getRow(currentRow).values = [
                             new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
                             `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
@@ -523,6 +590,22 @@ class SellerController {
                         ];
                         currentRow++;
                     });
+
+                    // Add total row for penalties
+                    const penaltiesTotalRow = detailSheet.getRow(currentRow);
+                    penaltiesTotalRow.values = [
+                        'JAMI:',
+                        `-$${totalPenalties.toFixed(2)}`,
+                        '',
+                        ''
+                    ];
+                    penaltiesTotalRow.font = { bold: true };
+                    penaltiesTotalRow.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFF0F9FF' }
+                    };
+                    currentRow++;
                 } else {
                     detailSheet.getRow(currentRow).values = ['Shtraflar mavjud emas'];
                     currentRow++;
