@@ -783,7 +783,7 @@ class SalesController {
                         new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
                         `$${parseFloat(penalty.remaining_debt || 0).toFixed(2)}`,
                         `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
-                        penalty.reason || 'Sababsiz'
+                        penalty.notes || 'Sababsiz'
                     ]);
                     row.getCell(4).font = { color: { argb: 'FFFF0000' }, bold: true };
                     row.eachCell((cell, colNumber) => {
