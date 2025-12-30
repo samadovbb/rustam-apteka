@@ -33,7 +33,13 @@ class ReportsController {
                     si.quantity,
                     (si.unit_price - si.purchase_price_at_sale) * si.quantity as product_profit,
                     d.markup_type,
-                    d.markup_value
+                    d.markup_value,
+                    d.current_amount,
+                    CASE
+                        WHEN d.current_amount IS NULL THEN 'yopilgan'
+                        WHEN d.current_amount <= 0 THEN 'yopilgan'
+                        ELSE 'yopilmagan'
+                    END as debt_status
                 FROM sale_items si
                 JOIN sales s ON si.sale_id = s.id
                 JOIN sellers sel ON s.seller_id = sel.id
@@ -115,13 +121,20 @@ class ReportsController {
                     sel.full_name as seller_name,
                     s.seller_id,
                     s.total_amount,
-                    SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as sale_profit
+                    SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as sale_profit,
+                    d.current_amount,
+                    CASE
+                        WHEN d.current_amount IS NULL THEN 'yopilgan'
+                        WHEN d.current_amount <= 0 THEN 'yopilgan'
+                        ELSE 'yopilmagan'
+                    END as debt_status
                 FROM sales s
                 JOIN sellers sel ON s.seller_id = sel.id
                 JOIN sale_items si ON s.id = si.sale_id
+                LEFT JOIN debts d ON s.id = d.sale_id
                 WHERE s.sale_date BETWEEN ? AND ?
                 ${sellerFilter}
-                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount
+                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount, d.current_amount
                 ORDER BY s.sale_date DESC
             `, [dateStart, dateEnd]);
 
@@ -189,7 +202,13 @@ class ReportsController {
                     si.quantity,
                     (si.unit_price - si.purchase_price_at_sale) * si.quantity as product_profit,
                     d.markup_type,
-                    d.markup_value
+                    d.markup_value,
+                    d.current_amount,
+                    CASE
+                        WHEN d.current_amount IS NULL THEN 'yopilgan'
+                        WHEN d.current_amount <= 0 THEN 'yopilgan'
+                        ELSE 'yopilmagan'
+                    END as debt_status
                 FROM sale_items si
                 JOIN sales s ON si.sale_id = s.id
                 JOIN sellers sel ON s.seller_id = sel.id
@@ -232,7 +251,7 @@ class ReportsController {
             const worksheet = workbook.addWorksheet('Mahsulotlar hisoboti');
 
             // Title
-            worksheet.mergeCells('A1:K1');
+            worksheet.mergeCells('A1:L1');
             worksheet.getCell('A1').value = 'MAHSULOTLAR BO\'YICHA BATAFSIL HISOBOT';
             worksheet.getCell('A1').font = { size: 16, bold: true };
             worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -247,7 +266,7 @@ class ReportsController {
             const headerRow = worksheet.addRow([
                 'T/r', 'Savdo ID', 'Sotuvchi', 'Mahsulot', 'Kirim narxi',
                 'Sotuv narxi', 'Soni', 'Foyda', 'Fixed ustama',
-                'Ustama oylari', 'Jami foyda'
+                'Ustama oylari', 'Jami foyda', 'Qarz holati'
             ]);
             headerRow.font = { bold: true };
             headerRow.eachCell((cell) => {
@@ -285,7 +304,8 @@ class ReportsController {
                     `$${parseFloat(item.product_profit || 0).toFixed(2)}`,
                     `$${parseFloat(item.fixed_markup_total || 0).toFixed(2)}`,
                     `${item.markup_months} oy`,
-                    `$${parseFloat(item.total_profit || 0).toFixed(2)}`
+                    `$${parseFloat(item.total_profit || 0).toFixed(2)}`,
+                    item.debt_status === 'yopilgan' ? '✓ Yopilgan' : '✗ Yopilmagan'
                 ]);
 
                 row.eachCell((cell) => {
@@ -304,7 +324,8 @@ class ReportsController {
                 `$${totalProfit.toFixed(2)}`,
                 `$${totalMarkup.toFixed(2)}`,
                 '',
-                `$${totalFinal.toFixed(2)}`
+                `$${totalFinal.toFixed(2)}`,
+                ''
             ]);
             totalRow.font = { bold: true, size: 12 };
             totalRow.fill = {
@@ -317,7 +338,7 @@ class ReportsController {
             worksheet.columns = [
                 { width: 8 }, { width: 12 }, { width: 20 }, { width: 25 },
                 { width: 15 }, { width: 15 }, { width: 10 }, { width: 15 },
-                { width: 15 }, { width: 15 }, { width: 15 }
+                { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }
             ];
 
             // Send file
@@ -360,13 +381,20 @@ class ReportsController {
                     sel.full_name as seller_name,
                     s.seller_id,
                     s.total_amount,
-                    SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as sale_profit
+                    SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as sale_profit,
+                    d.current_amount,
+                    CASE
+                        WHEN d.current_amount IS NULL THEN 'yopilgan'
+                        WHEN d.current_amount <= 0 THEN 'yopilgan'
+                        ELSE 'yopilmagan'
+                    END as debt_status
                 FROM sales s
                 JOIN sellers sel ON s.seller_id = sel.id
                 JOIN sale_items si ON s.id = si.sale_id
+                LEFT JOIN debts d ON s.id = d.sale_id
                 WHERE s.sale_date BETWEEN ? AND ?
                 ${sellerFilter}
-                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount
+                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount, d.current_amount
                 ORDER BY s.sale_date DESC
             `, [dateStart, dateEnd]);
 
@@ -390,7 +418,7 @@ class ReportsController {
             const worksheet = workbook.addWorksheet('Savdolar hisoboti');
 
             // Title
-            worksheet.mergeCells('A1:G1');
+            worksheet.mergeCells('A1:H1');
             worksheet.getCell('A1').value = 'SAVDOLAR BO\'YICHA BATAFSIL HISOBOT';
             worksheet.getCell('A1').font = { size: 16, bold: true };
             worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
@@ -404,7 +432,7 @@ class ReportsController {
             // Table header
             const headerRow = worksheet.addRow([
                 'T/r', 'Savdo ID', 'Sana', 'Sotuvchi',
-                'Savdo foydasi', 'Shtraflar', 'Sof foyda'
+                'Savdo foydasi', 'Shtraflar', 'Sof foyda', 'Qarz holati'
             ]);
             headerRow.font = { bold: true };
             headerRow.eachCell((cell) => {
@@ -442,7 +470,8 @@ class ReportsController {
                     sale.seller_name,
                     `$${saleProfit.toFixed(2)}`,
                     `-$${penalties.toFixed(2)}`,
-                    `$${netProfit.toFixed(2)}`
+                    `$${netProfit.toFixed(2)}`,
+                    sale.debt_status === 'yopilgan' ? '✓ Yopilgan' : '✗ Yopilmagan'
                 ]);
 
                 row.eachCell((cell) => {
@@ -460,7 +489,8 @@ class ReportsController {
                 '', '', '', 'JAMI:',
                 `$${totalProfit.toFixed(2)}`,
                 `-$${totalPenalties.toFixed(2)}`,
-                `$${totalNet.toFixed(2)}`
+                `$${totalNet.toFixed(2)}`,
+                ''
             ]);
             totalRow.font = { bold: true, size: 12 };
             totalRow.fill = {
@@ -472,7 +502,7 @@ class ReportsController {
             // Set column widths
             worksheet.columns = [
                 { width: 8 }, { width: 12 }, { width: 15 }, { width: 20 },
-                { width: 15 }, { width: 15 }, { width: 15 }
+                { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }
             ];
 
             // Send file
