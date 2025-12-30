@@ -4,14 +4,19 @@ class DebtController {
     static async index(req, res) {
         try {
             const status = req.query.status || 'active';
-            const debts = await Debt.getAll(status);
+            const page = parseInt(req.query.page) || 1;
+            const pageSize = parseInt(req.query.pageSize) || 50;
+
+            const debts = await Debt.getAll(status, page, pageSize);
             const stats = await Debt.getDebtStatistics();
 
             res.render('debts/index', {
                 title: 'Debts - MegaDent POS',
                 debts,
                 stats,
-                currentStatus: status
+                currentStatus: status,
+                currentPage: page,
+                pageSize: pageSize
             });
         } catch (error) {
             console.error('Debts index error:', error);

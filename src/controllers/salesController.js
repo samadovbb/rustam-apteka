@@ -5,10 +5,16 @@ const Seller = require('../models/Seller');
 class SalesController {
     static async index(req, res) {
         try {
-            const sales = await Sale.getAll();
+            const page = parseInt(req.query.page) || 1;
+            const pageSize = parseInt(req.query.pageSize) || 50;
+
+            const sales = await Sale.getAll(page, pageSize);
+
             res.render('sales/index', {
                 title: 'Sales - MegaDent POS',
-                sales
+                sales,
+                currentPage: page,
+                pageSize: pageSize
             });
         } catch (error) {
             console.error('Sales index error:', error);

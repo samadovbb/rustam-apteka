@@ -1,0 +1,80 @@
+<% if (typeof currentPage !== 'undefined' && typeof pageSize !== 'undefined') { %>
+<div class="pagination-container" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="pagination-info">
+        Sahifa: <strong><%= currentPage %></strong> |
+        Har sahifada: <strong><%= pageSize %></strong> ta
+    </div>
+
+    <div class="pagination-controls">
+        <%
+        const currentUrl = new URL(req.originalUrl, `http://${req.headers.host}`);
+        const baseUrl = currentUrl.pathname;
+        const searchParams = new URLSearchParams(currentUrl.search);
+
+        // Previous page link
+        searchParams.set('page', Math.max(1, currentPage - 1));
+        const prevUrl = `${baseUrl}?${searchParams.toString()}`;
+
+        // Next page link
+        searchParams.set('page', currentPage + 1);
+        const nextUrl = `${baseUrl}?${searchParams.toString()}`;
+
+        // First page link
+        searchParams.set('page', 1);
+        const firstUrl = `${baseUrl}?${searchParams.toString()}`;
+        %>
+
+        <a href="<%= firstUrl %>" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
+            « Birinchi
+        </a>
+
+        <a href="<%= prevUrl %>" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
+            ‹ Oldingi
+        </a>
+
+        <span style="margin: 0 10px; padding: 5px 10px; background-color: #007bff; color: white; border-radius: 3px;">
+            <%= currentPage %>
+        </span>
+
+        <a href="<%= nextUrl %>" class="btn btn-sm btn-secondary" style="margin-left: 5px;">
+            Keyingi ›
+        </a>
+
+        <!-- Page size selector -->
+        <select id="pageSizeSelector" class="form-control" style="width: auto; display: inline-block; margin-left: 15px;" onchange="changePageSize(this.value)">
+            <option value="10" <%= pageSize === 10 ? 'selected' : '' %>>10 ta</option>
+            <option value="25" <%= pageSize === 25 ? 'selected' : '' %>>25 ta</option>
+            <option value="50" <%= pageSize === 50 ? 'selected' : '' %>>50 ta</option>
+            <option value="100" <%= pageSize === 100 ? 'selected' : '' %>>100 ta</option>
+        </select>
+    </div>
+</div>
+
+<script>
+function changePageSize(newSize) {
+    const url = new URL(window.location);
+    url.searchParams.set('pageSize', newSize);
+    url.searchParams.set('page', '1'); // Reset to first page
+    window.location.href = url.toString();
+}
+</script>
+
+<style>
+.pagination-container {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.pagination-controls a.btn {
+    text-decoration: none;
+}
+
+.pagination-controls a[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+</style>
+<% } %>

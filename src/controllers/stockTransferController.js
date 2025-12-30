@@ -5,10 +5,16 @@ const Product = require('../models/Product');
 class StockTransferController {
     static async index(req, res) {
         try {
-            const transfers = await StockTransfer.getAll();
+            const page = parseInt(req.query.page) || 1;
+            const pageSize = parseInt(req.query.pageSize) || 50;
+
+            const transfers = await StockTransfer.getAll(page, pageSize);
+
             res.render('stock/transfer-list', {
                 title: 'Stock Transfers - MegaDent POS',
-                transfers
+                transfers,
+                currentPage: page,
+                pageSize: pageSize
             });
         } catch (error) {
             console.error('Stock transfers index error:', error);

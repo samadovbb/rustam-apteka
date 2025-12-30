@@ -5,10 +5,16 @@ const Product = require('../models/Product');
 class StockIntakeController {
     static async index(req, res) {
         try {
-            const intakes = await StockIntake.getAll();
+            const page = parseInt(req.query.page) || 1;
+            const pageSize = parseInt(req.query.pageSize) || 50;
+
+            const intakes = await StockIntake.getAll(page, pageSize);
+
             res.render('stock/intake-list', {
                 title: 'Stock Intakes - MegaDent POS',
-                intakes
+                intakes,
+                currentPage: page,
+                pageSize: pageSize
             });
         } catch (error) {
             console.error('Stock intakes index error:', error);
