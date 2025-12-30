@@ -6,29 +6,11 @@
     </div>
 
     <div class="pagination-controls">
-        <%
-        const currentUrl = new URL(req.originalUrl, `http://${req.headers.host}`);
-        const baseUrl = currentUrl.pathname;
-        const searchParams = new URLSearchParams(currentUrl.search);
-
-        // Previous page link
-        searchParams.set('page', Math.max(1, currentPage - 1));
-        const prevUrl = `${baseUrl}?${searchParams.toString()}`;
-
-        // Next page link
-        searchParams.set('page', currentPage + 1);
-        const nextUrl = `${baseUrl}?${searchParams.toString()}`;
-
-        // First page link
-        searchParams.set('page', 1);
-        const firstUrl = `${baseUrl}?${searchParams.toString()}`;
-        %>
-
-        <a href="<%= firstUrl %>" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
+        <a href="#" onclick="goToPage(1); return false;" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
             « Birinchi
         </a>
 
-        <a href="<%= prevUrl %>" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
+        <a href="#" onclick="goToPage(<%= Math.max(1, currentPage - 1) %>); return false;" class="btn btn-sm btn-secondary" style="margin-right: 5px;" <%= currentPage === 1 ? 'disabled' : '' %>>
             ‹ Oldingi
         </a>
 
@@ -36,7 +18,7 @@
             <%= currentPage %>
         </span>
 
-        <a href="<%= nextUrl %>" class="btn btn-sm btn-secondary" style="margin-left: 5px;">
+        <a href="#" onclick="goToPage(<%= currentPage + 1 %>); return false;" class="btn btn-sm btn-secondary" style="margin-left: 5px;">
             Keyingi ›
         </a>
 
@@ -51,6 +33,12 @@
 </div>
 
 <script>
+function goToPage(page) {
+    const url = new URL(window.location);
+    url.searchParams.set('page', page);
+    window.location.href = url.toString();
+}
+
 function changePageSize(newSize) {
     const url = new URL(window.location);
     url.searchParams.set('pageSize', newSize);
