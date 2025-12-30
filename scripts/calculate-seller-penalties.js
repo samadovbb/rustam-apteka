@@ -76,7 +76,7 @@ async function calculateSellerPenalties() {
 
                 // If there's still debt at this check date, apply penalty
                 if (runningBalance > 0.01) { // Using 0.01 to handle floating point precision
-                    const penaltyAmount = runningBalance * 0.01; // 1% penalty
+                    const penaltyAmount = runningBalance * 0.02; // 2% penalty
 
                     // Check if penalty already exists for this sale and date
                     const existingPenalty = await query(`
