@@ -13,6 +13,7 @@ router.get('/:id/edit', SellerController.edit);
 router.post('/:id', SellerController.update);
 router.post('/:id/delete', SellerController.delete);
 router.get('/:id/inventory', SellerController.inventory);
+router.get('/:id/export-annual-sales', SellerController.exportAnnualSales);
 
 // API routes
 router.get('/api/all', SellerController.getAllApi);

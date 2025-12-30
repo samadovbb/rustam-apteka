@@ -17,6 +17,9 @@
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.sellers.sellerInfo || 'Seller Information' %></h3>
                     <div>
+                        <a href="/sellers/<%= seller.id %>/export-annual-sales" class="btn btn-success" style="margin-right: 10px;">
+                            📊 Yillik savdolarni Excel ga yuklab olish
+                        </a>
                         <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-info"><%= lang.sellers.inventory || 'Inventory' %></a>
                         <a href="/sellers/<%= seller.id %>/edit" class="btn btn-secondary"><%= lang.buttons.edit %></a>
                         <a href="/sellers" class="btn btn-outline"><%= lang.buttons.back || 'Back' %></a>
