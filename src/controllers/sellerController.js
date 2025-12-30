@@ -460,7 +460,7 @@ class SellerController {
                 const penalties = await query(`
                     SELECT sp.*, d.current_amount as debt_amount
                     FROM seller_penalties sp
-                    LEFT JOIN debts d ON sp.debt_id = d.id
+                    LEFT JOIN debts d ON sp.sale_id = d.sale_id
                     WHERE sp.sale_id = ?
                     ORDER BY sp.penalty_date ASC
                 `, [sale.id]);
