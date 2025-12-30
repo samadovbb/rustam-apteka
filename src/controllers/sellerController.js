@@ -496,7 +496,7 @@ class SellerController {
                             new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
                             `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
                             `$${parseFloat(penalty.debt_amount || 0).toFixed(2)}`,
-                            penalty.reason || '-'
+                            penalty.notes || '-'
                         ];
                         currentRow++;
                     });
