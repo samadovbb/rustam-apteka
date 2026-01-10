@@ -7,14 +7,14 @@ class DebtController {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const [debts, stats, totalRecords] = await Promise.all([
-                Debt.getAll(status, page, pageSize),
-                Debt.getDebtStatistics(),
-                Debt.getCount(status)
+            // Get all debts without pagination first, then calculate and filter
+            const [allDebts, stats] = await Promise.all([
+                Debt.getAll(status, 1, 999999), // Get all matching debts
+                Debt.getDebtStatistics()
             ]);
 
-            // Calculate current amount and status for each debt
-            const debtsWithCalculations = debts.map(debt => {
+            // Calculate current amount and status for each debt, then filter by calculated status
+            const allDebtsWithCalculations = allDebts.map(debt => {
                 const calculation = Debt.calculateDebtWithMarkup(debt);
 
                 // Calculate status based on calculated amount
@@ -33,11 +33,17 @@ class DebtController {
                     calculated_markup_amount: calculation.markupAmount,
                     calculated_status: calculatedStatus
                 };
-            });
+            }).filter(debt => debt.calculated_status === status); // Filter by calculated status
 
+            // Now apply pagination to filtered results
+            const totalRecords = allDebtsWithCalculations.length;
             const totalPages = Math.ceil(totalRecords / pageSize);
-            const startRecord = (page - 1) * pageSize + 1;
-            const endRecord = Math.min(page * pageSize, totalRecords);
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const debtsWithCalculations = allDebtsWithCalculations.slice(startIndex, endIndex);
+
+            const startRecord = totalRecords > 0 ? startIndex + 1 : 0;
+            const endRecord = Math.min(endIndex, totalRecords);
 
             res.render('debts/index', {
                 title: 'Debts - MegaDent POS',
