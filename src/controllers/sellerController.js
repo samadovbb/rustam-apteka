@@ -500,7 +500,7 @@ class SellerController {
                         SELECT *
                         FROM debt_fixed_markup_logs
                         WHERE debt_id = ?
-                        ORDER BY applied_date ASC
+                        ORDER BY calculation_date ASC
                     `, [sale.debt_id]);
 
                     if (markupHistory.length > 0) {
@@ -516,11 +516,11 @@ class SellerController {
                         markupHistory.forEach(markup => {
                             totalMarkup += parseFloat(markup.markup_value);
                             detailSheet.getRow(currentRow).values = [
-                                new Date(markup.applied_date).toLocaleDateString('ru-RU'),
+                                new Date(markup.calculation_date).toLocaleDateString('ru-RU'),
                                 `$${parseFloat(markup.markup_value).toFixed(2)}`,
-                                `$${parseFloat(markup.debt_before).toFixed(2)}`,
-                                `$${parseFloat(markup.debt_after).toFixed(2)}`,
-                                markup.notes || '-'
+                                `$${parseFloat(markup.remaining_debt).toFixed(2)}`,
+                                `$${parseFloat(markup.total_after_markup).toFixed(2)}`,
+                                '-'
                             ];
                             currentRow++;
                         });
