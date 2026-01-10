@@ -130,14 +130,12 @@ class Debt {
 
         let markupAmount = 0;
 
+        // Only calculate fixed markup, NOT percent markup
         if (debt.markup_type === 'fixed') {
             // Fixed markup per month
             markupAmount = parseFloat(debt.markup_value) * monthsOverdue;
-        } else if (debt.markup_type === 'percent') {
-            // Percent markup - simple interest (not compound)
-            const markupPercent = parseFloat(debt.markup_value);
-            markupAmount = (currentAmount * markupPercent * monthsOverdue) / 100;
         }
+        // Note: percent markup is NOT calculated for display
 
         return {
             baseAmount: currentAmount,
