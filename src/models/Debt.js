@@ -412,18 +412,54 @@ class Debt {
     }
 
     static async getDebtStatistics() {
-        const sql = `
-            SELECT
-                COUNT(*) as total_count,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_count,
-                SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_count,
-                SUM(CASE WHEN status = 'active' THEN current_amount ELSE 0 END) as total_active_debt,
-                SUM(original_amount) as total_original_debt,
-                SUM(CASE WHEN status = 'paid' THEN original_amount ELSE 0 END) as total_recovered
-            FROM debts
-        `;
-        const results = await query(sql);
-        return results[0] || {};
+        // Get all debts
+        const sql = `SELECT * FROM debts`;
+        const allDebts = await query(sql);
+
+        // Calculate statistics based on calculated status
+        let activeCount = 0;
+        let paidCount = 0;
+        let cancelledCount = 0;
+        let totalActiveDebt = 0;
+        let totalOriginalDebt = 0;
+        let totalRecovered = 0;
+
+        allDebts.forEach(debt => {
+            const calculation = this.calculateDebtWithMarkup(debt);
+
+            // Calculate status based on calculated amount
+            let calculatedStatus;
+            if (debt.status === 'cancelled') {
+                calculatedStatus = 'cancelled';
+            } else if (calculation.totalWithMarkup <= 0) {
+                calculatedStatus = 'paid';
+            } else {
+                calculatedStatus = 'active';
+            }
+
+            // Update statistics
+            totalOriginalDebt += parseFloat(debt.original_amount);
+
+            if (calculatedStatus === 'active') {
+                activeCount++;
+                totalActiveDebt += calculation.totalWithMarkup;
+            } else if (calculatedStatus === 'paid') {
+                paidCount++;
+                totalRecovered += parseFloat(debt.original_amount);
+            } else if (calculatedStatus === 'cancelled') {
+                cancelledCount++;
+            }
+        });
+
+        return {
+            total_count: allDebts.length,
+            active_count: activeCount,
+            paid_count: paidCount,
+            cancelled_count: cancelledCount,
+            total_active_debt: totalActiveDebt,
+            total_original_debt: totalOriginalDebt,
+            total_recovered: totalRecovered
+        };
     }
 
     static async getLatestPaymentDate() {
