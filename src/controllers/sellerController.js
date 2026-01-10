@@ -225,10 +225,10 @@ class SellerController {
                 return res.status(404).send('Seller not found');
             }
 
-            // Get current year
-            const currentYear = new Date().getFullYear();
-            const startDate = `${currentYear}-01-01`;
-            const endDate = `${currentYear}-12-31`;
+            // Get year from query parameter, default to 2025
+            const year = parseInt(req.query.year) || 2025;
+            const startDate = `${year}-01-01`;
+            const endDate = `${year}-12-31`;
 
             // Get all sales for this seller in current year
             const sales = await query(`
@@ -254,7 +254,7 @@ class SellerController {
 
             // Title
             summarySheet.mergeCells('A1:F1');
-            summarySheet.getCell('A1').value = `${seller.full_name.toUpperCase()} - ${currentYear} YIL YILLIK HISOBOT`;
+            summarySheet.getCell('A1').value = `${seller.full_name.toUpperCase()} - ${year} YIL YILLIK HISOBOT`;
             summarySheet.getCell('A1').font = { size: 16, bold: true };
             summarySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
 
@@ -262,7 +262,7 @@ class SellerController {
             summarySheet.addRow(['Sotuvchi:', seller.full_name]);
             summarySheet.addRow(['Telefon:', seller.phone || '-']);
             summarySheet.addRow(['Komissiya:', `${parseFloat(seller.commission_percent).toFixed(1)}%`]);
-            summarySheet.addRow(['Yil:', currentYear]);
+            summarySheet.addRow(['Yil:', year]);
             summarySheet.addRow(['Savdolar soni:', sales.length]);
             summarySheet.addRow([]);
 
@@ -625,7 +625,7 @@ class SellerController {
             ];
 
             // Send file
-            const fileName = `${SellerController.cyrillicToLatin(seller.full_name)}_${currentYear}_Yillik_Hisobot.xlsx`;
+            const fileName = `${SellerController.cyrillicToLatin(seller.full_name)}_${year}_Yillik_Hisobot.xlsx`;
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
             await workbook.xlsx.write(res);
