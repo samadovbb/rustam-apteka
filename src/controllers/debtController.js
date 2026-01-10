@@ -16,16 +16,7 @@ class DebtController {
             // Calculate current amount and status for each debt, then filter by calculated status
             const allDebtsWithCalculations = allDebts.map(debt => {
                 const calculation = Debt.calculateDebtWithMarkup(debt);
-
-                // Calculate status based on calculated amount
-                let calculatedStatus;
-                if (debt.status === 'cancelled') {
-                    calculatedStatus = 'cancelled';
-                } else if (calculation.totalWithMarkup <= 0) {
-                    calculatedStatus = 'paid';
-                } else {
-                    calculatedStatus = 'active';
-                }
+                const calculatedStatus = Debt.getCalculatedStatus(debt);
 
                 return {
                     ...debt,

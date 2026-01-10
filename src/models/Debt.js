@@ -25,17 +25,14 @@ class Debt {
     }
 
     static async getCount(status = 'active') {
-        const sql = `
-            SELECT COUNT(*) as total
-            FROM debts d
-            WHERE CASE
-                WHEN d.status = 'cancelled' THEN 'cancelled'
-                WHEN d.current_amount <= 0 THEN 'paid'
-                ELSE 'active'
-            END = ?
-        `;
-        const result = await query(sql, [status]);
-        return result[0].total;
+        // Get all debts and count by calculated status
+        const allDebts = await query('SELECT * FROM debts');
+
+        const count = allDebts.filter(debt => {
+            return this.getCalculatedStatus(debt) === status;
+        }).length;
+
+        return count;
     }
 
     static async findById(id) {
@@ -143,6 +140,21 @@ class Debt {
             markupAmount,
             totalWithMarkup: currentAmount + markupAmount
         };
+    }
+
+    // Calculate status based on calculated amount (helper method)
+    static getCalculatedStatus(debt) {
+        if (debt.status === 'cancelled') {
+            return 'cancelled';
+        }
+
+        const calculation = this.calculateDebtWithMarkup(debt);
+
+        if (calculation.totalWithMarkup <= 0) {
+            return 'paid';
+        }
+
+        return 'active';
     }
 
     // Apply markup for a debt (monthly calculation)
@@ -413,8 +425,7 @@ class Debt {
 
     static async getDebtStatistics() {
         // Get all debts
-        const sql = `SELECT * FROM debts`;
-        const allDebts = await query(sql);
+        const allDebts = await query('SELECT * FROM debts');
 
         // Calculate statistics based on calculated status
         let activeCount = 0;
@@ -425,17 +436,8 @@ class Debt {
         let totalRecovered = 0;
 
         allDebts.forEach(debt => {
+            const calculatedStatus = this.getCalculatedStatus(debt);
             const calculation = this.calculateDebtWithMarkup(debt);
-
-            // Calculate status based on calculated amount
-            let calculatedStatus;
-            if (debt.status === 'cancelled') {
-                calculatedStatus = 'cancelled';
-            } else if (calculation.totalWithMarkup <= 0) {
-                calculatedStatus = 'paid';
-            } else {
-                calculatedStatus = 'active';
-            }
 
             // Update statistics
             totalOriginalDebt += parseFloat(debt.original_amount);
