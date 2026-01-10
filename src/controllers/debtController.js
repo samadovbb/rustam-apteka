@@ -13,13 +13,35 @@ class DebtController {
                 Debt.getCount(status)
             ]);
 
+            // Calculate current amount and status for each debt
+            const debtsWithCalculations = debts.map(debt => {
+                const calculation = Debt.calculateDebtWithMarkup(debt);
+
+                // Calculate status based on calculated amount
+                let calculatedStatus;
+                if (debt.status === 'cancelled') {
+                    calculatedStatus = 'cancelled';
+                } else if (calculation.totalWithMarkup <= 0) {
+                    calculatedStatus = 'paid';
+                } else {
+                    calculatedStatus = 'active';
+                }
+
+                return {
+                    ...debt,
+                    calculated_current_amount: calculation.totalWithMarkup,
+                    calculated_markup_amount: calculation.markupAmount,
+                    calculated_status: calculatedStatus
+                };
+            });
+
             const totalPages = Math.ceil(totalRecords / pageSize);
             const startRecord = (page - 1) * pageSize + 1;
             const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('debts/index', {
                 title: 'Debts - MegaDent POS',
-                debts,
+                debts: debtsWithCalculations,
                 stats,
                 currentStatus: status,
                 currentPage: page,

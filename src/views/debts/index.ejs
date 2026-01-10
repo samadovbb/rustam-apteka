@@ -69,7 +69,12 @@
                                         <td><%= debt.customer_name %><br><small><%= debt.customer_phone %></small></td>
                                         <td><%= new Date(debt.sale_date).toLocaleDateString('ru-RU') %></td>
                                         <td>$<%= parseFloat(debt.original_amount || 0).toFixed(2) %></td>
-                                        <td>$<%= parseFloat(debt.current_amount || 0).toFixed(2) %></td>
+                                        <td>
+                                            $<%= parseFloat(debt.calculated_current_amount || 0).toFixed(2) %>
+                                            <% if (debt.calculated_markup_amount > 0) { %>
+                                                <br><small style="color: #ff8800;">+$<%= parseFloat(debt.calculated_markup_amount || 0).toFixed(2) %> ustama</small>
+                                            <% } %>
+                                        </td>
                                         <td>
                                             <% if (debt.markup_type === 'fixed') { %>
                                                 <%= lang.debts.fixed %>: $<%= parseFloat(debt.markup_value || 0).toFixed(2) %>
@@ -79,14 +84,9 @@
                                         </td>
                                         <td><%= debt.grace_end_date ? new Date(debt.grace_end_date).toLocaleDateString('ru-RU') : '-' %></td>
                                         <td>
-                                            <%
-                                            const debtStatus = debt.calculated_status ||
-                                                (debt.status === 'cancelled' ? 'cancelled' :
-                                                 (debt.current_amount <= 0 ? 'paid' : 'active'));
-                                            %>
-                                            <% if (debtStatus === 'active') { %>
+                                            <% if (debt.calculated_status === 'active') { %>
                                                 <span class="badge badge-danger"><%= lang.status.active %></span>
-                                            <% } else if (debtStatus === 'paid') { %>
+                                            <% } else if (debt.calculated_status === 'paid') { %>
                                                 <span class="badge badge-success"><%= lang.status.paid %></span>
                                             <% } else { %>
                                                 <span class="badge badge-secondary"><%= lang.status.cancelled %></span>
