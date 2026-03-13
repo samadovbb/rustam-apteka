@@ -23,6 +23,9 @@ router.get('/:id/returns', SalesController.getReturns);
 // Export to Excel
 router.get('/:id/export', SalesController.exportToExcel);
 
+// Toggle profit given
+router.put('/:id/profit-given', SalesController.toggleProfitGiven);
+
 // API routes
 router.get('/api/seller/:seller_id/inventory', SalesController.getSellerInventory);
 router.get('/api/latest-date', SalesController.getLatestDate);

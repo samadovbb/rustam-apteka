@@ -1,329 +1,511 @@
 <%- include('../partials/header') %>
 
-<div class="main-wrapper">
-    <%- include('../partials/sidebar') %>
+    <div class="main-wrapper">
+        <%- include('../partials/sidebar') %>
 
-    <main class="main-content">
-        <div class="topbar">
-            <h2><%= title %></h2>
-            <div class="user-info">
-                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
-            </div>
-        </div>
-
-        <div class="container">
-            <!-- Seller Info Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.sellers.sellerInfo || 'Seller Information' %></h3>
-                    <div>
-                        <a href="/sellers/<%= seller.id %>/export-annual-sales?year=2025" class="btn btn-success" style="margin-right: 10px;">
-                            📊 2025-yil savdolarni Excel ga yuklab olish
-                        </a>
-                        <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-info"><%= lang.sellers.inventory || 'Inventory' %></a>
-                        <a href="/sellers/<%= seller.id %>/edit" class="btn btn-secondary"><%= lang.buttons.edit %></a>
-                        <a href="/sellers" class="btn btn-outline"><%= lang.buttons.back || 'Back' %></a>
+            <main class="main-content">
+                <div class="topbar">
+                    <h2>
+                        <%= title %>
+                    </h2>
+                    <div class="user-info">
+                        <span>
+                            <%= lang.common.welcome %>, <strong>
+                                    <%= locals.user ? user.full_name || user.login : 'Admin' %>
+                                </strong>
+                        </span>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-                        <div>
-                            <strong><%= lang.table.name %>:</strong> <%= seller.full_name %>
+
+                <div class="container">
+                    <!-- Seller Info Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <%= lang.sellers.sellerInfo || 'Seller Information' %>
+                            </h3>
+                            <div>
+                                <a href="/sellers/<%= seller.id %>/export-annual-sales?year=2025"
+                                    class="btn btn-success" style="margin-right: 10px;">
+                                    📊 2025-yil savdolarni Excel ga yuklab olish
+                                </a>
+                                <a href="/sellers/<%= seller.id %>/inventory" class="btn btn-info">
+                                    <%= lang.sellers.inventory || 'Inventory' %>
+                                </a>
+                                <a href="/sellers/<%= seller.id %>/edit" class="btn btn-secondary">
+                                    <%= lang.buttons.edit %>
+                                </a>
+                                <a href="/sellers" class="btn btn-outline">
+                                    <%= lang.buttons.back || 'Back' %>
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <strong><%= lang.table.phone %>:</strong> <%= seller.phone || '-' %>
-                        </div>
-                        <div>
-                            <strong><%= lang.sellers.commission || 'Commission' %>:</strong> <%= parseFloat(seller.commission_percent).toFixed(1) %>%
+                        <div class="card-body">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                                <div>
+                                    <strong>
+                                        <%= lang.table.name %>:
+                                    </strong>
+                                    <%= seller.full_name %>
+                                </div>
+                                <div>
+                                    <strong>
+                                        <%= lang.table.phone %>:
+                                    </strong>
+                                    <%= seller.phone || '-' %>
+                                </div>
+                                <div>
+                                    <strong>
+                                        <%= lang.sellers.commission || 'Commission' %>:
+                                    </strong>
+                                    <%= parseFloat(seller.commission_percent).toFixed(1) %>%
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Sales Statistics -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.sales.statistics || 'Sales Statistics' %></h3>
-                </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-                        <div>
-                            <strong><%= lang.sales.totalSales || 'Total Sales' %>:</strong><br>
-                            <%= stats.total_sales || 0 %>
+                    <!-- Sales Statistics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <%= lang.sales.statistics || 'Sales Statistics' %>
+                            </h3>
                         </div>
-                        <div>
-                            <strong><%= lang.sales.totalRevenue || 'Total Revenue' %>:</strong><br>
-                            <%= parseFloat(stats.total_revenue || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                        </div>
-                        <div>
-                            <strong><%= lang.sales.collected || 'Collected' %>:</strong><br>
-                            <%= parseFloat(stats.total_collected || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                        </div>
-                        <div>
-                            <strong><%= lang.sales.pending || 'Pending' %>:</strong><br>
-                            <span style="color: red;">
-                                <%= parseFloat(stats.total_pending || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                            </span>
+                        <div class="card-body">
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                                <div>
+                                    <strong>
+                                        <%= lang.sales.totalSales || 'Total Sales' %>:
+                                    </strong><br>
+                                    <%= stats.total_sales || 0 %>
+                                </div>
+                                <div>
+                                    <strong>
+                                        <%= lang.sales.totalRevenue || 'Total Revenue' %>:
+                                    </strong><br>
+                                    <%= parseFloat(stats.total_revenue || 0).toFixed(2) %>
+                                        <%= lang.common.currency || 'UZS' %>
+                                </div>
+                                <div>
+                                    <strong>
+                                        <%= lang.sales.collected || 'Collected' %>:
+                                    </strong><br>
+                                    <%= parseFloat(stats.total_collected || 0).toFixed(2) %>
+                                        <%= lang.common.currency || 'UZS' %>
+                                </div>
+                                <div>
+                                    <strong>
+                                        <%= lang.sales.pending || 'Pending' %>:
+                                    </strong><br>
+                                    <span style="color: red;">
+                                        <%= parseFloat(stats.total_pending || 0).toFixed(2) %>
+                                            <%= lang.common.currency || 'UZS' %>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Profit & Penalty Statistics -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Foyda va Shtraflar</h3>
-                    <button onclick="calculatePenalties()" class="btn btn-primary" id="calculateBtn">
-                        Shtraflarni Hisoblash
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-                        <div>
-                            <strong>Umumiy Foyda:</strong><br>
-                            <span style="color: green; font-size: 1.2em; font-weight: bold;">
-                                <%= parseFloat(profitStats.total_profit || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                            </span>
+                    <!-- Profit & Penalty Statistics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Foyda va Shtraflar</h3>
+                            <button onclick="calculatePenalties()" class="btn btn-primary" id="calculateBtn">
+                                Shtraflarni Hisoblash
+                            </button>
                         </div>
-                        <div>
-                            <strong>Umumiy Shtraflar:</strong><br>
-                            <span style="color: red; font-size: 1.2em; font-weight: bold;">
-                                <%= parseFloat(penaltyStats.total_penalty_amount || 0).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                            </span>
-                        </div>
-                        <div>
-                            <strong>Sof Foyda:</strong><br>
-                            <span style="color: blue; font-size: 1.2em; font-weight: bold;">
-                                <%= (parseFloat(profitStats.total_profit || 0) - parseFloat(penaltyStats.total_penalty_amount || 0)).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                            </span>
-                        </div>
-                        <div>
-                            <strong>Shtraflar Soni:</strong><br>
-                            <%= penaltyStats.total_penalties || 0 %>
+                        <div class="card-body">
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                                <div>
+                                    <strong>Umumiy Foyda:</strong><br>
+                                    <span style="color: green; font-size: 1.2em; font-weight: bold;">
+                                        <%= parseFloat(profitStats.total_profit || 0).toFixed(2) %>
+                                            <%= lang.common.currency || 'UZS' %>
+                                    </span>
+                                </div>
+                                <div>
+                                    <strong>Umumiy Shtraflar:</strong><br>
+                                    <span style="color: red; font-size: 1.2em; font-weight: bold;">
+                                        <%= parseFloat(penaltyStats.total_penalty_amount || 0).toFixed(2) %>
+                                            <%= lang.common.currency || 'UZS' %>
+                                    </span>
+                                </div>
+                                <div>
+                                    <strong>Sof Foyda:</strong><br>
+                                    <span style="color: blue; font-size: 1.2em; font-weight: bold;">
+                                        <%= (parseFloat(profitStats.total_profit || 0) -
+                                            parseFloat(penaltyStats.total_penalty_amount || 0)).toFixed(2) %>
+                                            <%= lang.common.currency || 'UZS' %>
+                                    </span>
+                                </div>
+                                <div>
+                                    <strong>Shtraflar Soni:</strong><br>
+                                    <%= penaltyStats.total_penalties || 0 %>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Penalties List (Grouped by Sale) -->
-            <% if (penalties && penalties.length > 0) { %>
-            <%
-            // Group penalties by sale_id
-            const penaltiesBySale = {};
-            penalties.forEach(penalty => {
-                if (!penaltiesBySale[penalty.sale_id]) {
-                    penaltiesBySale[penalty.sale_id] = {
-                        sale_id: penalty.sale_id,
-                        customer_name: penalty.customer_name,
-                        total: 0,
-                        count: 0
-                    };
+                    <!-- Penalties List (Grouped by Sale) -->
+                    <% if (penalties && penalties.length> 0) { %>
+                        <% 
+                            // Group penalties by sale_id 
+                            const penaltiesBySale={}; 
+                            penalties.forEach(penalty => {
+                                if (!penaltiesBySale[penalty.sale_id]) {
+                                    penaltiesBySale[penalty.sale_id] = {
+                                        sale_id: penalty.sale_id,
+                                        customer_name: penalty.customer_name,
+                                        total: 0,
+                                        count: 0
+                                    };
+                                }
+                                penaltiesBySale[penalty.sale_id].total += parseFloat(penalty.penalty_amount);
+                                penaltiesBySale[penalty.sale_id].count += 1;
+                            });
+                            const groupedPenalties = Object.values(penaltiesBySale);
+                        %>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Shtraflar (Savdo bo'yicha)</h3>
+                                </div>
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Savdo ID</th>
+                                                <th>Xaridor</th>
+                                                <th>Shtraflar soni</th>
+                                                <th>Jami shtraf</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% groupedPenalties.forEach(group=> { %>
+                                                <tr>
+                                                    <td><a href="/sales/<%= group.sale_id %>"
+                                                            style="color: #2563eb; font-weight: bold;">#<%=
+                                                                group.sale_id %></a></td>
+                                                    <td>
+                                                        <%= group.customer_name %>
+                                                    </td>
+                                                    <td>
+                                                        <%= group.count %>
+                                                    </td>
+                                                    <td style="color: red; font-weight: bold; font-size: 1.1em;">
+                                                        -$<%= group.total.toFixed(2) %>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <!-- Debtors -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <%= lang.sellers.debtors || 'Debtors' %>
+                                        </h3>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <%= lang.table.id %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.customers.customer || 'Customer' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.table.phone %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.debts.totalDebt || 'Total Debt' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.table.actions %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (debtors.length===0) { %>
+                                                    <tr>
+                                                        <td colspan="5" class="text-center">
+                                                            <%= lang.sellers.noDebtors || 'No debtors' %>
+                                                        </td>
+                                                    </tr>
+                                                    <% } else { %>
+                                                        <% debtors.forEach(debtor=> { %>
+                                                            <tr>
+                                                                <td>#<%= debtor.id %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= debtor.full_name %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= debtor.phone %>
+                                                                </td>
+                                                                <td style="color: red; font-weight: bold;">
+                                                                    <%= parseFloat(debtor.total_debt).toFixed(2) %>
+                                                                        <%= lang.common.currency || 'UZS' %>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="/customers/<%= debtor.id %>/view"
+                                                                        class="btn btn-sm btn-info">
+                                                                        <%= lang.buttons.view || 'View' %>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Recent Sales -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <%= lang.sales.recentSales || 'Recent Sales' %>
+                                        </h3>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <%= lang.table.id %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.sales.saleDate || 'Date' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.customers.customer || 'Customer' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.sales.totalAmount || 'Total' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.sales.paidAmount || 'Paid' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.table.status %>
+                                                    </th>
+                                                    <th>Foyda</th>
+                                                    <th>
+                                                        <%= lang.table.actions %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (sales.length===0) { %>
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">
+                                                            <%= lang.sales.noSales || 'No sales found' %>
+                                                        </td>
+                                                    </tr>
+                                                    <% } else { %>
+                                                        <% sales.forEach(sale=> { %>
+                                                            <tr>
+                                                                <td>#<%= sale.id %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= new Date(sale.sale_date).toLocaleDateString() %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= sale.customer_name %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= parseFloat(sale.total_amount).toFixed(2) %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= parseFloat(sale.paid_amount).toFixed(2) %>
+                                                                </td>
+                                                                <td>
+                                                                    <% if (sale.status==='paid' ) { %>
+                                                                        <span class="badge badge-success">
+                                                                            <%= lang.sales.paid || 'Paid' %>
+                                                                        </span>
+                                                                        <% } else if (sale.status==='partial' ) { %>
+                                                                            <span class="badge badge-warning">
+                                                                                <%= lang.sales.partial || 'Partial' %>
+                                                                            </span>
+                                                                            <% } else { %>
+                                                                                <span class="badge badge-danger">
+                                                                                    <%= lang.sales.unpaid || 'Unpaid' %>
+                                                                                </span>
+                                                                                <% } %>
+                                                                </td>
+                                                                <td>
+                                                                    <% if (sale.profit_given) { %>
+                                                                        <span class="badge badge-success"
+                                                                            style="cursor: pointer; padding: 6px 12px; font-size: 0.85em;"
+                                                                            onclick="toggleProfitGiven(<%= sale.id %>, this)"
+                                                                            title="<%= sale.profit_given_at ? 'Berilgan: ' + new Date(sale.profit_given_at).toLocaleDateString() : '' %>">
+                                                                            ✅ Berilgan
+                                                                        </span>
+                                                                        <% } else { %>
+                                                                            <span class="badge badge-danger"
+                                                                                style="cursor: pointer; padding: 6px 12px; font-size: 0.85em;"
+                                                                                onclick="toggleProfitGiven(<%= sale.id %>, this)">
+                                                                                ❌ Berilmagan
+                                                                            </span>
+                                                                            <% } %>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="/sales/<%= sale.id %>"
+                                                                        class="btn btn-sm btn-info">
+                                                                        <%= lang.buttons.view || 'View' %>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Stock Transfers -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <%= lang.transfers.recent || 'Recent Stock Transfers' %>
+                                        </h3>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <%= lang.table.id %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.transfers.transferDate || 'Date' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.table.notes || 'Notes' %>
+                                                    </th>
+                                                    <th>
+                                                        <%= lang.table.actions %>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% if (transfers.length===0) { %>
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">
+                                                            <%= lang.transfers.noTransfers || 'No transfers found' %>
+                                                        </td>
+                                                    </tr>
+                                                    <% } else { %>
+                                                        <% transfers.forEach(transfer=> { %>
+                                                            <tr>
+                                                                <td>#<%= transfer.id %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= new
+                                                                        Date(transfer.transfer_date).toLocaleDateString()
+                                                                        %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= transfer.notes || '-' %>
+                                                                </td>
+                                                                <td>
+                                                                    <a href="/stock-transfer/<%= transfer.id %>"
+                                                                        class="btn btn-sm btn-info">
+                                                                        <%= lang.buttons.view || 'View' %>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                </div>
+            </main>
+    </div>
+
+    <%- include('../partials/footer') %>
+
+        <script>
+            async function calculatePenalties() {
+                const btn = document.getElementById('calculateBtn');
+                const originalText = btn.textContent;
+
+                if (!confirm('Barcha savdolar uchun shtraflarni hisoblashni xohlaysizmi? Bu bir necha daqiqa vaqt olishi mumkin.')) {
+                    return;
                 }
-                penaltiesBySale[penalty.sale_id].total += parseFloat(penalty.penalty_amount);
-                penaltiesBySale[penalty.sale_id].count += 1;
-            });
-            const groupedPenalties = Object.values(penaltiesBySale);
-            %>
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Shtraflar (Savdo bo'yicha)</h3>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Savdo ID</th>
-                                <th>Xaridor</th>
-                                <th>Shtraflar soni</th>
-                                <th>Jami shtraf</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% groupedPenalties.forEach(group => { %>
-                                <tr>
-                                    <td><a href="/sales/<%= group.sale_id %>" style="color: #2563eb; font-weight: bold;">#<%= group.sale_id %></a></td>
-                                    <td><%= group.customer_name %></td>
-                                    <td><%= group.count %></td>
-                                    <td style="color: red; font-weight: bold; font-size: 1.1em;">
-                                        -$<%= group.total.toFixed(2) %>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <% } %>
 
-            <!-- Debtors -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.sellers.debtors || 'Debtors' %></h3>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th><%= lang.table.id %></th>
-                                <th><%= lang.customers.customer || 'Customer' %></th>
-                                <th><%= lang.table.phone %></th>
-                                <th><%= lang.debts.totalDebt || 'Total Debt' %></th>
-                                <th><%= lang.table.actions %></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (debtors.length === 0) { %>
-                                <tr>
-                                    <td colspan="5" class="text-center"><%= lang.sellers.noDebtors || 'No debtors' %></td>
-                                </tr>
-                            <% } else { %>
-                                <% debtors.forEach(debtor => { %>
-                                    <tr>
-                                        <td>#<%= debtor.id %></td>
-                                        <td><%= debtor.full_name %></td>
-                                        <td><%= debtor.phone %></td>
-                                        <td style="color: red; font-weight: bold;">
-                                            <%= parseFloat(debtor.total_debt).toFixed(2) %> <%= lang.common.currency || 'UZS' %>
-                                        </td>
-                                        <td>
-                                            <a href="/customers/<%= debtor.id %>/view" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                try {
+                    btn.disabled = true;
+                    btn.textContent = 'Hisoblanmoqda...';
 
-            <!-- Recent Sales -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.sales.recentSales || 'Recent Sales' %></h3>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th><%= lang.table.id %></th>
-                                <th><%= lang.sales.saleDate || 'Date' %></th>
-                                <th><%= lang.customers.customer || 'Customer' %></th>
-                                <th><%= lang.sales.totalAmount || 'Total' %></th>
-                                <th><%= lang.sales.paidAmount || 'Paid' %></th>
-                                <th><%= lang.table.status %></th>
-                                <th><%= lang.table.actions %></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (sales.length === 0) { %>
-                                <tr>
-                                    <td colspan="7" class="text-center"><%= lang.sales.noSales || 'No sales found' %></td>
-                                </tr>
-                            <% } else { %>
-                                <% sales.forEach(sale => { %>
-                                    <tr>
-                                        <td>#<%= sale.id %></td>
-                                        <td><%= new Date(sale.sale_date).toLocaleDateString() %></td>
-                                        <td><%= sale.customer_name %></td>
-                                        <td><%= parseFloat(sale.total_amount).toFixed(2) %></td>
-                                        <td><%= parseFloat(sale.paid_amount).toFixed(2) %></td>
-                                        <td>
-                                            <% if (sale.status === 'paid') { %>
-                                                <span class="badge badge-success"><%= lang.sales.paid || 'Paid' %></span>
-                                            <% } else if (sale.status === 'partial') { %>
-                                                <span class="badge badge-warning"><%= lang.sales.partial || 'Partial' %></span>
-                                            <% } else { %>
-                                                <span class="badge badge-danger"><%= lang.sales.unpaid || 'Unpaid' %></span>
-                                            <% } %>
-                                        </td>
-                                        <td>
-                                            <a href="/sales/<%= sale.id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    const response = await fetch('/sellers/api/calculate-penalties', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
-            <!-- Stock Transfers -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.transfers.recent || 'Recent Stock Transfers' %></h3>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th><%= lang.table.id %></th>
-                                <th><%= lang.transfers.transferDate || 'Date' %></th>
-                                <th><%= lang.table.notes || 'Notes' %></th>
-                                <th><%= lang.table.actions %></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (transfers.length === 0) { %>
-                                <tr>
-                                    <td colspan="4" class="text-center"><%= lang.transfers.noTransfers || 'No transfers found' %></td>
-                                </tr>
-                            <% } else { %>
-                                <% transfers.forEach(transfer => { %>
-                                    <tr>
-                                        <td>#<%= transfer.id %></td>
-                                        <td><%= new Date(transfer.transfer_date).toLocaleDateString() %></td>
-                                        <td><%= transfer.notes || '-' %></td>
-                                        <td>
-                                            <a href="/stock-transfer/<%= transfer.id %>" class="btn btn-sm btn-info"><%= lang.buttons.view || 'View' %></a>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
+                    const result = await response.json();
 
-<%- include('../partials/footer') %>
-
-<script>
-async function calculatePenalties() {
-    const btn = document.getElementById('calculateBtn');
-    const originalText = btn.textContent;
-
-    if (!confirm('Barcha savdolar uchun shtraflarni hisoblashni xohlaysizmi? Bu bir necha daqiqa vaqt olishi mumkin.')) {
-        return;
-    }
-
-    try {
-        btn.disabled = true;
-        btn.textContent = 'Hisoblanmoqda...';
-
-        const response = await fetch('/sellers/api/calculate-penalties', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+                    if (result.success) {
+                        alert('Shtraflar muvaffaqiyatli hisoblandi! Sahifa yangilanmoqda...');
+                        window.location.reload();
+                    } else {
+                        alert('Xatolik: ' + result.error);
+                        console.error('Output:', result.output);
+                    }
+                } catch (error) {
+                    alert('Xatolik yuz berdi: ' + error.message);
+                    console.error('Error:', error);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
             }
-        });
 
-        const result = await response.json();
+            async function toggleProfitGiven(saleId, element) {
+                try {
+                    element.style.opacity = '0.5';
+                    element.style.pointerEvents = 'none';
 
-        if (result.success) {
-            alert('Shtraflar muvaffaqiyatli hisoblandi! Sahifa yangilanmoqda...');
-            window.location.reload();
-        } else {
-            alert('Xatolik: ' + result.error);
-            console.error('Output:', result.output);
-        }
-    } catch (error) {
-        alert('Xatolik yuz berdi: ' + error.message);
-        console.error('Error:', error);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-    }
-}
-</script>
+                    const response = await fetch(`/sales/${saleId}/profit-given`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (result.profit_given) {
+                            element.className = 'badge badge-success';
+                            element.innerHTML = '✅ Berilgan';
+                            element.title = 'Berilgan: ' + new Date(result.profit_given_at).toLocaleDateString();
+                        } else {
+                            element.className = 'badge badge-danger';
+                            element.innerHTML = '❌ Berilmagan';
+                            element.title = '';
+                        }
+                        element.style.cssText = 'cursor: pointer; padding: 6px 12px; font-size: 0.85em;';
+                    } else {
+                        alert('Xatolik: ' + result.error);
+                        element.style.opacity = '1';
+                        element.style.pointerEvents = 'auto';
+                    }
+                } catch (error) {
+                    alert('Xatolik yuz berdi: ' + error.message);
+                    element.style.opacity = '1';
+                    element.style.pointerEvents = 'auto';
+                }
+            }
+        </script>

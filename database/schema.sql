@@ -180,6 +180,8 @@ CREATE TABLE sales (
     paid_amount DECIMAL(12, 2) DEFAULT 0.00,
     remaining_amount DECIMAL(12, 2) GENERATED ALWAYS AS (total_amount - paid_amount) STORED,
     status ENUM('paid', 'partial', 'unpaid') DEFAULT 'unpaid',
+    profit_given TINYINT(1) DEFAULT 0 COMMENT '0 = foyda berilmagan, 1 = foyda berilgan',
+    profit_given_at TIMESTAMP NULL COMMENT 'Foyda berilgan sana',
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

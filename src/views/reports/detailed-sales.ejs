@@ -31,6 +31,14 @@
                             </select>
                         </div>
                         <div class="form-group" style="margin: 0;">
+                            <label for="profit_given" class="form-label">Foyda holati</label>
+                            <select id="profit_given" name="profit_given" class="form-control">
+                                <option value="all" <%= filters.profit_given === 'all' ? 'selected' : '' %>>Barchasi</option>
+                                <option value="1" <%= filters.profit_given === '1' ? 'selected' : '' %>>Berilgan (✅)</option>
+                                <option value="0" <%= filters.profit_given === '0' ? 'selected' : '' %>>Berilmagan (❌)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
                             <label for="start_date" class="form-label">Boshlanish sanasi</label>
                             <input type="date" id="start_date" name="start_date" class="form-control" value="<%= filters.start_date %>">
                         </div>
@@ -66,6 +74,7 @@
                                 <th>Savdo foydasi</th>
                                 <th>Shtraflar</th>
                                 <th>Sof foyda</th>
+                                <th>Foyda (Sotuvchi)</th>
                                 <th>Qarz holati</th>
                                 <th class="no-print">Amallar</th>
                             </tr>
@@ -114,7 +123,23 @@
                                         <td style="color: green; font-weight: bold;">$<%= saleProfit.toFixed(2) %></td>
                                         <td style="color: red; font-weight: bold;">-$<%= penalties.toFixed(2) %></td>
                                         <td style="color: <%= netProfit >= 0 ? 'blue' : 'red' %>; font-weight: bold; font-size: 1.1em;">
-                                            $<%= netProfit.toFixed(2) %>
+                                            $<%= netProfit.toFixed(2) %>  
+                                        </td>
+                                        <td>
+                                            <% if (sale.profit_given) { %>
+                                                <span class="badge badge-success"
+                                                    style="cursor: pointer; padding: 6px 12px; font-size: 0.85em; background-color: #10b981; color: white; border-radius: 4px;"
+                                                    onclick="toggleProfitGiven(<%= sale.sale_id %>, this)"
+                                                    title="<%= sale.profit_given_at ? 'Berilgan: ' + new Date(sale.profit_given_at).toLocaleDateString() : '' %>">
+                                                    ✅ Berilgan
+                                                </span>
+                                            <% } else { %>
+                                                <span class="badge badge-danger"
+                                                    style="cursor: pointer; padding: 6px 12px; font-size: 0.85em; background-color: #ef4444; color: white; border-radius: 4px;"
+                                                    onclick="toggleProfitGiven(<%= sale.sale_id %>, this)">
+                                                    ❌ Berilmagan
+                                                </span>
+                                            <% } %>
                                         </td>
                                         <td>
                                             <% if (sale.debt_status === 'yopilgan') { %>
@@ -149,7 +174,7 @@
                                 %>
                                         <!-- Seller Header -->
                                         <tr style="background: #e0f2fe; font-weight: bold;">
-                                            <td colspan="9" style="padding: 10px; font-size: 1.05em;">
+                                            <td colspan="10" style="padding: 10px; font-size: 1.05em;">
                                                 👤 <%= sellerName %> (<%= sellerSales.length %> ta savdo)
                                             </td>
                                         </tr>
@@ -166,9 +191,10 @@
                                             <td style="color: red;">-$<%= sellerPenalties.toFixed(2) %></td>
                                             <td style="color: blue; font-size: 1.1em;">$<%= sellerNet.toFixed(2) %></td>
                                             <td></td>
+                                            <td></td>
                                             <td class="no-print"></td>
                                         </tr>
-                                        <tr style="height: 10px;"><td colspan="9"></td></tr>
+                                        <tr style="height: 10px;"><td colspan="10"></td></tr>
                                 <%
                                     });
                                 } else {
@@ -182,6 +208,7 @@
                                     <td style="color: green;">$<%= totalProfit.toFixed(2) %></td>
                                     <td style="color: red;">-$<%= totalPenalties.toFixed(2) %></td>
                                     <td style="color: blue; font-size: 1.2em;">$<%= totalNet.toFixed(2) %></td>
+                                    <td></td>
                                     <td></td>
                                     <td class="no-print"></td>
                                 </tr>
@@ -218,6 +245,45 @@ function printSale(saleId) {
                 printWindow.print();
             }, 500);
         };
+    }
+}
+
+async function toggleProfitGiven(saleId, element) {
+    try {
+        element.style.opacity = '0.5';
+        element.style.pointerEvents = 'none';
+
+        const response = await fetch(`/sales/${saleId}/profit-given`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            if (result.profit_given) {
+                element.className = 'badge badge-success';
+                element.innerHTML = '✅ Berilgan';
+                element.title = 'Berilgan: ' + new Date(result.profit_given_at).toLocaleDateString();
+                element.style.backgroundColor = '#10b981';
+            } else {
+                element.className = 'badge badge-danger';
+                element.innerHTML = '❌ Berilmagan';
+                element.title = '';
+                element.style.backgroundColor = '#ef4444';
+            }
+            element.style.cssText = `cursor: pointer; padding: 6px 12px; font-size: 0.85em; background-color: ${result.profit_given ? '#10b981' : '#ef4444'}; color: white; border-radius: 4px;`;
+        } else {
+            alert('Xatolik: ' + result.error);
+            element.style.opacity = '1';
+            element.style.pointerEvents = 'auto';
+        }
+    } catch (error) {
+        alert('Xatolik yuz berdi: ' + error.message);
+        element.style.opacity = '1';
+        element.style.pointerEvents = 'auto';
     }
 }
 </script>

@@ -40,8 +40,13 @@
             </div>
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title"><%= lang.dashboard.quickActions %></h3>
+                    <% if (locals.user && locals.user.login === 'admin') { %>
+                        <button id="recalculateBtn" class="btn btn-warning btn-sm" onclick="recalculateAll()">
+                            <i class="fas fa-sync"></i> Ustama va jarimalarni qayta hisoblash
+                        </button>
+                    <% } %>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="/sales/create" class="btn btn-primary"><%= lang.dashboard.newSale %></a>
@@ -130,5 +135,38 @@
         </div>
     </main>
 </div>
+
+<script>
+function recalculateAll() {
+    if (confirm("Haqiqatan ham barcha ustama va jarimalarni o'chirib qaytadan hisoblab chiqmoqchimisiz?")) {
+        const btn = document.getElementById('recalculateBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hisoblanmoqda...';
+        
+        fetch('/dashboard/recalculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert('Xatolik: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync"></i> Ustama va jarimalarni qayta hisoblash';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Xatolik yuz berdi!');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync"></i> Ustama va jarimalarni qayta hisoblash';
+        });
+    }
+}
+</script>
 
 <%- include('partials/footer') %>

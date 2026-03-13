@@ -135,7 +135,7 @@ class SalesController {
             const initialPayment = payments.length > 0
                 ? payments.reduce((earliest, payment) => {
                     return new Date(payment.payment_date) < new Date(earliest.payment_date) ? payment : earliest;
-                  })
+                })
                 : null;
 
             // Fetch debt information if exists
@@ -390,6 +390,24 @@ class SalesController {
             res.json({ success: true, returns });
         } catch (error) {
             console.error('Get returns error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Toggle profit given status
+    static async toggleProfitGiven(req, res) {
+        try {
+            const result = await Sale.toggleProfitGiven(req.params.id, req.user);
+            res.json({
+                success: true,
+                message: result.profit_given
+                    ? 'Foyda berildi deb belgilandi'
+                    : 'Foyda berilmadi deb belgilandi',
+                profit_given: result.profit_given,
+                profit_given_at: result.profit_given_at
+            });
+        } catch (error) {
+            console.error('Toggle profit given error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     }

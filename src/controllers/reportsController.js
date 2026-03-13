@@ -107,10 +107,18 @@ class ReportsController {
             const dateStart = start_date || `${currentYear}-01-01`;
             const dateEnd = end_date || `${currentYear}-12-31`;
 
-            // Build seller filter
+            // Build filters
             let sellerFilter = '';
             if (seller_id && seller_id !== 'all') {
                 sellerFilter = `AND s.seller_id = ${parseInt(seller_id)}`;
+            }
+            
+            let profitFilter = '';
+            const { profit_given } = req.query;
+            if (profit_given == '1') {
+                profitFilter = 'AND s.profit_given = 1';
+            } else if (profit_given == '0') {
+                profitFilter = 'AND s.profit_given = 0';
             }
 
             // Get sales with profit and penalties
@@ -122,6 +130,8 @@ class ReportsController {
                     s.seller_id,
                     s.total_amount,
                     SUM(si.quantity * (si.unit_price - si.purchase_price_at_sale)) as sale_profit,
+                    s.profit_given,
+                    s.profit_given_at,
                     d.current_amount,
                     CASE
                         WHEN d.current_amount IS NULL THEN 'yopilgan'
@@ -134,7 +144,8 @@ class ReportsController {
                 LEFT JOIN debts d ON s.id = d.sale_id
                 WHERE s.sale_date BETWEEN ? AND ?
                 ${sellerFilter}
-                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount, d.current_amount
+                ${profitFilter}
+                GROUP BY s.id, s.sale_date, sel.full_name, s.seller_id, s.total_amount, s.profit_given, s.profit_given_at, d.current_amount
                 ORDER BY s.sale_date DESC
             `, [dateStart, dateEnd]);
 
@@ -159,6 +170,7 @@ class ReportsController {
                 salesData: salesWithPenalties,
                 filters: {
                     seller_id: seller_id || 'all',
+                    profit_given: profit_given || 'all',
                     start_date: dateStart,
                     end_date: dateEnd
                 }

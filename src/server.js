@@ -89,6 +89,22 @@ const startServer = async () => {
         const dbConnected = await testConnection();
         if (!dbConnected) {
             console.error('⚠️  Server starting without database connection');
+        } else {
+            // Apply migrations automatically matching schema constraints 
+            const { query } = require('./config/database');
+            try {
+                // Check if profit_given exists in sales table
+                const result = await query("SHOW COLUMNS FROM sales LIKE 'profit_given'");
+                // MySQL2 promise wrapped custom 'query' returns the rows directly as result
+                if (!result || result.length === 0) {
+                    console.log('🔄 Applying migration: Adding profit_given to sales...');
+                    await query("ALTER TABLE sales ADD COLUMN profit_given TINYINT(1) DEFAULT 0 COMMENT '0 = foyda berilmagan, 1 = foyda berilgan'");
+                    await query("ALTER TABLE sales ADD COLUMN profit_given_at TIMESTAMP NULL COMMENT 'Foyda berilgan sana'");
+                    console.log('✅ Migration applied successfully.');
+                }
+            } catch (migrationError) {
+                console.error('❌ Migration failed:', migrationError.message);
+            }
         }
 
         // Start cron job for debt markup (DISABLED - using manual retroactive calculation instead)

@@ -644,6 +644,32 @@ class Sale {
         `;
         return await query(sql, [saleId]);
     }
+
+    static async toggleProfitGiven(saleId, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        // Get current sale
+        const sale = await this.findById(saleId);
+        if (!sale) {
+            throw new Error('Sale not found');
+        }
+
+        const oldProfitGiven = sale.profit_given;
+        const newProfitGiven = oldProfitGiven ? 0 : 1;
+        const profitGivenAt = newProfitGiven ? new Date() : null;
+
+        await query(
+            'UPDATE sales SET profit_given = ?, profit_given_at = ? WHERE id = ?',
+            [newProfitGiven, profitGivenAt, saleId]
+        );
+
+        // Log audit trail
+        const oldData = { profit_given: oldProfitGiven };
+        const newData = { profit_given: newProfitGiven, profit_given_at: profitGivenAt };
+        await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
+
+        return { profit_given: newProfitGiven, profit_given_at: profitGivenAt };
+    }
 }
 
 module.exports = Sale;
