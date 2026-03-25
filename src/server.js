@@ -138,6 +138,10 @@ const startServer = async () => {
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log(`📊 Database: ${process.env.DB_NAME || 'megadent_pos'}`);
             console.log('='.repeat(50));
+
+            // Server start bo'lganida Avtomatik Telegram Zaxirasini Yaratish (Agar ruxsat bo'lsa)
+            const { triggerTelegramBackup } = require('./utils/telegramBackup');
+            triggerTelegramBackup();
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
