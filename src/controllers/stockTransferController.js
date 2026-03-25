@@ -61,7 +61,7 @@ class StockTransferController {
             }
 
             await StockTransfer.create(seller_id, parsedItems, notes, transfer_date || null, req.user);
-            res.redirect('/stock-transfer');
+            res.redirect(req.cookies['last_stock-transfer_url'] || '/stock-transfer');
         } catch (error) {
             console.error('Stock transfer store error:', error);
             const sellers = await Seller.getAll();

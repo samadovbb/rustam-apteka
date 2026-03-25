@@ -39,6 +39,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Language middleware - inject Uzbek translations into all views
 app.use(languageMiddleware);
 
+// Middleware to track the latest list view URL (for pagination/search preservation)
+app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.xhr && !req.headers.accept?.includes('json')) {
+        const pathParts = req.path.split('/').filter(Boolean);
+        // Only track single-level paths like /products, /sales, /customers
+        if (pathParts.length === 1 && !['login', 'logout', 'dashboard', 'api'].includes(pathParts[0])) {
+            res.cookie(`last_${pathParts[0]}_url`, req.originalUrl, { maxAge: 900000, httpOnly: true });
+        }
+    }
+    next();
+});
+
 // Make environment available to views
 app.locals.env = process.env.NODE_ENV || 'development';
 
@@ -100,7 +112,15 @@ const startServer = async () => {
                     console.log('🔄 Applying migration: Adding profit_given to sales...');
                     await query("ALTER TABLE sales ADD COLUMN profit_given TINYINT(1) DEFAULT 0 COMMENT '0 = foyda berilmagan, 1 = foyda berilgan'");
                     await query("ALTER TABLE sales ADD COLUMN profit_given_at TIMESTAMP NULL COMMENT 'Foyda berilgan sana'");
-                    console.log('✅ Migration applied successfully.');
+                    console.log('✅ Migration profit_given applied successfully.');
+                }
+
+                // Check if is_deleted exists in products table
+                const productDeletedCol = await query("SHOW COLUMNS FROM products LIKE 'is_deleted'");
+                if (!productDeletedCol || productDeletedCol.length === 0) {
+                    console.log('🔄 Applying migration: Adding is_deleted to products for soft delete...');
+                    await query("ALTER TABLE products ADD COLUMN is_deleted TINYINT(1) DEFAULT 0 COMMENT '0 = faol, 1 = o''chirilgan'");
+                    console.log('✅ Migration is_deleted applied successfully.');
                 }
             } catch (migrationError) {
                 console.error('❌ Migration failed:', migrationError.message);

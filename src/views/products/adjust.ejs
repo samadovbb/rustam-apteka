@@ -1,0 +1,256 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2><%= title %></h2>
+            <div class="user-info">
+                <span>Xush kelibsiz, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="card">
+                <div class="card-header" style="justify-content: space-between; display: flex;">
+                    <h3 class="card-title">Ombor qoldiqlarini to'g'irlash (Ostatka bilan moslashtirish)</h3>
+                    <a href="/products" class="btn btn-outline">Orqaga</a>
+                </div>
+                
+                <% if (error) { %>
+                    <div class="alert alert-danger" style="margin: 15px;"><%= error %></div>
+                <% } %>
+                <div class="alert alert-info border" style="margin: 15px;">
+                    💡 Dasturda saqlangan ombor qogoldig'i (Bazada) va haqiqiy ombordagi mahsulot (Fact) o'rtasida farq bo'lsa, quyida "Haqiqiy Qoldiq" ustuniga joriy haqiqiy sonini kiriting va "Saqlash" tugmasini bosing. O'zgarish "Ostatka bilan moslashtirish" nomida yangi kirim/chiqim sifatida saqlanib qoladi.
+                </div>
+
+                <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <input type="text" id="adjustmentSearch" placeholder="Qidirish (Nomi, ID yoki Barcode)..." style="width: 70%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <div>
+                        <select id="itemsPerPage" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                            <option value="10">10 ta</option>
+                            <option value="20">20 ta</option>
+                            <option value="50" selected>50 ta</option>
+                            <option value="100">100 ta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table" style="width: 100%;" id="adjustmentTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">ID/Barcode</th>
+                                <th style="width: 30%;">Mahsulot nomi</th>
+                                <th style="width: 15%;">Sotuv narxi</th>
+                                <th style="width: 15%;">Bazada (Omborda)</th>
+                                <th style="width: 15%;">Haqiqiy qoldiq (Fact)</th>
+                                <th style="width: 15%;">Harakat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adjustmentTableBody">
+                            <% if (products.length === 0) { %>
+                                <tr id="no-data-row">
+                                    <td colspan="6" class="text-center">Bazada faol mahsulotlar mavjud emas</td>
+                                </tr>
+                            <% } else { %>
+                                <% products.forEach(product => { %>
+                                    <tr class="product-row" data-id="<%= product.id %>" data-search="<%= product.id %> <%= product.barcode %> <%= product.name.toLowerCase() %>">
+                                        <td>
+                                            #<%= product.id %><br>
+                                            <small><%= product.barcode %></small>
+                                        </td>
+                                        <td>
+                                            <strong><%= product.name %></strong>
+                                        </td>
+                                        <td>
+                                            <%= parseInt(product.sell_price) %> 
+                                        </td>
+                                        <td id="base-qty-<%= product.id %>" style="font-size: 1.1em; font-weight: bold; color: <%= product.warehouse_count > 0 ? '#2E8B57' : '#DC143C' %>;" data-count="<%= product.warehouse_count %>">
+                                            <%= product.warehouse_count %> ta
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   id="actual-qty-<%= product.id %>" 
+                                                   class="form-control text-center" 
+                                                   value="<%= product.warehouse_count %>" 
+                                                   style="width: 100%; border: 1px solid #ccc; padding: 5px; border-radius: 4px;">
+                                        </td>
+                                        <td>
+                                            <button type="button" 
+                                                    id="btn-adjust-<%= product.id %>"
+                                                    class="btn btn-primary" 
+                                                    onclick="adjustStock(<%= product.id %>)"
+                                                    style="width: 100%;">Saqlash</button>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center;" id="pagination-controls">
+                    <div>
+                        Jami: <span id="totalItemsCount">0</span> ta
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" id="prevPage" onclick="changePage(-1)" style="padding: 5px 15px;">Oldingi</button>
+                        <span style="margin: 0 15px;">Sahifa <span id="currentPageLabel">1</span> / <span id="totalPagesLabel">1</span></span>
+                        <button class="btn btn-outline" id="nextPage" onclick="changePage(1)" style="padding: 5px 15px;">Keyingi</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+    let savedPage = parseInt(sessionStorage.getItem('adjustCurrentPage'));
+    let currentPage = isNaN(savedPage) ? 1 : savedPage;
+    
+    let savedItems = parseInt(sessionStorage.getItem('adjustItemsPerPage'));
+    let itemsPerPage = isNaN(savedItems) ? 50 : savedItems;
+    document.getElementById('itemsPerPage').value = itemsPerPage;
+
+    let savedSearch = sessionStorage.getItem('adjustSearch') || '';
+    document.getElementById('adjustmentSearch').value = savedSearch;
+
+    let allRows = Array.from(document.querySelectorAll('.product-row'));
+    let filteredRows = [...allRows];
+
+    function renderTable() {
+        const tbody = document.getElementById('adjustmentTableBody');
+        allRows.forEach(row => row.style.display = 'none'); // Hide all
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages === 0 ? 1 : totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        sessionStorage.setItem('adjustCurrentPage', currentPage);
+        sessionStorage.setItem('adjustItemsPerPage', itemsPerPage);
+        sessionStorage.setItem('adjustSearch', document.getElementById('adjustmentSearch').value);
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        
+        const rowsToShow = filteredRows.slice(startIndex, endIndex);
+        rowsToShow.forEach(row => row.style.display = '');
+
+        document.getElementById('totalItemsCount').innerText = filteredRows.length;
+        document.getElementById('currentPageLabel').innerText = totalPages === 0 ? 0 : currentPage;
+        document.getElementById('totalPagesLabel').innerText = totalPages;
+
+        document.getElementById('prevPage').disabled = currentPage === 1;
+        document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+    }
+
+    function searchTable() {
+        const query = document.getElementById('adjustmentSearch').value.toLowerCase().trim();
+        filteredRows = allRows.filter(row => row.getAttribute('data-search').includes(query));
+        currentPage = 1; // reset to 1st page on new search
+        renderTable();
+    }
+
+    function changePage(direction) {
+        currentPage += direction;
+        renderTable();
+    }
+
+    document.getElementById('adjustmentSearch').addEventListener('input', searchTable);
+    
+    document.getElementById('itemsPerPage').addEventListener('change', function(e) {
+        itemsPerPage = parseInt(e.target.value);
+        currentPage = 1;
+        renderTable();
+    });
+
+    // Initial filtering if there was a saved search
+    if (savedSearch) {
+        filteredRows = allRows.filter(row => row.getAttribute('data-search').includes(savedSearch.toLowerCase()));
+    }
+    
+    // Initial render
+    renderTable();
+
+    async function adjustStock(productId) {
+        const inputField = document.getElementById(`actual-qty-${productId}`);
+        const baseQtyField = document.getElementById(`base-qty-${productId}`);
+        const currentCount = parseInt(baseQtyField.getAttribute('data-count'));
+        
+        const actualQuantity = parseInt(inputField.value);
+
+        if (isNaN(actualQuantity)) {
+            alert("Iltimos, haqiqiy qoldiqni ishonchli kiriting.");
+            return;
+        }
+
+        if (actualQuantity < 0) {
+            alert("Mahsulot qoldig'i 0 dan kam bo'lishi mumkin emas.");
+            return;
+        }
+
+        if (actualQuantity === currentCount) {
+            alert("Haqiqiy qoldiq mavjud bazadagi qoldiq bilan bir xil. O'zgartirish saqlanmadi.");
+            return;
+        }
+
+        const btn = document.getElementById(`btn-adjust-${productId}`);
+        const originalText = btn.innerHTML;
+        const diff = actualQuantity - currentCount;
+        
+        if (!confirm(`Siz rostdan ham bazaga ${diff > 0 ? '+' : ''}${diff} ta "Ostatka bilan moslashtirish" tranzaksiyasini yozmoqchimisiz?`)) {
+            return;
+        }
+
+        try {
+            btn.innerHTML = 'Kuting...';
+            btn.disabled = true;
+
+            const res = await fetch('/products/adjust', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    actual_quantity: actualQuantity
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                // DOM UPDATE INSTEAD OF RELOAD
+                baseQtyField.setAttribute('data-count', actualQuantity);
+                baseQtyField.innerHTML = actualQuantity + ' ta';
+                baseQtyField.style.color = actualQuantity > 0 ? '#2E8B57' : '#DC143C';
+                
+                // Show floating visual confirmation
+                btn.innerHTML = '✅ Saqlandi';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    btn.innerHTML = 'Saqlash';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                    btn.disabled = false;
+                }, 3000); // 3 seconds success indication
+
+            } else {
+                alert("Xatolik: " + data.error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            alert("Xatolik yuz berdi: " + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>

@@ -25,7 +25,7 @@ class SupplierController {
         try {
             const { name, phone, email, address } = req.body;
             await Supplier.create({ name, phone, email, address }, req.user);
-            res.redirect('/suppliers');
+            res.redirect(req.cookies.last_suppliers_url || '/suppliers');
         } catch (error) {
             console.error('Supplier create error:', error);
             res.render('suppliers/create', {
@@ -61,7 +61,7 @@ class SupplierController {
         try {
             const { name, phone, email, address } = req.body;
             await Supplier.update(req.params.id, { name, phone, email, address }, req.user);
-            res.redirect('/suppliers');
+            res.redirect(req.cookies.last_suppliers_url || '/suppliers');
         } catch (error) {
             console.error('Supplier update error:', error);
             const supplier = await Supplier.findById(req.params.id);
@@ -76,7 +76,7 @@ class SupplierController {
     static async delete(req, res) {
         try {
             await Supplier.delete(req.params.id, req.user);
-            res.redirect('/suppliers');
+            res.redirect(req.cookies.last_suppliers_url || '/suppliers');
         } catch (error) {
             console.error('Supplier delete error:', error);
             res.status(500).json({ error: error.message });

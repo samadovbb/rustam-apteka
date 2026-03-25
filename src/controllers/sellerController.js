@@ -25,7 +25,7 @@ class SellerController {
         try {
             const { full_name, phone, commission_percent } = req.body;
             await Seller.create({ full_name, phone, commission_percent }, req.user);
-            res.redirect('/sellers');
+            res.redirect(req.cookies.last_sellers_url || '/sellers');
         } catch (error) {
             console.error('Seller create error:', error);
             res.render('sellers/create', {
@@ -61,7 +61,7 @@ class SellerController {
         try {
             const { full_name, phone, commission_percent } = req.body;
             await Seller.update(req.params.id, { full_name, phone, commission_percent }, req.user);
-            res.redirect('/sellers');
+            res.redirect(req.cookies.last_sellers_url || '/sellers');
         } catch (error) {
             console.error('Seller update error:', error);
             const seller = await Seller.findById(req.params.id);
@@ -76,7 +76,7 @@ class SellerController {
     static async delete(req, res) {
         try {
             await Seller.delete(req.params.id, req.user);
-            res.redirect('/sellers');
+            res.redirect(req.cookies.last_sellers_url || '/sellers');
         } catch (error) {
             console.error('Seller delete error:', error);
             res.status(500).json({ error: error.message });

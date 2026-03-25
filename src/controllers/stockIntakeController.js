@@ -96,7 +96,7 @@ class StockIntakeController {
             }
 
             await StockIntake.create(supplier_id, processedItems, notes, intake_date || null, req.user);
-            res.redirect('/stock-intake');
+            res.redirect(req.cookies['last_stock-intake_url'] || '/stock-intake');
         } catch (error) {
             console.error('Stock intake store error:', error);
             const suppliers = await Supplier.getAll();

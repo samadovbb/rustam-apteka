@@ -33,6 +33,7 @@ CREATE TABLE products (
     purchase_price DECIMAL(12, 2) DEFAULT 0.00,
     sell_price DECIMAL(12, 2) DEFAULT 0.00,
     last_price_update_at TIMESTAMP NULL,
+    is_deleted TINYINT(1) DEFAULT 0 COMMENT '0 = faol, 1 = o''chirilgan',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_barcode (barcode),

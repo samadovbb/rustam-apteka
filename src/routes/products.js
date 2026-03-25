@@ -13,6 +13,10 @@ router.get('/', ProductController.index);
 router.get('/create', ProductController.create);
 router.post('/', ProductController.store);
 
+// Adjust inventory
+router.get('/adjust', ProductController.adjustInventory);
+router.post('/adjust', ProductController.storeAdjustment);
+
 // View product
 router.get('/:id/view', ProductController.view);
 

@@ -9,6 +9,7 @@ class Product {
             FROM products p
             LEFT JOIN warehouse_inventory wi ON p.id = wi.product_id
             LEFT JOIN seller_inventory si ON p.id = si.product_id
+            WHERE p.is_deleted = 0
             GROUP BY p.id
             ORDER BY p.name ASC
         `;
@@ -16,13 +17,13 @@ class Product {
     }
 
     static async findById(id) {
-        const sql = 'SELECT * FROM products WHERE id = ? LIMIT 1';
+        const sql = 'SELECT * FROM products WHERE id = ? AND is_deleted = 0 LIMIT 1';
         const results = await query(sql, [id]);
         return results[0] || null;
     }
 
     static async findByBarcode(barcode) {
-        const sql = 'SELECT * FROM products WHERE barcode = ? LIMIT 1';
+        const sql = 'SELECT * FROM products WHERE barcode = ? AND is_deleted = 0 LIMIT 1';
         const results = await query(sql, [barcode]);
         return results[0] || null;
     }
@@ -30,7 +31,7 @@ class Product {
     static async search(searchTerm) {
         const sql = `
             SELECT * FROM products
-            WHERE name LIKE ? OR barcode LIKE ?
+            WHERE (name LIKE ? OR barcode LIKE ?) AND is_deleted = 0
             ORDER BY name ASC
             LIMIT 50
         `;
@@ -117,7 +118,7 @@ class Product {
         // Get product data before deletion
         const product = await this.findById(id);
 
-        const sql = 'DELETE FROM products WHERE id = ?';
+        const sql = 'UPDATE products SET is_deleted = 1 WHERE id = ?';
         await query(sql, [id]);
 
         // Log audit trail
@@ -140,7 +141,7 @@ class Product {
             SELECT wi.*, p.name as product_name, p.barcode, p.purchase_price, p.sell_price
             FROM warehouse_inventory wi
             JOIN products p ON wi.product_id = p.id
-            WHERE wi.quantity > 0
+            WHERE wi.quantity > 0 AND p.is_deleted = 0
             ORDER BY p.name ASC
         `;
         return await query(sql);

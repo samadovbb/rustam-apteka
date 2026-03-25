@@ -6,6 +6,16 @@ class Supplier {
         return await query(sql);
     }
 
+    static async getOrCreateSystemSupplier() {
+        const sqlFind = 'SELECT id FROM suppliers WHERE name = ? LIMIT 1';
+        const results = await query(sqlFind, ['TIZIM (ADJUSTMENT)']);
+        if (results.length > 0) return results[0].id;
+
+        const sqlInsert = 'INSERT INTO suppliers (name, phone, address) VALUES (?, ?, ?)';
+        const insertRes = await query(sqlInsert, ['TIZIM (ADJUSTMENT)', 'TIZIM', 'Korrektirovka uchun maxsus tizim yozuvi']);
+        return insertRes.insertId;
+    }
+
     static async findById(id) {
         const sql = 'SELECT * FROM suppliers WHERE id = ? LIMIT 1';
         const results = await query(sql, [id]);

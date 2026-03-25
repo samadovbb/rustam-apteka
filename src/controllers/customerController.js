@@ -35,7 +35,7 @@ class CustomerController {
             }
 
             await Customer.create({ full_name, phone, address }, req.user);
-            res.redirect('/customers');
+            res.redirect(req.cookies.last_customers_url || '/customers');
         } catch (error) {
             console.error('Customer create error:', error);
             res.render('customers/create', {
@@ -84,7 +84,7 @@ class CustomerController {
             }
 
             await Customer.update(id, { full_name, phone, address }, req.user);
-            res.redirect('/customers');
+            res.redirect(req.cookies.last_customers_url || '/customers');
         } catch (error) {
             console.error('Customer update error:', error);
             const customer = await Customer.findById(req.params.id);
@@ -99,7 +99,7 @@ class CustomerController {
     static async delete(req, res) {
         try {
             await Customer.delete(req.params.id, req.user);
-            res.redirect('/customers');
+            res.redirect(req.cookies.last_customers_url || '/customers');
         } catch (error) {
             console.error('Customer delete error:', error);
             res.status(500).json({ error: error.message });

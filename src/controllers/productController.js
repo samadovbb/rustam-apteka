@@ -15,6 +15,67 @@ class ProductController {
         }
     }
 
+    // Show adjust inventory form
+    static async adjustInventory(req, res) {
+        try {
+            const products = await Product.getAll();
+            res.render('products/adjust', {
+                title: 'Omborni To\'g\'irlash (Ostatka bilan moslashtirish)',
+                products,
+                error: null
+            });
+        } catch (error) {
+            console.error('Adjust inventory error:', error);
+            res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    // Store adjustment
+    static async storeAdjustment(req, res) {
+        try {
+            const { product_id, actual_quantity } = req.body;
+            
+            if (!product_id || actual_quantity === undefined || actual_quantity === '') {
+                throw new Error("Mahsulot va haqiqiy qoldiqni kiriting!");
+            }
+
+            const product = await Product.findById(product_id);
+            if (!product) {
+                throw new Error("Mahsulot topilmadi");
+            }
+
+            const warehouseStock = await Product.getWarehouseStock(product_id);
+            const currentQuantity = warehouseStock ? warehouseStock.quantity : 0;
+            const diff = parseInt(actual_quantity) - parseInt(currentQuantity);
+
+            if (diff !== 0) {
+                const StockIntake = require('../models/StockIntake');
+                const Supplier = require('../models/Supplier');
+                
+                // Get or create the special ADJUSTMENT supplier
+                const systemSupplierId = await Supplier.getOrCreateSystemSupplier();
+                
+                await StockIntake.create(
+                    systemSupplierId, 
+                    [{
+                        product_id: product_id,
+                        quantity: diff,
+                        purchase_price: product.purchase_price
+                    }], 
+                    "Ostatka bilan moslashtirish", 
+                    null, 
+                    req.user
+                );
+            }
+
+            // After adjusting, send back a success response
+            res.json({ success: true, message: `Bazada o'zgarish kiritildi: ${diff > 0 ? '+' : ''}${diff} ta` });
+        } catch (error) {
+            console.error('Store adjustment error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // Show create form
     static async create(req, res) {
         res.render('products/create', {
@@ -45,7 +106,7 @@ class ProductController {
                 sell_price: parseFloat(sell_price) || 0
             }, req.user);
 
-            res.redirect('/products');
+            res.redirect(req.cookies.last_products_url || '/products');
         } catch (error) {
             console.error('Product create error:', error);
             res.render('products/create', {
@@ -103,7 +164,7 @@ class ProductController {
                 sell_price: parseFloat(sell_price) || 0
             }, req.user);
 
-            res.redirect('/products');
+            res.redirect(req.cookies.last_products_url || '/products');
         } catch (error) {
             console.error('Product update error:', error);
             const product = await Product.findById(req.params.id);
@@ -119,7 +180,7 @@ class ProductController {
     static async delete(req, res) {
         try {
             await Product.delete(req.params.id, req.user);
-            res.redirect('/products');
+            res.redirect(req.cookies.last_products_url || '/products');
         } catch (error) {
             console.error('Product delete error:', error);
             res.status(500).json({ error: error.message });
