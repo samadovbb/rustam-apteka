@@ -6,6 +6,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 async function triggerTelegramBackup() {
+    let backupFilePath = null;
     try {
         const token = process.env.TELEGRAM_BOT_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -26,7 +27,7 @@ async function triggerTelegramBackup() {
             fs.mkdirSync(backupDir, { recursive: true });
         }
 
-        const backupFilePath = path.join(backupDir, backupFileName);
+        backupFilePath = path.join(backupDir, backupFileName);
 
         console.log('📦 Baza zaxira qilinmoqda (Backup)...');
         // Dump database using the javascript-based wrapper
@@ -58,16 +59,25 @@ async function triggerTelegramBackup() {
 
         if (response.data && response.data.ok) {
             console.log('✅ Zaxira Telegram botga muvaffaqiyatli uzatildi!');
-            
-            // Delete local file to save disk space
-            fs.unlinkSync(backupFilePath);
-            console.log("🗑️ Lokal fayl xotirani tejash uchun o'chirib tashlandi.");
         } else {
             console.error('❌ Telegram javobida xatolik yuz berdi:', response.data);
         }
 
     } catch (error) {
-        console.error('❌ Telegram Backup xatosi:', error.message);
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.message.includes('network')) {
+            console.error("📡 Internet aloqasi yo'q! Zaxira (Backup) Telegramga jo'natilmadi. Ammo tizim o'z ishini davom ettirmoqda!");
+        } else {
+            console.error('❌ Telegram Backup xatosi:', error.message);
+        }
+    } finally {
+        // Hamma holatda (muvaffaqiyatli yoki xato bo'lsa ham) lokal disk to'lib ketmasligi uchun 
+        // vaqtinchalik yaratilgan .sql faylini oxirida o'chirib tashlaymiz.
+        try {
+            if (fs.existsSync(backupFilePath)) {
+                fs.unlinkSync(backupFilePath);
+                console.log("🗑️ Lokal vaqtinchalik xotira (fayl) tozalandi.");
+            }
+        } catch (cleanupError) {}
     }
 }
 
