@@ -310,13 +310,13 @@ class ReportsController {
                     item.sale_id,
                     item.seller_name,
                     item.product_name,
-                    `$${parseFloat(item.purchase_price_at_sale || 0).toFixed(2)}`,
-                    `$${parseFloat(item.sell_price || 0).toFixed(2)}`,
+                    parseFloat(item.purchase_price_at_sale || 0),
+                    parseFloat(item.sell_price || 0),
                     item.quantity,
-                    `$${parseFloat(item.product_profit || 0).toFixed(2)}`,
-                    `$${parseFloat(item.fixed_markup_total || 0).toFixed(2)}`,
+                    parseFloat(item.product_profit || 0),
+                    parseFloat(item.fixed_markup_total || 0),
                     `${item.markup_months} oy`,
-                    `$${parseFloat(item.total_profit || 0).toFixed(2)}`,
+                    parseFloat(item.total_profit || 0),
                     item.debt_status === 'yopilgan' ? '✓ Yopilgan' : '✗ Yopilmagan'
                 ]);
 
@@ -333,10 +333,10 @@ class ReportsController {
             // Totals row
             const totalRow = worksheet.addRow([
                 '', '', '', '', '', '', 'JAMI:',
-                `$${totalProfit.toFixed(2)}`,
-                `$${totalMarkup.toFixed(2)}`,
+                parseFloat(totalProfit),
+                parseFloat(totalMarkup),
                 '',
-                `$${totalFinal.toFixed(2)}`,
+                parseFloat(totalFinal),
                 ''
             ]);
             totalRow.font = { bold: true, size: 12 };
@@ -480,9 +480,9 @@ class ReportsController {
                     sale.sale_id,
                     new Date(sale.sale_date).toLocaleDateString('ru-RU'),
                     sale.seller_name,
-                    `$${saleProfit.toFixed(2)}`,
+                    parseFloat(saleProfit),
                     `-$${penalties.toFixed(2)}`,
-                    `$${netProfit.toFixed(2)}`,
+                    parseFloat(netProfit),
                     sale.debt_status === 'yopilgan' ? '✓ Yopilgan' : '✗ Yopilmagan'
                 ]);
 
@@ -499,9 +499,9 @@ class ReportsController {
             // Totals row
             const totalRow = worksheet.addRow([
                 '', '', '', 'JAMI:',
-                `$${totalProfit.toFixed(2)}`,
+                parseFloat(totalProfit),
                 `-$${totalPenalties.toFixed(2)}`,
-                `$${totalNet.toFixed(2)}`,
+                parseFloat(totalNet),
                 ''
             ]);
             totalRow.font = { bold: true, size: 12 };

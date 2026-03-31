@@ -2,7 +2,7 @@ const { query } = require('../config/database');
 
 class Supplier {
     static async getAll() {
-        const sql = 'SELECT * FROM suppliers ORDER BY name ASC';
+        const sql = "SELECT * FROM suppliers WHERE name != 'TIZIM (ADJUSTMENT)' ORDER BY name ASC";
         return await query(sql);
     }
 
@@ -98,7 +98,8 @@ class Supplier {
     static async search(searchTerm) {
         const sql = `
             SELECT * FROM suppliers
-            WHERE name LIKE ? OR phone LIKE ? OR email LIKE ?
+            WHERE (name LIKE ? OR phone LIKE ? OR email LIKE ?)
+            AND name != 'TIZIM (ADJUSTMENT)'
             ORDER BY name ASC
             LIMIT 50
         `;

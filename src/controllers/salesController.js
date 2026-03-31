@@ -527,10 +527,10 @@ class SalesController {
                     '',
                     item.product_name,
                     quantity,
-                    `$${purchasePrice.toFixed(2)}`,
-                    `$${unitPrice.toFixed(2)}`,
-                    `$${subtotal.toFixed(2)}`,
-                    `$${itemProfit.toFixed(2)}`
+                    parseFloat(purchasePrice),
+                    parseFloat(unitPrice),
+                    parseFloat(subtotal),
+                    parseFloat(itemProfit)
                 ]);
                 row.eachCell((cell, colNumber) => {
                     if (colNumber > 1) {
@@ -546,7 +546,7 @@ class SalesController {
 
             // Total
             worksheet.addRow([]);
-            const totalRow = worksheet.addRow(['', '', '', '', '', 'Jami:', `$${parseFloat(sale.total_amount).toFixed(2)}`]);
+            const totalRow = worksheet.addRow(['', '', '', '', '', 'Jami:', parseFloat(sale.total_amount)]);
             totalRow.font = { bold: true, size: 12 };
             totalRow.getCell(7).fill = {
                 type: 'pattern',
@@ -555,7 +555,7 @@ class SalesController {
             };
 
             // Profit row
-            const profitRow = worksheet.addRow(['', '', '', '', '', 'Foyda:', `$${totalProfit.toFixed(2)}`]);
+            const profitRow = worksheet.addRow(['', '', '', '', '', 'Foyda:', parseFloat(totalProfit)]);
             profitRow.font = { bold: true, size: 12, color: { argb: 'FF00AA00' } };
             profitRow.getCell(7).fill = {
                 type: 'pattern',
@@ -565,8 +565,8 @@ class SalesController {
 
             // Payment info
             worksheet.addRow([]);
-            worksheet.addRow(['', 'To\'langan:', `$${parseFloat(sale.paid_amount).toFixed(2)}`]);
-            const remainingRow = worksheet.addRow(['', 'Qoldiq:', `$${parseFloat(sale.remaining_amount).toFixed(2)}`]);
+            worksheet.addRow(['', 'To\'langan:', parseFloat(sale.paid_amount)]);
+            const remainingRow = worksheet.addRow(['', 'Qoldiq:', parseFloat(sale.remaining_amount)]);
             if (sale.remaining_amount > 0) {
                 remainingRow.getCell(3).font = { color: { argb: 'FFFF0000' }, bold: true };
             }
@@ -575,8 +575,8 @@ class SalesController {
             if (debt && debtCalculation) {
                 worksheet.addRow([]);
                 worksheet.addRow(['', 'QARZ MA\'LUMOTLARI']).font = { bold: true, size: 12 };
-                worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
-                worksheet.addRow(['', 'Joriy qarz:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
+                worksheet.addRow(['', 'Asl qarz:', parseFloat(debt.original_amount)]);
+                worksheet.addRow(['', 'Joriy qarz:', parseFloat(debtCalculation.baseAmount)]);
             }
 
             // Combined Payment and Markup History
@@ -636,7 +636,7 @@ class SalesController {
                     new Date(sale.sale_date).toLocaleDateString('ru-RU'),
                     'Umumiy summa',
                     '-',
-                    `$${runningBalance.toFixed(2)}`
+                    parseFloat(runningBalance)
                 ]);
                 initialRow.font = { bold: true };
                 initialRow.fill = {
@@ -664,7 +664,7 @@ class SalesController {
                             item.date.toLocaleDateString('ru-RU'),
                             `-$${parseFloat(item.payment.amount).toFixed(2)}`,
                             translatePaymentMethod(item.payment.payment_method),
-                            `$${runningBalance.toFixed(2)}`
+                            parseFloat(runningBalance)
                         ]);
                         row.getCell(3).font = { color: { argb: 'FF00AA00' }, bold: true };
                         row.eachCell((cell, colNumber) => {
@@ -690,7 +690,7 @@ class SalesController {
                             item.date.toLocaleDateString('ru-RU'),
                             markupDisplay,
                             'Ustama',
-                            `$${runningBalance.toFixed(2)}`
+                            parseFloat(runningBalance)
                         ]);
                         row.getCell(3).font = { color: { argb: 'FFFF9900' }, bold: true };
                         row.fill = {
@@ -717,7 +717,7 @@ class SalesController {
                     '',
                     '',
                     'QOLDIQ:',
-                    `$${runningBalance.toFixed(2)}`
+                    parseFloat(runningBalance)
                 ]);
                 finalRow.font = { bold: true, size: 12 };
                 finalRow.getCell(5).font = {
@@ -816,7 +816,7 @@ class SalesController {
                     const row = worksheet.addRow([
                         '',
                         new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
-                        `$${parseFloat(penalty.remaining_debt || 0).toFixed(2)}`,
+                        parseFloat(penalty.remaining_debt || 0),
                         `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
                         penalty.notes || 'Sababsiz'
                     ]);

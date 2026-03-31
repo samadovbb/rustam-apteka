@@ -14,6 +14,7 @@ router.get('/create', ProductController.create);
 router.post('/', ProductController.store);
 
 // Adjust inventory
+router.get('/adjust/export', ProductController.exportAdjustExcel);
 router.get('/adjust', ProductController.adjustInventory);
 router.post('/adjust', ProductController.storeAdjustment);
 

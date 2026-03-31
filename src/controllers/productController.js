@@ -30,6 +30,60 @@ class ProductController {
         }
     }
 
+    // Export inventory for adjustments to Excel
+    static async exportAdjustExcel(req, res) {
+        try {
+            const ExcelJS = require('exceljs');
+            const products = await Product.getAll();
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Ombor (Ostatka)');
+
+            worksheet.columns = [
+                { header: 'ID', key: 'id', width: 10 },
+                { header: 'Barcode', key: 'barcode', width: 20 },
+                { header: 'Mahsulot Nomi', key: 'name', width: 45 },
+                { header: 'Sotuv Narxi', key: 'sell_price', width: 15 },
+                { header: 'Bazada (Ostatka)', key: 'warehouse_count', width: 20 },
+                { header: 'Haqiqiy Qoldiq (Fact)', key: 'actual_count', width: 25 },
+            ];
+
+            // Header stylings
+            worksheet.getRow(1).font = { bold: true };
+            worksheet.getRow(1).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+            products.forEach(product => {
+                const row = worksheet.addRow({
+                    id: product.id,
+                    barcode: product.barcode,
+                    name: product.name,
+                    sell_price: parseFloat(product.sell_price || 0),
+                    warehouse_count: parseInt(product.warehouse_count || 0),
+                    actual_count: '' // intentionally left empty
+                });
+                row.alignment = { vertical: 'middle', horizontal: 'left' };
+                row.getCell('warehouse_count').alignment = { horizontal: 'center' };
+            });
+
+            const dateStr = new Date().toISOString().split('T')[0];
+            const fileName = `Ostatka_Export_${dateStr}.xlsx`;
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+            await workbook.xlsx.write(res);
+            res.end();
+        } catch (error) {
+            console.error('Export Excel error:', error);
+            res.status(500).json({ error: 'Excel generatsiya qilishda xatolik yuz berdi' });
+        }
+    }
+
     // Store adjustment
     static async storeAdjustment(req, res) {
         try {

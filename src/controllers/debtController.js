@@ -268,9 +268,9 @@ class DebtController {
 
             // Debt amounts
             worksheet.addRow(['', 'QARZ MIQDORLARI']).font = { bold: true, size: 12 };
-            worksheet.addRow(['', 'Asl qarz:', `$${parseFloat(debt.original_amount).toFixed(2)}`]);
-            worksheet.addRow(['', 'Joriy qarz (asosiy):', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
-            const totalRow = worksheet.addRow(['', 'JAMI QARZ:', `$${parseFloat(debtCalculation.baseAmount).toFixed(2)}`]);
+            worksheet.addRow(['', 'Asl qarz:', parseFloat(debt.original_amount)]);
+            worksheet.addRow(['', 'Joriy qarz (asosiy):', parseFloat(debtCalculation.baseAmount)]);
+            const totalRow = worksheet.addRow(['', 'JAMI QARZ:', parseFloat(debtCalculation.baseAmount)]);
             totalRow.font = { bold: true, size: 12 };
 
             // Grace period info
@@ -335,7 +335,7 @@ class DebtController {
                     new Date(debt.sale_date).toLocaleDateString('ru-RU'),
                     'Boshlang\'ich qarz',
                     '-',
-                    `$${runningBalance.toFixed(2)}`
+                    parseFloat(runningBalance)
                 ]);
                 initialRow.font = { bold: true };
                 initialRow.eachCell((cell, colNumber) => {
@@ -370,7 +370,7 @@ class DebtController {
                         new Date(item.date).toLocaleDateString('ru-RU'),
                         displayType,
                         displayAmount,
-                        `$${runningBalance.toFixed(2)}`
+                        parseFloat(runningBalance)
                     ]);
                     row.getCell(4).font = { color: { argb: amountColor }, bold: true };
                     row.getCell(5).font = { bold: true };
@@ -392,7 +392,7 @@ class DebtController {
                     '',
                     '',
                     'JAMI QARZ:',
-                    `$${runningBalance.toFixed(2)}`
+                    parseFloat(runningBalance)
                 ]);
                 totalRow.font = { bold: true, size: 12 };
                 totalRow.getCell(5).font = { color: { argb: 'FFFF0000' }, bold: true, size: 12 };

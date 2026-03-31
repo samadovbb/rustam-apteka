@@ -293,18 +293,18 @@ class SellerController {
                     `#${sale.id}`,
                     new Date(sale.sale_date).toLocaleDateString('ru-RU'),
                     sale.customer_name,
-                    `$${parseFloat(sale.total_amount).toFixed(2)}`,
-                    `$${parseFloat(sale.paid_amount).toFixed(2)}`,
-                    `$${parseFloat(sale.remaining_amount).toFixed(2)}`
+                    parseFloat(sale.total_amount),
+                    parseFloat(sale.paid_amount),
+                    parseFloat(sale.remaining_amount)
                 ]);
             });
 
             // Totals
             const summaryTotalRow = summarySheet.addRow([
                 '', '', 'JAMI:',
-                `$${totalAmount.toFixed(2)}`,
-                `$${totalPaid.toFixed(2)}`,
-                `$${totalRemaining.toFixed(2)}`
+                parseFloat(totalAmount),
+                parseFloat(totalPaid),
+                parseFloat(totalRemaining)
             ]);
             summaryTotalRow.font = { bold: true };
             summaryTotalRow.fill = {
@@ -342,9 +342,9 @@ class SellerController {
                 detailSheet.getRow(currentRow).values = ['Sana:', new Date(sale.sale_date).toLocaleDateString('ru-RU')]; currentRow++;
                 detailSheet.getRow(currentRow).values = ['Xaridor:', sale.customer_name]; currentRow++;
                 detailSheet.getRow(currentRow).values = ['Telefon:', sale.customer_phone]; currentRow++;
-                detailSheet.getRow(currentRow).values = ['Jami summa:', `$${parseFloat(sale.total_amount).toFixed(2)}`]; currentRow++;
-                detailSheet.getRow(currentRow).values = ['To\'langan:', `$${parseFloat(sale.paid_amount).toFixed(2)}`]; currentRow++;
-                detailSheet.getRow(currentRow).values = ['Qarz:', `$${parseFloat(sale.remaining_amount).toFixed(2)}`]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Jami summa:', parseFloat(sale.total_amount)]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['To\'langan:', parseFloat(sale.paid_amount)]; currentRow++;
+                detailSheet.getRow(currentRow).values = ['Qarz:', parseFloat(sale.remaining_amount)]; currentRow++;
                 currentRow++; // Empty row
 
                 // 1. PRODUCTS SECTION
@@ -391,10 +391,10 @@ class SellerController {
                     detailSheet.getRow(currentRow).values = [
                         item.product_name,
                         item.quantity,
-                        `$${parseFloat(item.purchase_price_at_sale).toFixed(2)}`,
-                        `$${parseFloat(item.unit_price).toFixed(2)}`,
-                        `$${profit.toFixed(2)}`,
-                        `$${itemTotal.toFixed(2)}`
+                        parseFloat(item.purchase_price_at_sale),
+                        parseFloat(item.unit_price),
+                        parseFloat(profit),
+                        parseFloat(itemTotal)
                     ];
                     currentRow++;
                 });
@@ -406,8 +406,8 @@ class SellerController {
                     totalQuantity,
                     '',
                     '',
-                    `$${totalProfit.toFixed(2)}`,
-                    `$${totalAmount.toFixed(2)}`
+                    parseFloat(totalProfit),
+                    parseFloat(totalAmount)
                 ];
                 productsTotalRow.font = { bold: true };
                 productsTotalRow.fill = {
@@ -453,7 +453,7 @@ class SellerController {
                         totalPayments += parseFloat(payment.amount);
                         detailSheet.getRow(currentRow).values = [
                             new Date(payment.payment_date).toLocaleDateString('ru-RU'),
-                            `$${parseFloat(payment.amount).toFixed(2)}`,
+                            parseFloat(payment.amount),
                             payment.payment_method || '-',
                             payment.notes || '-'
                         ];
@@ -464,7 +464,7 @@ class SellerController {
                     const paymentsTotalRow = detailSheet.getRow(currentRow);
                     paymentsTotalRow.values = [
                         'JAMI:',
-                        `$${totalPayments.toFixed(2)}`,
+                        parseFloat(totalPayments),
                         '',
                         ''
                     ];
@@ -517,9 +517,9 @@ class SellerController {
                             totalMarkup += parseFloat(markup.markup_value);
                             detailSheet.getRow(currentRow).values = [
                                 new Date(markup.calculation_date).toLocaleDateString('ru-RU'),
-                                `$${parseFloat(markup.markup_value).toFixed(2)}`,
-                                `$${parseFloat(markup.remaining_debt).toFixed(2)}`,
-                                `$${parseFloat(markup.total_after_markup).toFixed(2)}`,
+                                parseFloat(markup.markup_value),
+                                parseFloat(markup.remaining_debt),
+                                parseFloat(markup.total_after_markup),
                                 '-'
                             ];
                             currentRow++;
@@ -529,7 +529,7 @@ class SellerController {
                         const markupTotalRow = detailSheet.getRow(currentRow);
                         markupTotalRow.values = [
                             'JAMI:',
-                            `$${totalMarkup.toFixed(2)}`,
+                            parseFloat(totalMarkup),
                             '',
                             '',
                             ''
@@ -585,7 +585,7 @@ class SellerController {
                         detailSheet.getRow(currentRow).values = [
                             new Date(penalty.penalty_date).toLocaleDateString('ru-RU'),
                             `-$${parseFloat(penalty.penalty_amount).toFixed(2)}`,
-                            `$${parseFloat(penalty.debt_amount || 0).toFixed(2)}`,
+                            parseFloat(penalty.debt_amount || 0),
                             penalty.notes || '-'
                         ];
                         currentRow++;

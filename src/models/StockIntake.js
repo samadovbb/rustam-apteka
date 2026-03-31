@@ -8,6 +8,7 @@ class StockIntake {
             SELECT si.*, s.name as supplier_name
             FROM stock_intakes si
             JOIN suppliers s ON si.supplier_id = s.id
+            WHERE s.name != 'TIZIM (ADJUSTMENT)'
             ORDER BY si.intake_date DESC
             LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}
         `;
@@ -16,7 +17,12 @@ class StockIntake {
     }
 
     static async getCount() {
-        const sql = `SELECT COUNT(*) as total FROM stock_intakes`;
+        const sql = `
+            SELECT COUNT(*) as total 
+            FROM stock_intakes si
+            JOIN suppliers s ON si.supplier_id = s.id
+            WHERE s.name != 'TIZIM (ADJUSTMENT)'
+        `;
         const result = await query(sql);
         return result[0].total;
     }

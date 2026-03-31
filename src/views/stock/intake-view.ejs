@@ -39,7 +39,6 @@
                                 <th><%= lang.table.barcode %></th>
                                 <th><%= lang.table.quantity %></th>
                                 <th><%= lang.table.purchasePrice %></th>
-                                <th><%= lang.table.subtotal %></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -49,7 +48,6 @@
                                     <td><%= item.barcode %></td>
                                     <td><%= item.quantity %></td>
                                     <td>$<%= parseFloat(item.purchase_price || 0).toFixed(2) %></td>
-                                    <td>$<%= parseFloat(item.subtotal || 0).toFixed(2) %></td>
                                 </tr>
                             <% }) %>
                         </tbody>
