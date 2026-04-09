@@ -48,6 +48,7 @@
                                 </select>
                                 <input type="number" class="form-control quantity-input" placeholder="<%= lang.stockIntake.quantity %>" min="1" style="flex: 1;" required>
                                 <input type="number" step="0.01" class="form-control price-input" placeholder="<%= lang.stockTransfer.sellerPrice %>" min="0" style="flex: 1;" required>
+                                <button type="button" class="btn btn-danger remove-product-btn" style="padding: 0.5rem; flex: 0.1; display:flex; justify-content:center; align-items:center;" onclick="removeStockProductRow(this)" title="<%= lang.buttons.delete || 'X' %>">&times;</button>
                             </div>
                         </div>
                         <button type="button" class="btn btn-sm btn-secondary" onclick="addProductRow()"><%= lang.stockIntake.addProduct %></button>
@@ -102,6 +103,9 @@ document.getElementById('transferForm').addEventListener('submit', async functio
                 quantity: parseInt(quantity),
                 seller_price: parseFloat(price)
             });
+        } else {
+            // Remove incomplete rows before submit to clear out empty fields
+            row.remove();
         }
     });
 
@@ -190,15 +194,16 @@ $(document).ready(function() {
                 delay: 250,
                 data: function (params) {
                     return {
-                        q: params.term || ''
+                        q: params.term || '',
+                        in_stock: '1'
                     };
                 },
                 processResults: function (data) {
                     return {
                         results: data.map(function(product) {
                             return {
-                                id: product.id,
-                                text: product.name + ' (' + product.barcode + ')',
+                                id: product.product_id || product.id,
+                                text: product.product_name || product.name + ' (' + (product.barcode || '') + ') - Mavjud: ' + (product.quantity || product.warehouse_count),
                                 product: product
                             };
                         })
@@ -251,6 +256,30 @@ $(document).ready(function() {
 
         // Initialize Select2 on new row
         initializeProductSelect(select);
+    };
+
+    // Make remove function globally accessible
+    window.removeStockProductRow = function(button) {
+        const row = button.closest('.product-item');
+        const container = document.getElementById('productsList');
+        // Prevent deleting the very last row
+        if (container.querySelectorAll('.product-item').length > 1) {
+            // Remove select2 instance correctly for cleanup
+            const select = row.querySelector('.product-select');
+            if ($(select).hasClass("select2-hidden-accessible")) {
+                $(select).select2('destroy');
+            }
+            row.remove();
+        } else {
+            // Unset values if it's the last row
+            row.querySelectorAll('input, select').forEach(input => {
+                input.value = '';
+            });
+            const select = row.querySelector('.product-select');
+            if ($(select).hasClass("select2-hidden-accessible")) {
+                $(select).val(null).trigger('change');
+            }
+        }
     };
 });
 </script>

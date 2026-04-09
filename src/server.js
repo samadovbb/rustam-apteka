@@ -122,6 +122,39 @@ const startServer = async () => {
                     await query("ALTER TABLE products ADD COLUMN is_deleted TINYINT(1) DEFAULT 0 COMMENT '0 = faol, 1 = o''chirilgan'");
                     console.log('✅ Migration is_deleted applied successfully.');
                 }
+
+                // Check if sale_item_price_history table exists
+                const priceHistoryTable = await query("SHOW TABLES LIKE 'sale_item_price_history'");
+                if (!priceHistoryTable || priceHistoryTable.length === 0) {
+                    console.log('🔄 Applying migration: Creating sale_item_price_history table...');
+                    await query(`
+                        CREATE TABLE IF NOT EXISTS sale_item_price_history (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            sale_item_id INT NOT NULL,
+                            sale_id INT NOT NULL,
+                            old_unit_price DECIMAL(12, 2) NOT NULL,
+                            new_unit_price DECIMAL(12, 2) NOT NULL,
+                            changed_by VARCHAR(100) NULL,
+                            reason VARCHAR(500) NULL,
+                            changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (sale_item_id) REFERENCES sale_items(id) ON DELETE CASCADE,
+                            FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+                            INDEX idx_sale_item (sale_item_id),
+                            INDEX idx_sale (sale_id),
+                            INDEX idx_changed_at (changed_at)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    `);
+                    console.log('✅ Migration sale_item_price_history applied successfully.');
+                }
+
+                // Check if original_unit_price column exists in sale_items
+                const originalPriceCol = await query("SHOW COLUMNS FROM sale_items LIKE 'original_unit_price'");
+                if (!originalPriceCol || originalPriceCol.length === 0) {
+                    console.log('🔄 Applying migration: Adding original_unit_price to sale_items...');
+                    await query("ALTER TABLE sale_items ADD COLUMN original_unit_price DECIMAL(12, 2) NULL AFTER unit_price");
+                    await query("UPDATE sale_items SET original_unit_price = unit_price WHERE original_unit_price IS NULL");
+                    console.log('✅ Migration original_unit_price applied successfully.');
+                }
             } catch (migrationError) {
                 console.error('❌ Migration failed:', migrationError.message);
             }

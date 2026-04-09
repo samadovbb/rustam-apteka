@@ -165,3 +165,22 @@ function checkDebtSection() {
 
 // Attach listeners to first row
 attachProductRowListeners(document.querySelector('.product-item'));
+
+// Remove product row
+window.removeProductRow = function(button) {
+    const row = button.closest('.product-item');
+    const container = document.getElementById('productsList');
+    // Prevent deleting the very last row
+    if (container.querySelectorAll('.product-item').length > 1) {
+        row.remove();
+        updateTotal();
+    } else {
+        // Reset values if it's the last row
+        row.querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        row.querySelector('.product-select').value = '';
+        row.querySelector('span').textContent = '$0.00';
+        updateTotal();
+    }
+}

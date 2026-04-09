@@ -18,6 +18,9 @@ router.get('/adjust/export', ProductController.exportAdjustExcel);
 router.get('/adjust', ProductController.adjustInventory);
 router.post('/adjust', ProductController.storeAdjustment);
 
+// Export catalog to excel
+router.get('/export-catalog', ProductController.exportCatalog);
+
 // View product
 router.get('/:id/view', ProductController.view);
 

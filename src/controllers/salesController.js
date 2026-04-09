@@ -876,6 +876,44 @@ class SalesController {
             res.status(500).send('Error generating Excel file');
         }
     }
+
+    // Update sale item price
+    static async updateItemPrice(req, res) {
+        try {
+            const { new_unit_price, reason } = req.body;
+
+            if (new_unit_price === undefined || new_unit_price === null || new_unit_price === '') {
+                return res.status(400).json({ success: false, error: 'Yangi narx kiritilishi kerak' });
+            }
+
+            const result = await Sale.updateItemPrice(
+                req.params.item_id,
+                parseFloat(new_unit_price),
+                reason || null,
+                req.user
+            );
+
+            res.json({
+                success: true,
+                message: `Narx muvaffaqiyatli o'zgartirildi: $${result.oldUnitPrice.toFixed(2)} → $${result.newUnitPrice.toFixed(2)}`,
+                result
+            });
+        } catch (error) {
+            console.error('Update item price error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Get sale item price history
+    static async getItemPriceHistory(req, res) {
+        try {
+            const history = await Sale.getItemPriceHistory(req.params.item_id);
+            res.json({ success: true, history });
+        } catch (error) {
+            console.error('Get item price history error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 module.exports = SalesController;

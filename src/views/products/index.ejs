@@ -15,7 +15,10 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><%= lang.products.title %></h3>
-                    <a href="/products/create" class="btn btn-primary"><%= lang.products.addNew %></a>
+                    <div>
+                        <a href="/products/export-catalog" class="btn btn-success" style="margin-right: 10px;">Price List (<%= lang.buttons.download || 'Скачать' %>)</a>
+                        <a href="/products/create" class="btn btn-primary"><%= lang.products.addNew %></a>
+                    </div>
                 </div>
 
                 <div style="padding: 15px;">

@@ -56,7 +56,8 @@ class Sale {
     static async getItems(saleId) {
         const sql = `
             SELECT si.*, p.name as product_name, p.barcode,
-                   (si.quantity * (si.unit_price - si.purchase_price_at_sale)) as item_profit
+                   (si.quantity * (si.unit_price - si.purchase_price_at_sale)) as item_profit,
+                   (SELECT COUNT(*) FROM sale_item_price_history sph WHERE sph.sale_item_id = si.id) as price_change_count
             FROM sale_items si
             JOIN products p ON si.product_id = p.id
             WHERE si.sale_id = ?
@@ -669,6 +670,122 @@ class Sale {
         await AuditLog.log('sales', saleId, 'update', oldData, newData, user);
 
         return { profit_given: newProfitGiven, profit_given_at: profitGivenAt };
+    }
+    static async updateItemPrice(saleItemId, newUnitPrice, reason = null, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get current sale item
+            const [items] = await conn.execute(
+                'SELECT * FROM sale_items WHERE id = ?',
+                [saleItemId]
+            );
+
+            if (!items[0]) {
+                throw new Error('Sale item not found');
+            }
+
+            const item = items[0];
+            const oldUnitPrice = parseFloat(item.unit_price);
+            const saleId = item.sale_id;
+
+            if (oldUnitPrice === parseFloat(newUnitPrice)) {
+                throw new Error('Yangi narx eski narx bilan bir xil');
+            }
+
+            // If original_unit_price is null, set it to current unit_price (first time changing)
+            if (item.original_unit_price === null) {
+                await conn.execute(
+                    'UPDATE sale_items SET original_unit_price = ? WHERE id = ?',
+                    [oldUnitPrice, saleItemId]
+                );
+            }
+
+            // Record price change history
+            await conn.execute(
+                `INSERT INTO sale_item_price_history 
+                 (sale_item_id, sale_id, old_unit_price, new_unit_price, changed_by, reason)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [saleItemId, saleId, oldUnitPrice, newUnitPrice, user?.login || null, reason || null]
+            );
+
+            // Update the unit_price on the sale item
+            await conn.execute(
+                'UPDATE sale_items SET unit_price = ? WHERE id = ?',
+                [newUnitPrice, saleItemId]
+            );
+
+            // Recalculate sale total_amount
+            const [allItems] = await conn.execute(
+                'SELECT SUM(quantity * unit_price) as new_total FROM sale_items WHERE sale_id = ?',
+                [saleId]
+            );
+            const newTotalAmount = parseFloat(allItems[0].new_total || 0);
+
+            // Get current sale data
+            const [sales] = await conn.execute(
+                'SELECT * FROM sales WHERE id = ?',
+                [saleId]
+            );
+            const sale = sales[0];
+            const priceDiff = (parseFloat(newUnitPrice) - oldUnitPrice) * item.quantity;
+
+            // Update sale total
+            const newPaidAmount = parseFloat(sale.paid_amount);
+            let newStatus = 'unpaid';
+            if (newPaidAmount >= newTotalAmount) {
+                newStatus = 'paid';
+            } else if (newPaidAmount > 0) {
+                newStatus = 'partial';
+            }
+
+            await conn.execute(
+                'UPDATE sales SET total_amount = ?, status = ? WHERE id = ?',
+                [newTotalAmount, newStatus, saleId]
+            );
+
+            // Update debt if exists
+            const [debts] = await conn.execute(
+                'SELECT * FROM debts WHERE sale_id = ?',
+                [saleId]
+            );
+
+            if (debts[0]) {
+                const debt = debts[0];
+                const newDebtCurrent = Math.max(0, parseFloat(debt.current_amount) + priceDiff);
+                const newDebtOriginal = Math.max(0, parseFloat(debt.original_amount) + priceDiff);
+                const debtStatus = newDebtCurrent <= 0 ? 'paid' : 'active';
+
+                await conn.execute(
+                    'UPDATE debts SET current_amount = ?, original_amount = ?, status = ? WHERE id = ?',
+                    [newDebtCurrent, newDebtOriginal, debtStatus, debt.id]
+                );
+            }
+
+            // Log audit trail
+            const oldData = { sale_item_id: saleItemId, unit_price: oldUnitPrice };
+            const newData = { sale_item_id: saleItemId, unit_price: newUnitPrice, reason };
+            await AuditLog.log('sale_items', saleItemId, 'update', oldData, newData, user);
+
+            return {
+                oldUnitPrice,
+                newUnitPrice: parseFloat(newUnitPrice),
+                newTotalAmount,
+                priceDiff
+            };
+        });
+    }
+
+    static async getItemPriceHistory(saleItemId) {
+        const sql = `
+            SELECT sph.*, si.product_id, p.name as product_name
+            FROM sale_item_price_history sph
+            JOIN sale_items si ON sph.sale_item_id = si.id
+            JOIN products p ON si.product_id = p.id
+            WHERE sph.sale_item_id = ?
+            ORDER BY sph.changed_at DESC
+        `;
+        return await query(sql, [saleItemId]);
     }
 }
 

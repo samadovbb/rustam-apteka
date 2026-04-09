@@ -28,13 +28,25 @@ class Product {
         return results[0] || null;
     }
 
-    static async search(searchTerm) {
-        const sql = `
-            SELECT * FROM products
-            WHERE (name LIKE ? OR barcode LIKE ?) AND is_deleted = 0
-            ORDER BY name ASC
-            LIMIT 50
-        `;
+    static async search(searchTerm, onlyInStock = false) {
+        let sql = "";
+        if (onlyInStock) {
+            sql = `
+                SELECT p.*, wi.quantity as warehouse_count 
+                FROM products p
+                JOIN warehouse_inventory wi ON p.id = wi.product_id
+                WHERE (p.name LIKE ? OR p.barcode LIKE ?) AND p.is_deleted = 0 AND wi.quantity > 0
+                ORDER BY p.name ASC
+                LIMIT 50
+            `;
+        } else {
+            sql = `
+                SELECT * FROM products
+                WHERE (name LIKE ? OR barcode LIKE ?) AND is_deleted = 0
+                ORDER BY name ASC
+                LIMIT 50
+            `;
+        }
         const term = `%${searchTerm}%`;
         return await query(sql, [term, term]);
     }

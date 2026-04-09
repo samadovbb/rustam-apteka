@@ -241,17 +241,79 @@ class ProductController {
         }
     }
 
+    // Export catalog
+    static async exportCatalog(req, res) {
+        try {
+            const ExcelJS = require('exceljs');
+            const products = await Product.getAll();
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Price List');
+
+            worksheet.columns = [
+                { header: 'ID', key: 'id', width: 10 },
+                { header: 'Barcode', key: 'barcode', width: 20 },
+                { header: 'Mahsulot Nomi', key: 'name', width: 45 },
+                { header: 'Soni', key: 'quantity', width: 15 },
+                { header: 'Sotuv Narxi', key: 'sell_price', width: 15 }
+            ];
+
+            // Header stylings
+            worksheet.getRow(1).font = { bold: true };
+            worksheet.getRow(1).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD3D3D3' }
+            };
+            worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+            // Only export the products that are actually available (warehouse_count > 0)
+            const availableProducts = products.filter(p => parseInt(p.warehouse_count || 0) > 0);
+
+            availableProducts.forEach(product => {
+                const row = worksheet.addRow({
+                    id: product.id,
+                    barcode: product.barcode,
+                    name: product.name,
+                    quantity: parseInt(product.warehouse_count || 0),
+                    sell_price: parseFloat(product.sell_price || 0)
+                });
+                row.alignment = { vertical: 'middle', horizontal: 'left' };
+                row.getCell('quantity').alignment = { horizontal: 'center' };
+                row.getCell('sell_price').alignment = { horizontal: 'right' };
+                row.getCell('sell_price').numFmt = '#,##0.00';
+            });
+
+            const dateStr = new Date().toISOString().split('T')[0];
+            const fileName = `Price_List_${dateStr}.xlsx`;
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+            await workbook.xlsx.write(res);
+            res.end();
+        } catch (error) {
+            console.error('Export Excel error:', error);
+            res.status(500).json({ error: 'Excel generatsiya qilishda xatolik yuz berdi' });
+        }
+    }
+
     // API: Search products
     static async search(req, res) {
         try {
-            const { q } = req.query;
-            // If no query, return all products
+            const { q, in_stock } = req.query;
+            const onlyInStock = (in_stock === '1' || in_stock === 'true');
             if (!q || q.trim() === '') {
-                const products = await Product.getAll();
-                return res.json(products);
+                if (onlyInStock) {
+                    const products = await Product.search('', true);
+                    return res.json(products);
+                } else {
+                    const products = await Product.getAll();
+                    return res.json(products);
+                }
             }
 
-            const products = await Product.search(q);
+            const products = await Product.search(q, onlyInStock);
             res.json(products);
         } catch (error) {
             console.error('Product search error:', error);

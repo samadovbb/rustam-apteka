@@ -77,6 +77,7 @@
                                 <th><%= lang.table.quantity %></th>
                                 <th><%= lang.table.unitPrice %></th>
                                 <th><%= lang.table.subtotal %></th>
+                                <th>Harakat</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -93,8 +94,29 @@
                                     <td><%= item.product_name %></td>
                                     <td><%= item.barcode %></td>
                                     <td><%= item.quantity %></td>
-                                    <td>$<%= parseFloat(item.unit_price || 0).toFixed(2) %></td>
-                                    <td>$<%= parseFloat(item.subtotal || 0).toFixed(2) %></td>
+                                    <td id="price-display-<%= item.id %>">
+                                        <span>$<%= parseFloat(item.unit_price || 0).toFixed(2) %></span>
+                                        <% if (item.original_unit_price && parseFloat(item.original_unit_price) !== parseFloat(item.unit_price)) { %>
+                                            <br>
+                                            <small style="color: #999; text-decoration: line-through;" title="Avvalgi narx">
+                                                $<%= parseFloat(item.original_unit_price).toFixed(2) %>
+                                            </small>
+                                            <% if (item.price_change_count > 0) { %>
+                                                <small style="color: #f59e0b; cursor: pointer; margin-left: 4px;" 
+                                                       onclick="showPriceHistory(<%= sale.id %>, <%= item.id %>, '<%= item.product_name %>')"
+                                                       title="<%= item.price_change_count %> marta o'zgartirilgan">
+                                                    🕐<%= item.price_change_count %>
+                                                </small>
+                                            <% } %>
+                                        <% } %>
+                                    </td>
+                                    <td id="subtotal-display-<%= item.id %>">$<%= parseFloat(item.subtotal || 0).toFixed(2) %></td>
+                                    <td>
+                                        <button onclick="editItemPrice(<%= sale.id %>, <%= item.id %>, '<%= item.product_name %>', <%= parseFloat(item.unit_price) %>)" 
+                                                class="btn btn-sm btn-link" title="Narxni tahrirlash" style="padding: 2px 6px; font-size: 0.9em;">
+                                            ✏️ Narx
+                                        </button>
+                                    </td>
                                 </tr>
                             <% }) %>
                         </tbody>
@@ -105,6 +127,7 @@
                                 <td><%= items.reduce((sum, item) => sum + item.quantity, 0) %></td>
                                 <td></td>
                                 <td>$<%= parseFloat(sale.total_amount || 0).toFixed(2) %></td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -704,6 +727,143 @@ async function showReturnDialog(saleId) {
             console.error('Error:', error);
             Swal.fire('Xato!', 'Mahsulotlarni qaytarishda xatolik yuz berdi', 'error');
         }
+    }
+}
+
+// Edit sale item price
+async function editItemPrice(saleId, itemId, productName, currentPrice) {
+    const { value: formValues } = await Swal.fire({
+        title: 'Narxni tahrirlash',
+        html:
+            `<div style="text-align: left; padding: 10px;">` +
+            `<p><strong>Mahsulot:</strong> ${productName}</p>` +
+            `<p><strong>Joriy narx:</strong> $${currentPrice.toFixed(2)}</p>` +
+            `<hr>` +
+            `<div style="margin-bottom: 15px;">` +
+            `<label for="swal-new-price" style="display: block; margin-bottom: 5px; font-weight: bold;">Yangi narx:</label>` +
+            `<input id="swal-new-price" type="number" step="0.01" min="0" class="swal2-input" value="${currentPrice.toFixed(2)}" style="margin: 0; width: 100%;">` +
+            `</div>` +
+            `<div>` +
+            `<label for="swal-reason" style="display: block; margin-bottom: 5px; font-weight: bold;">Sabab (ixtiyoriy):</label>` +
+            `<textarea id="swal-reason" class="swal2-textarea" placeholder="Narx o'zgarishi sababini kiriting..." style="margin: 0; width: 100%;"></textarea>` +
+            `</div>` +
+            `</div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Saqlash',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#2563eb',
+        preConfirm: () => {
+            const newPrice = parseFloat(document.getElementById('swal-new-price').value);
+            const reason = document.getElementById('swal-reason').value;
+
+            if (isNaN(newPrice) || newPrice < 0) {
+                Swal.showValidationMessage('Narx to\'g\'ri kiritilishi kerak');
+                return false;
+            }
+
+            if (newPrice === currentPrice) {
+                Swal.showValidationMessage('Yangi narx eski narx bilan bir xil');
+                return false;
+            }
+
+            return { newPrice, reason };
+        }
+    });
+
+    if (formValues) {
+        try {
+            const response = await fetch(`/sales/${saleId}/item/${itemId}/price`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    new_unit_price: formValues.newPrice,
+                    reason: formValues.reason
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire('Yangilandi!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('Xato!', 'Narxni yangilashda xatolik yuz berdi', 'error');
+        }
+    }
+}
+
+// Show price change history
+async function showPriceHistory(saleId, itemId, productName) {
+    try {
+        const response = await fetch(`/sales/${saleId}/item/${itemId}/price-history`);
+        const data = await response.json();
+
+        if (!data.success) {
+            Swal.fire('Xato!', data.error, 'error');
+            return;
+        }
+
+        const history = data.history;
+
+        if (history.length === 0) {
+            Swal.fire('Ma\'lumot', 'Narx o\'zgarishlari tarixi mavjud emas', 'info');
+            return;
+        }
+
+        let tableHTML = `
+            <div style="text-align: left;">
+                <p><strong>Mahsulot:</strong> ${productName}</p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9em; margin-top: 10px;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Sana</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Eski narx</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">→</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Yangi narx</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Sabab</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        history.forEach(h => {
+            const date = new Date(h.changed_at).toLocaleString('ru-RU');
+            const diff = parseFloat(h.new_unit_price) - parseFloat(h.old_unit_price);
+            const diffColor = diff > 0 ? 'green' : 'red';
+
+            tableHTML += `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${date}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; text-decoration: line-through; color: #999;">$${parseFloat(h.old_unit_price).toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: ${diffColor}; font-weight: bold;">${diff > 0 ? '↑' : '↓'}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold;">$${parseFloat(h.new_unit_price).toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${h.reason || '-'}</td>
+                </tr>`;
+        });
+
+        tableHTML += `</tbody></table>`;
+
+        if (history[0].changed_by) {
+            tableHTML += `<p style="margin-top: 10px; color: #666; font-size: 0.85em;">Oxirgi o'zgartiruvchi: ${history[0].changed_by}</p>`;
+        }
+
+        tableHTML += `</div>`;
+
+        Swal.fire({
+            title: 'Narx o\'zgarishlari tarixi',
+            html: tableHTML,
+            width: '700px',
+            confirmButtonText: 'Yopish'
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Xato!', 'Tarixni yuklashda xatolik yuz berdi', 'error');
     }
 }
 </script>
