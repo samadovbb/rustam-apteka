@@ -13,6 +13,7 @@ router.post('/:id/payment', SalesController.addPayment);
 router.post('/:id/calculate-markup', SalesController.calculateMarkup);
 router.put('/:id/date', SalesController.updateSaleDate);
 router.put('/:id/payment/:payment_id/date', SalesController.updatePaymentDate);
+router.put('/:id/payment/:payment_id/amount', SalesController.updatePaymentAmount);
 router.delete('/:id', SalesController.delete);
 
 // New features: change seller and return items

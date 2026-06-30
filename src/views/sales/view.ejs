@@ -235,7 +235,12 @@
                                 %>
                                     <tr>
                                         <td id="payment-date-<%= item.payment.id %>"><%= item.date.toLocaleDateString('ru-RU') %></td>
-                                        <td style="color: green; font-weight: bold;">-$<%= parseFloat(item.payment.amount || 0).toFixed(2) %></td>
+                                        <td style="color: green; font-weight: bold;">
+                                            -$<%= parseFloat(item.payment.amount || 0).toFixed(2) %>
+                                            <button onclick="editPaymentAmount(<%= sale.id %>, <%= item.payment.id %>, <%= parseFloat(item.payment.amount || 0) %>)" class="btn btn-sm btn-link" title="Summani tahrirlash" style="padding: 0 5px; font-size: 0.9em;">
+                                                ✏️
+                                            </button>
+                                        </td>
                                         <td><%= item.payment.payment_method %></td>
                                         <td style="font-weight: bold;">$<%= runningBalance.toFixed(2) %></td>
                                         <td>
@@ -561,6 +566,55 @@ async function editPaymentDate(saleId, paymentId, currentDate) {
     } catch (error) {
         console.error('Error:', error);
         Swal.fire('Xato!', 'Sanani yangilashda xatolik yuz berdi', 'error');
+    }
+}
+
+async function editPaymentAmount(saleId, paymentId, currentAmount) {
+    const { value: newAmount } = await Swal.fire({
+        title: 'To\'lov summasini tahrirlash',
+        input: 'number',
+        inputLabel: 'Yangi summa ($)',
+        inputValue: currentAmount,
+        inputAttributes: {
+            step: '0.01',
+            min: '0'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Saqlash',
+        cancelButtonText: 'Bekor qilish',
+        confirmButtonColor: '#2563eb',
+        inputValidator: (value) => {
+            if (!value || isNaN(parseFloat(value)) || parseFloat(value) < 0) {
+                return 'To\'g\'ri summa kiriting!';
+            }
+            if (parseFloat(value) === currentAmount) {
+                return 'Yangi summa eski summa bilan bir xil!';
+            }
+        }
+    });
+
+    if (newAmount) {
+        try {
+            const response = await fetch(`/sales/${saleId}/payment/${paymentId}/amount`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ amount: parseFloat(newAmount) })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire('Yangilandi!', data.message, 'success')
+                    .then(() => window.location.reload());
+            } else {
+                Swal.fire('Xato!', data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('Xato!', 'Summani yangilashda xatolik yuz berdi', 'error');
+        }
     }
 }
 

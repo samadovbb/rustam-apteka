@@ -329,6 +329,22 @@ class SalesController {
         }
     }
 
+    // Update payment amount
+    static async updatePaymentAmount(req, res) {
+        try {
+            const { amount } = req.body;
+            if (amount === undefined || amount === null || isNaN(parseFloat(amount)) || parseFloat(amount) < 0) {
+                return res.status(400).json({ success: false, error: 'Summa to\'g\'ri kiritilishi kerak' });
+            }
+
+            await Sale.updatePaymentAmount(req.params.payment_id, parseFloat(amount), req.user);
+            res.json({ success: true, message: 'To\'lov summasi muvaffaqiyatli yangilandi' });
+        } catch (error) {
+            console.error('Update payment amount error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // Delete a sale
     static async delete(req, res) {
         try {

@@ -416,6 +416,94 @@ class Sale {
         return true;
     }
 
+    static async updatePaymentAmount(paymentId, newAmount, user = null) {
+        const AuditLog = require('./AuditLog');
+
+        return await transaction(async (conn) => {
+            // Get payment data
+            const [payments] = await conn.execute('SELECT * FROM payments WHERE id = ?', [paymentId]);
+
+            if (!payments[0]) {
+                throw new Error('Payment not found');
+            }
+
+            const payment = payments[0];
+            const oldAmount = parseFloat(payment.amount);
+            const targetAmount = parseFloat(newAmount);
+            const diff = targetAmount - oldAmount;
+
+            if (diff === 0) {
+                return true; // No change needed
+            }
+
+            const saleId = payment.sale_id;
+
+            // Get current sale data
+            const [sales] = await conn.execute('SELECT * FROM sales WHERE id = ?', [saleId]);
+            if (!sales[0]) {
+                throw new Error('Sale not found');
+            }
+            const sale = sales[0];
+
+            // Calculate new paid_amount for sale
+            const newPaidAmount = parseFloat(sale.paid_amount) + diff;
+
+            // Update payment amount
+            await conn.execute('UPDATE payments SET amount = ? WHERE id = ?', [targetAmount, paymentId]);
+
+            // Check if there is an associated debt
+            const [debts] = await conn.execute('SELECT * FROM debts WHERE sale_id = ?', [saleId]);
+
+            let newStatus;
+            if (debts[0]) {
+                const debt = debts[0];
+                // Check if this payment is recorded in debt_payments
+                const [debtPayments] = await conn.execute(
+                    'SELECT * FROM debt_payments WHERE debt_id = ? AND payment_id = ?',
+                    [debt.id, paymentId]
+                );
+
+                if (debtPayments[0]) {
+                    // Update debt_payments amount
+                    await conn.execute(
+                        'UPDATE debt_payments SET amount = ? WHERE debt_id = ? AND payment_id = ?',
+                        [targetAmount, debt.id, paymentId]
+                    );
+
+                    // Update debt current_amount
+                    const newDebtAmount = Math.max(0, parseFloat(debt.current_amount) - diff);
+                    const debtStatus = newDebtAmount === 0 ? 'paid' : 'active';
+
+                    await conn.execute(
+                        'UPDATE debts SET current_amount = ?, status = ? WHERE id = ?',
+                        [newDebtAmount, debtStatus, debt.id]
+                    );
+
+                    newStatus = newDebtAmount === 0 ? 'paid' : 'partial';
+                } else {
+                    newStatus = newPaidAmount >= parseFloat(sale.total_amount) ? 'paid' : 'partial';
+                }
+            } else {
+                newStatus = newPaidAmount >= parseFloat(sale.total_amount) ? 'paid' : 'partial';
+            }
+
+            // Update sale paid_amount and status
+            await conn.execute(
+                'UPDATE sales SET paid_amount = ?, status = ? WHERE id = ?',
+                [newPaidAmount, newStatus, saleId]
+            );
+
+            // Get updated payment data for audit trail
+            const [updatedPayments] = await conn.execute('SELECT * FROM payments WHERE id = ?', [paymentId]);
+            const newPaymentData = { ...updatedPayments[0] };
+
+            // Log audit trail for payments
+            await AuditLog.log('payments', paymentId, 'update', payment, newPaymentData, user);
+
+            return true;
+        });
+    }
+
     static async delete(saleId, user = null) {
         const AuditLog = require('./AuditLog');
 
