@@ -54,6 +54,49 @@ class DebtController {
         }
     }
 
+    // Debts whose grace period has ended / is about to end
+    static async dueList(req, res) {
+        try {
+            const telegram = require('../utils/telegramBot');
+            const range = ['overdue', '7', '30'].includes(req.query.range) ? req.query.range : 'overdue';
+            const { title: rangeTitle, options } = telegram.getDueRange(range);
+
+            const debts = await Debt.getDueDebts(options);
+            const totalDue = debts.reduce((sum, debt) => sum + debt.amount_due, 0);
+
+            res.render('debts/due', {
+                title: 'Due Debts - MegaDent POS',
+                debts,
+                range,
+                rangeTitle,
+                totalDue,
+                telegramEnabled: telegram.isConfigured()
+            });
+        } catch (error) {
+            console.error('Due debts error:', error);
+            res.status(500).render('error', { title: 'Error', message: error.message, error });
+        }
+    }
+
+    static async sendDueToTelegram(req, res) {
+        try {
+            const telegram = require('../utils/telegramBot');
+            if (!telegram.isConfigured()) {
+                return res.status(400).json({ success: false, error: "Telegram sozlanmagan (.env da TELEGRAM_BOT_TOKEN va chat ID kerak)" });
+            }
+
+            const result = await telegram.sendDueDebts(req.body.range || 'overdue');
+            if (!result.sent) {
+                return res.status(502).json({ success: false, error: "Telegramga yuborib bo'lmadi. Internet aloqasini tekshiring." });
+            }
+
+            res.json({ success: true, message: `${result.count} ta qarz ro'yxati Telegramga yuborildi` });
+        } catch (error) {
+            console.error('Send due debts to Telegram error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     static async view(req, res) {
         try {
             const debt = await Debt.findById(req.params.id);

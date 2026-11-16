@@ -6,6 +6,11 @@ const { authMiddleware } = require('../middleware/auth');
 router.use(authMiddleware);
 
 router.get('/', DebtController.index);
+
+// Due debts (must stay above '/:id')
+router.get('/due', DebtController.dueList);
+router.post('/due/send-telegram', DebtController.sendDueToTelegram);
+
 router.get('/:id', DebtController.view);
 router.post('/:id/apply-markup', DebtController.applyManualMarkup);
 router.post('/:id/status', DebtController.updateStatus);

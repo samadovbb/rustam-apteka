@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+
+<div class="main-wrapper">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+        <div class="topbar">
+            <h2>Muddati kelgan qarzlar</h2>
+            <div class="user-info">
+                <span><%= lang.common.welcome %>, <strong><%= locals.user ? user.full_name || user.login : 'Admin' %></strong></span>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="stats-grid" style="margin-bottom: 20px;">
+                <div class="stat-card <%= range === 'overdue' ? 'danger' : 'warning' %>">
+                    <div class="stat-label">Qarzlar soni</div>
+                    <div class="stat-value"><%= debts.length %></div>
+                </div>
+                <div class="stat-card <%= range === 'overdue' ? 'danger' : 'warning' %>">
+                    <div class="stat-label">Jami qoldiq</div>
+                    <div class="stat-value">$<%= totalDue.toFixed(2) %></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h3 class="card-title" style="margin: 0;"><%= rangeTitle %></h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="/debts/due?range=overdue" class="btn btn-sm <%= range === 'overdue' ? 'btn-primary' : 'btn-secondary' %>">Muddati kelgan</a>
+                        <a href="/debts/due?range=7" class="btn btn-sm <%= range === '7' ? 'btn-primary' : 'btn-secondary' %>">7 kun ichida</a>
+                        <a href="/debts/due?range=30" class="btn btn-sm <%= range === '30' ? 'btn-primary' : 'btn-secondary' %>">30 kun ichida</a>
+                        <button type="button" id="sendTelegramBtn" class="btn btn-sm btn-info" <% if (!telegramEnabled) { %>disabled title="Telegram sozlanmagan"<% } %>>✈️ Telegramga yuborish</button>
+                    </div>
+                </div>
+
+                <div style="padding: 15px;">
+                    <input type="text" id="dueSearch" class="form-control" placeholder="Qidirish (mijoz, telefon, sotuvchi)...">
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th><%= lang.debts.customer %></th>
+                                <th><%= lang.table.seller %></th>
+                                <th>Sotuv</th>
+                                <th>Muddat</th>
+                                <th>Holat</th>
+                                <th>Qoldiq</th>
+                                <th><%= lang.table.actions %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (debts.length === 0) { %>
+                                <tr>
+                                    <td colspan="8" class="text-center">Ro'yxat bo'sh</td>
+                                </tr>
+                            <% } else { %>
+                                <% debts.forEach((debt, index) => { %>
+                                    <% const days = parseInt(debt.days_overdue) || 0; %>
+                                    <tr>
+                                        <td><%= index + 1 %></td>
+                                        <td><%= debt.customer_name %><br><small><%= debt.customer_phone %></small></td>
+                                        <td><%= debt.seller_name %></td>
+                                        <td>
+                                            <a href="/sales/<%= debt.sale_id %>">#<%= debt.sale_id %></a><br>
+                                            <small><%= new Date(debt.sale_date).toLocaleDateString('ru-RU') %></small>
+                                        </td>
+                                        <td><%= new Date(debt.grace_end_date).toLocaleDateString('ru-RU') %></td>
+                                        <td>
+                                            <% if (days > 0) { %>
+                                                <span class="badge badge-danger"><%= days %> kun o'tdi</span>
+                                            <% } else if (days === 0) { %>
+                                                <span class="badge badge-warning">Bugun</span>
+                                            <% } else { %>
+                                                <span class="badge badge-info"><%= Math.abs(days) %> kun qoldi</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            $<%= debt.amount_due.toFixed(2) %>
+                                            <% if (debt.markup_amount > 0) { %>
+                                                <br><small style="color: #ff8800;">+$<%= debt.markup_amount.toFixed(2) %> ustama</small>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <a href="/debts/<%= debt.id %>" class="btn btn-sm btn-primary"><%= lang.buttons.view %></a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+document.getElementById('dueSearch').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    document.querySelectorAll('.table-responsive tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(searchValue) ? '' : 'none';
+    });
+});
+
+document.getElementById('sendTelegramBtn').addEventListener('click', async function() {
+    const button = this;
+    button.disabled = true;
+
+    try {
+        const response = await fetch('/debts/due/send-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ range: '<%= range %>' })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({ icon: 'success', title: 'Yuborildi', text: result.message, timer: 2500, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Xatolik', text: result.error });
+        }
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Xatolik', text: 'Server bilan aloqa yo\'q' });
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>

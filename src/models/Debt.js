@@ -464,6 +464,40 @@ class Debt {
         };
     }
 
+    /**
+     * Debts whose grace period has ended (or ends within `daysAhead` days) and are still unpaid.
+     * onlyUpcoming = true leaves out the ones already due, keeping only the future ones.
+     * days_overdue: > 0 overdue, 0 due today, < 0 days left.
+     */
+    static async getDueDebts({ daysAhead = 0, onlyUpcoming = false } = {}) {
+        const sql = `
+            SELECT d.*, c.full_name as customer_name, c.phone as customer_phone,
+                   s.sale_date, s.total_amount as sale_total, s.paid_amount as sale_paid,
+                   sel.full_name as seller_name,
+                   DATEDIFF(CURDATE(), d.grace_end_date) as days_overdue
+            FROM debts d
+            JOIN customers c ON d.customer_id = c.id
+            JOIN sales s ON d.sale_id = s.id
+            JOIN sellers sel ON s.seller_id = sel.id
+            WHERE d.status <> 'cancelled'
+              AND d.current_amount > 0
+              AND d.grace_end_date IS NOT NULL
+              AND d.grace_end_date <= DATE_ADD(CURDATE(), INTERVAL ${parseInt(daysAhead) || 0} DAY)
+              ${onlyUpcoming ? 'AND d.grace_end_date > CURDATE()' : ''}
+            ORDER BY d.grace_end_date ASC, d.id ASC
+        `;
+        const debts = await query(sql);
+
+        return debts.map(debt => {
+            const calculation = this.calculateDebtWithMarkup(debt);
+            return {
+                ...debt,
+                amount_due: calculation.totalWithMarkup,
+                markup_amount: calculation.markupAmount
+            };
+        });
+    }
+
     static async getLatestPaymentDate() {
         const sql = `
             SELECT DATE(p.payment_date) as latest_date

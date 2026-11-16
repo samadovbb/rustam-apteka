@@ -3,23 +3,123 @@ const Seller = require('../models/Seller');
 const Product = require('../models/Product');
 
 class StockTransferController {
+    static parseFilters(queryParams = {}) {
+        const text = (value) => (typeof value === 'string' ? value.trim() : '');
+        return {
+            seller_id: text(queryParams.seller_id),
+            date_from: text(queryParams.date_from),
+            date_to: text(queryParams.date_to),
+            product: text(queryParams.product)
+        };
+    }
+
+    static async exportToExcel(req, res) {
+        try {
+            const ExcelJS = require('exceljs');
+            const filters = StockTransferController.parseFilters(req.query);
+            const rows = await StockTransfer.getExportRows(filters);
+
+            const formatDate = (value) => new Date(value).toLocaleDateString('ru-RU');
+            const filterDate = (value) => (value ? value.split('-').reverse().join('.') : null);
+
+            let sellerName = 'Barchasi';
+            if (filters.seller_id) {
+                const seller = await Seller.findById(filters.seller_id);
+                sellerName = seller ? seller.full_name : sellerName;
+            }
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("O'tkazmalar");
+
+            worksheet.columns = [
+                { width: 6 }, { width: 12 }, { width: 14 }, { width: 28 }, { width: 42 },
+                { width: 22 }, { width: 10 }, { width: 14 }, { width: 16 }, { width: 30 }
+            ];
+
+            worksheet.mergeCells('A1:J1');
+            worksheet.getCell('A1').value = "SOTUVCHILARGA O'TKAZMALAR HISOBOTI";
+            worksheet.getCell('A1').font = { size: 16, bold: true };
+            worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+            worksheet.addRow([]);
+            worksheet.addRow(['', 'Sotuvchi:', sellerName]);
+            worksheet.addRow(['', 'Davr:', `${filterDate(filters.date_from) || '...'} — ${filterDate(filters.date_to) || '...'}`]);
+            if (filters.product) {
+                worksheet.addRow(['', 'Mahsulot:', filters.product]);
+            }
+            worksheet.addRow([]);
+
+            const headerRow = worksheet.addRow([
+                '№', "O'tkazma", 'Sana', 'Sotuvchi', 'Mahsulot',
+                'Shtrix kod', 'Miqdor', 'Narx', 'Summa', 'Izoh'
+            ]);
+            headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            headerRow.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+            let totalQuantity = 0;
+            let totalAmount = 0;
+            rows.forEach((row, index) => {
+                const quantity = parseInt(row.quantity) || 0;
+                const price = parseFloat(row.seller_price) || 0;
+                const subtotal = parseFloat(row.subtotal) || 0;
+                totalQuantity += quantity;
+                totalAmount += subtotal;
+
+                const excelRow = worksheet.addRow([
+                    index + 1, `#${row.id}`, formatDate(row.transfer_date), row.seller_name,
+                    row.product_name, row.barcode, quantity, price, subtotal, row.notes || ''
+                ]);
+                excelRow.getCell(8).numFmt = '#,##0.00';
+                excelRow.getCell(9).numFmt = '#,##0.00';
+            });
+
+            const totalRow = worksheet.addRow(['', '', '', '', 'JAMI:', '', totalQuantity, '', totalAmount, '']);
+            totalRow.font = { bold: true };
+            totalRow.getCell(9).numFmt = '#,##0.00';
+
+            const fileDate = new Date().toISOString().split('T')[0];
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=otkazmalar_${fileDate}.xlsx`);
+
+            await workbook.xlsx.write(res);
+            res.end();
+        } catch (error) {
+            console.error('Stock transfers export error:', error);
+            res.status(500).send('Excel eksportida xatolik: ' + error.message);
+        }
+    }
+
     static async index(req, res) {
         try {
             const page = parseInt(req.query.page) || 1;
             const pageSize = parseInt(req.query.pageSize) || 50;
 
-            const [transfers, totalRecords] = await Promise.all([
-                StockTransfer.getAll(page, pageSize),
-                StockTransfer.getCount()
+            const filters = StockTransferController.parseFilters(req.query);
+
+            const [transfers, totalRecords, summary, sellers] = await Promise.all([
+                StockTransfer.getAll(page, pageSize, filters),
+                StockTransfer.getCount(filters),
+                StockTransfer.getSummary(filters),
+                Seller.getAll()
             ]);
 
             const totalPages = Math.ceil(totalRecords / pageSize);
-            const startRecord = (page - 1) * pageSize + 1;
+            const startRecord = totalRecords > 0 ? (page - 1) * pageSize + 1 : 0;
             const endRecord = Math.min(page * pageSize, totalRecords);
 
             res.render('stock/transfer-list', {
                 title: 'Stock Transfers - MegaDent POS',
                 transfers,
+                sellers,
+                filters,
+                summary,
+                exportQuery: new URLSearchParams(
+                    Object.entries(filters).filter(([, value]) => value)
+                ).toString(),
                 currentPage: page,
                 pageSize: pageSize,
                 totalRecords: totalRecords,

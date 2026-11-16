@@ -175,6 +175,9 @@ const startServer = async () => {
             // Server start bo'lganida Avtomatik Telegram Zaxirasini Yaratish (Agar ruxsat bo'lsa)
             const { triggerTelegramBackup } = require('./utils/telegramBackup');
             triggerTelegramBackup();
+
+            // Telegram xabarnomalari: sotuvlar, muddati kelgan qarzlar, bot buyruqlari
+            require('./utils/telegramBot').start();
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);

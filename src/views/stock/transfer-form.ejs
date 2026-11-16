@@ -1,5 +1,20 @@
 <%- include('../partials/header') %>
 
+<style>
+/* Mahsulot tanlash ro'yxati: kengroq va balandroq ochiladi */
+#productsList .select2-dropdown {
+    min-width: min(720px, 90vw);
+}
+#productsList .select2-container--default .select2-results > .select2-results__options {
+    max-height: 60vh;
+}
+#productsList .select2-results__option {
+    padding: 10px 12px;
+    white-space: normal;
+    line-height: 1.4;
+}
+</style>
+
 <div class="main-wrapper">
     <%- include('../partials/sidebar') %>
 

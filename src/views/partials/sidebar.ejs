@@ -51,8 +51,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/debts" class="nav-link <%= title.includes('Debt') ? 'active' : '' %>">
+                <a href="/debts" class="nav-link <%= title.includes('Debt') && !title.includes('Due Debts') ? 'active' : '' %>">
                     <span>📋</span> <%= lang.nav.debts %>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/debts/due" class="nav-link <%= title.includes('Due Debts') ? 'active' : '' %>">
+                    <span>⏰</span> Muddati kelgan qarzlar
                 </a>
             </li>
             <li class="nav-item">

@@ -1,5 +1,10 @@
 <%- include('../partials/header') %>
 
+<%
+    const hasFilters = !!(filters.seller_id || filters.date_from || filters.date_to || filters.product);
+    const money = (value) => parseFloat(value || 0).toFixed(2);
+%>
+
 <div class="main-wrapper">
     <%- include('../partials/sidebar') %>
 
@@ -12,11 +17,69 @@
         </div>
 
         <div class="container">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><%= lang.stockTransfer.allTransfers %></h3>
-                    <a href="/stock-transfer/create" class="btn btn-primary"><%= lang.stockTransfer.newTransfer %></a>
+            <div class="stats-grid" style="margin-bottom: 20px;">
+                <div class="stat-card primary">
+                    <div class="stat-label">O'tkazmalar soni<%= hasFilters ? ' (filtr bo\'yicha)' : '' %></div>
+                    <div class="stat-value"><%= summary.transfers_count || 0 %></div>
                 </div>
+                <div class="stat-card info">
+                    <div class="stat-label">Jami mahsulot miqdori</div>
+                    <div class="stat-value"><%= parseInt(summary.total_quantity) || 0 %> <%= lang.common.units %></div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">Jami summa (sotuvchi narxida)</div>
+                    <div class="stat-value">$<%= money(summary.total_amount) %></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h3 class="card-title" style="margin: 0;"><%= lang.stockTransfer.allTransfers %></h3>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="/stock-transfer/export<%= exportQuery ? '?' + exportQuery : '' %>" class="btn btn-success">📥 Excel</a>
+                        <a href="/stock-transfer/create" class="btn btn-primary"><%= lang.stockTransfer.newTransfer %></a>
+                    </div>
+                </div>
+
+                <form method="GET" action="/stock-transfer" id="transferFilterForm" style="padding: 15px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                    <div style="flex: 2; min-width: 220px;">
+                        <label class="form-label" for="filterSeller"><%= lang.stockTransfer.seller %></label>
+                        <select name="seller_id" id="filterSeller" class="form-control">
+                            <option value="">Barcha sotuvchilar</option>
+                            <% sellers.forEach(seller => { %>
+                                <option value="<%= seller.id %>" <%= String(filters.seller_id) === String(seller.id) ? 'selected' : '' %>><%= seller.full_name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label class="form-label" for="filterDateFrom">Sanadan</label>
+                        <input type="date" name="date_from" id="filterDateFrom" class="form-control" value="<%= filters.date_from %>">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label class="form-label" for="filterDateTo">Sanagacha</label>
+                        <input type="date" name="date_to" id="filterDateTo" class="form-control" value="<%= filters.date_to %>">
+                    </div>
+                    <div style="flex: 2; min-width: 200px;">
+                        <label class="form-label" for="filterProduct">Mahsulot (nomi yoki shtrix kod)</label>
+                        <input type="text" name="product" id="filterProduct" class="form-control" value="<%= filters.product %>" placeholder="Masalan: Визиограф">
+                    </div>
+                    <% if (pageSize !== 50) { %>
+                        <input type="hidden" name="pageSize" value="<%= pageSize %>">
+                    <% } %>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="submit" class="btn btn-primary">Filtrlash</button>
+                        <% if (hasFilters) { %>
+                            <a href="/stock-transfer" class="btn btn-secondary">Tozalash</a>
+                        <% } %>
+                    </div>
+                    <div style="flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-outline" data-range="today">Bugun</button>
+                        <button type="button" class="btn btn-sm btn-outline" data-range="week">Oxirgi 7 kun</button>
+                        <button type="button" class="btn btn-sm btn-outline" data-range="month">Shu oy</button>
+                        <button type="button" class="btn btn-sm btn-outline" data-range="prevMonth">O'tgan oy</button>
+                        <button type="button" class="btn btn-sm btn-outline" data-range="year">Shu yil</button>
+                    </div>
+                </form>
 
                 <div class="table-responsive">
                     <table>
@@ -25,13 +88,17 @@
                                 <th><%= lang.table.id %></th>
                                 <th><%= lang.table.date %></th>
                                 <th><%= lang.table.seller %></th>
+                                <th>Mahsulot turlari</th>
+                                <th>Jami miqdor</th>
+                                <th>Summa</th>
+                                <th><%= lang.common.notes %></th>
                                 <th><%= lang.table.actions %></th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (transfers.length === 0) { %>
                                 <tr>
-                                    <td colspan="4" class="text-center"><%= lang.stockTransfer.notFound %></td>
+                                    <td colspan="8" class="text-center"><%= lang.stockTransfer.notFound %></td>
                                 </tr>
                             <% } else { %>
                                 <% transfers.forEach(transfer => { %>
@@ -39,6 +106,10 @@
                                         <td>#<%= transfer.id %></td>
                                         <td><%= new Date(transfer.transfer_date).toLocaleDateString('ru-RU') %></td>
                                         <td><%= transfer.seller_name %></td>
+                                        <td><%= transfer.items_count %></td>
+                                        <td><%= parseInt(transfer.total_quantity) || 0 %></td>
+                                        <td>$<%= money(transfer.total_amount) %></td>
+                                        <td><%= transfer.notes || '' %></td>
                                         <td>
                                             <a href="/stock-transfer/<%= transfer.id %>" class="btn btn-sm btn-primary"><%= lang.buttons.view %></a>
                                         </td>
@@ -56,3 +127,43 @@
 </div>
 
 <%- include('../partials/footer') %>
+
+<script>
+$(document).ready(function() {
+    $('#filterSeller').select2({ width: '100%' });
+
+    // Quick date ranges
+    const toInputDate = (date) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+    };
+
+    document.querySelectorAll('#transferFilterForm [data-range]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const now = new Date();
+            let from = new Date(now);
+            let to = new Date(now);
+
+            switch (this.dataset.range) {
+                case 'week':
+                    from.setDate(now.getDate() - 6);
+                    break;
+                case 'month':
+                    from = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'prevMonth':
+                    from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    to = new Date(now.getFullYear(), now.getMonth(), 0);
+                    break;
+                case 'year':
+                    from = new Date(now.getFullYear(), 0, 1);
+                    break;
+            }
+
+            document.getElementById('filterDateFrom').value = toInputDate(from);
+            document.getElementById('filterDateTo').value = toInputDate(to);
+            document.getElementById('transferFilterForm').submit();
+        });
+    });
+});
+</script>

@@ -1,24 +1,106 @@
 const { query, transaction } = require('../config/database');
 
 class StockTransfer {
-    static async getAll(page = 1, pageSize = 50) {
+    // Build WHERE clause from list filters: { seller_id, date_from, date_to, product }
+    static buildFilter(filters = {}) {
+        const where = [];
+        const params = [];
+        const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+
+        const sellerId = parseInt(filters.seller_id);
+        if (sellerId) {
+            where.push('st.seller_id = ?');
+            params.push(sellerId);
+        }
+        if (isDate(filters.date_from)) {
+            where.push('st.transfer_date >= ?');
+            params.push(`${filters.date_from} 00:00:00`);
+        }
+        if (isDate(filters.date_to)) {
+            where.push('st.transfer_date <= ?');
+            params.push(`${filters.date_to} 23:59:59`);
+        }
+        if (filters.product && filters.product.trim()) {
+            where.push(`EXISTS (
+                SELECT 1 FROM stock_transfer_items fi
+                JOIN products fp ON fi.product_id = fp.id
+                WHERE fi.stock_transfer_id = st.id AND (fp.name LIKE ? OR fp.barcode LIKE ?)
+            )`);
+            const term = `%${filters.product.trim()}%`;
+            params.push(term, term);
+        }
+
+        return {
+            whereSql: where.length ? `WHERE ${where.join(' AND ')}` : '',
+            params
+        };
+    }
+
+    static async getAll(page = 1, pageSize = 50, filters = {}) {
         const offset = (page - 1) * pageSize;
+        const { whereSql, params } = this.buildFilter(filters);
 
         const sql = `
-            SELECT st.*, s.full_name as seller_name
+            SELECT st.*, s.full_name as seller_name,
+                   COALESCE(agg.items_count, 0) as items_count,
+                   COALESCE(agg.total_quantity, 0) as total_quantity,
+                   COALESCE(agg.total_amount, 0) as total_amount
             FROM stock_transfers st
             JOIN sellers s ON st.seller_id = s.id
-            ORDER BY st.transfer_date DESC
+            LEFT JOIN (
+                SELECT stock_transfer_id,
+                       COUNT(*) as items_count,
+                       SUM(quantity) as total_quantity,
+                       SUM(quantity * seller_price) as total_amount
+                FROM stock_transfer_items
+                GROUP BY stock_transfer_id
+            ) agg ON agg.stock_transfer_id = st.id
+            ${whereSql}
+            ORDER BY st.transfer_date DESC, st.id DESC
             LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}
         `;
 
-        return await query(sql);
+        return await query(sql, params);
     }
 
-    static async getCount() {
-        const sql = `SELECT COUNT(*) as total FROM stock_transfers`;
-        const result = await query(sql);
+    static async getCount(filters = {}) {
+        const { whereSql, params } = this.buildFilter(filters);
+        const sql = `SELECT COUNT(*) as total FROM stock_transfers st ${whereSql}`;
+        const result = await query(sql, params);
         return result[0].total;
+    }
+
+    // Totals for the whole filtered set (not just the current page)
+    static async getSummary(filters = {}) {
+        const { whereSql, params } = this.buildFilter(filters);
+        const sql = `
+            SELECT COUNT(DISTINCT st.id) as transfers_count,
+                   COALESCE(SUM(sti.quantity), 0) as total_quantity,
+                   COALESCE(SUM(sti.quantity * sti.seller_price), 0) as total_amount
+            FROM stock_transfers st
+            LEFT JOIN stock_transfer_items sti ON sti.stock_transfer_id = st.id
+            ${whereSql}
+        `;
+        const result = await query(sql, params);
+        return result[0];
+    }
+
+    // One row per transferred product, for the Excel export
+    static async getExportRows(filters = {}) {
+        const { whereSql, params } = this.buildFilter(filters);
+        const sql = `
+            SELECT st.id, st.transfer_date, st.notes, s.full_name as seller_name,
+                   p.name as product_name, p.barcode,
+                   sti.quantity, sti.seller_price,
+                   (sti.quantity * sti.seller_price) as subtotal
+            FROM stock_transfers st
+            JOIN sellers s ON st.seller_id = s.id
+            JOIN stock_transfer_items sti ON sti.stock_transfer_id = st.id
+            JOIN products p ON sti.product_id = p.id
+            ${whereSql}
+            ORDER BY st.transfer_date DESC, st.id DESC, p.name ASC
+        `;
+        return await query(sql, params);
     }
 
     static async findById(id) {

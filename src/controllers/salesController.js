@@ -103,6 +103,9 @@ class SalesController {
                 req.user
             );
 
+            // Notify admin via Telegram in the background (must not delay or break the sale)
+            require('../utils/telegramBot').notifySale(saleId);
+
             res.redirect(`/sales/${saleId}`);
         } catch (error) {
             console.error('Sale store error:', error);
